@@ -54,16 +54,16 @@ Either way, **the changeset always gets its own commit, never squashed into an i
 
 Keep both sections short. A trivial, single-purpose PR deserves one bullet per section, not padding to look thorough.
 
-**Links** — one more section, only when there's actually something to put in it:
+**Resources** — one more section, only when there's actually something to put in it:
 
 - The issue this PR tracks, wherever it lives — a GitHub issue, a Jira ticket, a Linear issue, etc. Pull it from a `Fixes #123`/`Relates to <KEY>`-style reference already in a commit message or the existing PR body, the branch name, or what the user has already mentioned in conversation.
 - Any external context that actually informed the fix — an upstream issue, a design doc, a blog post, a Miro board — again only if one genuinely exists in the branch's history or conversation.
 
-Don't go hunting for tangential links to fill this out, and don't add a "Links" section with nothing real in it. One line per link is plenty — this is a pointer, not a bibliography. If neither an issue link nor any external context exists, leave the section out entirely rather than forcing an empty one.
+Don't go hunting for tangential links to fill this out, and don't add a "Resources" section with nothing real in it. One line per link is plenty — this is a pointer, not a bibliography. If neither an issue link nor any external context exists, leave the section out entirely rather than forcing an empty one.
 
 ## Step 5: Fit the update into the existing template — don't replace it
 
-Check the PR's current body and, if present, `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`). If the repo has its own section headers — "## Summary", "## Testing", "## Screenshots", a checklist, a "Related issue(s)" field — map What/Why/Links onto whichever existing headers are the closest match instead of inventing new ones, and leave every section you have no new information for untouched (testing notes, screenshots, checklists). If there's no template to work from, default to:
+Check the PR's current body and, if present, `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`). If the repo has its own section headers — "## Summary", "## Testing", "## Screenshots", a checklist, a "Related issue(s)" field — map What/Why/Resources onto whichever existing headers are the closest match instead of inventing new ones, and leave every section you have no new information for untouched (testing notes, screenshots, checklists). If there's no template to work from, default to:
 
 ```markdown
 ## What
@@ -72,11 +72,11 @@ Check the PR's current body and, if present, `.github/pull_request_template.md` 
 ## Why
 - ...
 
-## Links
+## Resources
 - ...
 ```
 
-(omit the `## Links` section entirely when Step 4 found nothing to put there)
+(omit the `## Resources` section entirely when Step 4 found nothing to put there)
 
 The goal is a description that reads like it was written by the person who made the change, not one that got its structure bulldozed by a script.
 
