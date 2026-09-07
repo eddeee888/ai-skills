@@ -1,26 +1,35 @@
 ---
 name: fix
-description: Turn a merged verify base-test PR into an actual fix. Root-causes the failing (skipped) test, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick and pushes it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after a verify base-test PR has merged. Requires that PR — and its skipped test — to already be on the base branch; this skill does not write the reproduction itself, `verify` does. Every push in this skill re-syncs via the `pr:sync` skill.
+description: Turn a `verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — and pushes it as a draft PR marked `eddeee888:oss:fix`. Use when asked to "fix issue #123", "implement the fix for #123", or right after a `verify` checkpoint commit exists. This skill does not write the reproduction itself, `verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. Every push in this skill re-syncs via the `pr:sync` skill.
 ---
 
 # Fix a verified issue
 
-This is the second half of the TDD loop `verify` started: a skipped, failing test already sits on the base branch proving the bug is real. This skill's job is to make that test pass for real, honestly, and to make the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose which trade-off to take before code gets written.
+This is the second half of the TDD loop `verify` started: a failing test already exists somewhere, committed with an `eddeee888:oss:verify` marker, proving the bug is real. This skill's job is to make that test pass for real, honestly, and to make the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose which trade-off to take before code gets written.
 
 **Every push this skill makes ends by running the `pr:sync` skill** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes based on feedback.
 
-## Step 1: Confirm the base test actually merged
+## Step 1: Find the `verify` checkpoint commit
+
+The failing test could be on the branch you're already on (continuing the same PR `verify` opened) or on a completely different one — don't assume either way, look:
 
 ```bash
-gh pr list --search "<issue number>" --state merged --json number,title,url,mergedAt
-git log origin/<base-branch> --oneline --grep="<issue number>"
+git fetch origin --quiet
+git log --all --oneline --grep="eddeee888:oss:verify"
 ```
 
-If the base-test PR isn't merged yet, stop and say so. Don't fix ahead of the red test landing — that's the entire point of doing this as two skills instead of one, and fixing first throws away the proof the test exists to provide.
+If nothing turns up, stop and ask the user where the failing test lives — a different fork/remote, or `verify` genuinely hasn't run yet. Don't guess a starting point or write the fix against a test that doesn't exist yet; that throws away the entire point of doing this as two skills.
+
+If more than one commit matches (multiple issues verified over time), disambiguate using the issue number in the commit message before proceeding.
+
+This commit is your base for everything that follows:
+
+- If it's already in the current branch's history, keep working right here — no new branch needed.
+- Otherwise, branch from it directly, not from the tip of the base branch: `git checkout -b fix/<issue-number> <verify-commit-sha>`. The checkpoint commit's PR does not need to be merged for this — building on top of the commit is enough.
 
 ## Step 2: Re-root-cause it
 
-Pull up the skipped test and the issue thread again. Temporarily unskip the test locally and run it — read the actual failure (stack trace, assertion diff, error type), don't rely on memory of what the issue said the problem was; the base test may have surfaced something more specific.
+Pull up the failing test and the issue thread again. Run the test locally — read the actual failure (stack trace, assertion diff, error type), don't rely on memory of what the issue said the problem was; the checkpoint commit may have surfaced something more specific.
 
 ## Step 3: Is the bug ours, or a dependency's?
 
@@ -42,13 +51,20 @@ For each option, give: what actually changes, blast radius (what else it touches
 
 ## Step 5: Implement the chosen option
 
-- Unskip the base test — it's the acceptance criterion for this fix.
-- Make the change matching the option the user picked, nothing broader.
-- Run the affected package's test suite (at minimum) to confirm the previously-skipped test now passes for the right reason, and that nothing else regressed.
+- The checkpoint test from Step 1 is the acceptance criterion for this fix — it's still failing at this point, that's expected.
+- Make the change matching the option the user picked, nothing broader, as commits on top of the `eddeee888:oss:verify` commit — don't rebase or rewrite that commit, it's the proof this fix is answering to.
+- Commit the fix with the marker `eddeee888:oss:fix` as the last line of the commit message, same trailer convention as `verify`:
+
+  ```
+  fix: <short description> (#<issue number>)
+
+  eddeee888:oss:fix
+  ```
+- Run the affected package's test suite (at minimum) to confirm the previously-failing test now passes for the right reason, and that nothing else regressed.
 
 ## Step 6: Push a draft PR
 
-Branch fresh off the latest base branch (the base-test branch is already merged — don't build on top of it).
+Push the branch from Step 1 — the one built on top of the `eddeee888:oss:verify` commit, whether that was already the current branch or a new one checked out from it.
 
 ```bash
 gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
@@ -62,6 +78,6 @@ Run the `pr:sync` skill right after opening the PR, and again after any subseque
 
 ## When to stop instead of proceeding
 
-- Base-test PR not merged yet → stop at Step 1, say so, don't fix ahead of it.
+- No `eddeee888:oss:verify` commit found anywhere → stop at Step 1, say so, ask the user where it lives rather than guessing a base to build on.
 - Root cause still unclear after Step 2/3 → don't guess an option set; go back to the issue/reporter (or the `verify` skill) for more signal before presenting choices.
 - User hasn't picked an option yet → don't implement a "likely" default; wait for their answer.

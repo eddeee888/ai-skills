@@ -41,6 +41,8 @@ If a changeset system is present:
 - If one exists, update its summary so it matches the current diff.
 - If none exists, create one, matching the bump type and one-line voice already used by other entries in `.changeset/`.
 
+Either way, **the changeset always gets its own commit, never squashed into an implementation commit** — see Step 6 for exactly where it lands in the branch's history.
+
 ## Step 4: Draft the title and description
 
 **Title** — one line, imperative, naming the net effect of the change. If the diff spans a few unrelated things, name the most user-visible one and note the rest is bundled in, rather than trying to cram every change into the title.
@@ -72,13 +74,15 @@ The goal is a description that reads like it was written by the person who made 
 gh pr edit <number> --title "<new title>" --body "<new body>"
 ```
 
-If a changeset file was created or edited, it's part of the PR, not a side effect — commit and push it along with the rest of the branch:
+If a changeset file was created or edited, it's part of the PR, not a side effect — but it's never bundled into the same commit as the implementation change either. Commit it separately, immediately after the commit it documents (don't let it drift to the end of a longer session, and don't let unrelated commits land between the fix and its changeset):
 
 ```bash
 git add .changeset/*.md
 git commit -m "chore: update changeset"
 git push
 ```
+
+If the implementation commit that prompted this changeset already has other commits stacked after it (e.g. this sync is catching up on a few rounds of pushes), the changeset commit still only needs to exist once, right after the fix — don't reorder existing history to force it earlier; that's not worth a rebase on someone else's branch.
 
 Then tell the user, briefly: whether the title changed, and a one-line summary of what moved in the description/changeset. Don't paste the full new PR body back at them — they can open the PR to read it.
 

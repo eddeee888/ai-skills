@@ -1,13 +1,13 @@
 ---
 name: verify
-description: Verify a GitHub issue is real and reproducible before any fix work starts. Checks the issue for a reproduction, asks the reporter for one if it's missing (using the repo's own issue template as the guide), writes a test that encodes the repro, and — once that test is confirmed failing for the right reason — pushes it as a skipped "base test" PR. Use when asked to "verify issue #123", "triage this issue", "check if this bug is real/reproducible", or as the mandatory first step before fixing any reported bug. Pairs with the `fix` skill, which only starts once this skill's PR is merged.
+description: Verify a GitHub issue is real and reproducible before any fix work starts. Checks the issue for a reproduction, asks the reporter for one if it's missing (using the repo's own issue template as the guide), writes a test that encodes the repro, and — once that test is confirmed failing for the right reason — pushes it, still failing, as a checkpoint commit marked `eddeee888:oss:verify`. Use when asked to "verify issue #123", "triage this issue", "check if this bug is real/reproducible", or as the mandatory first step before fixing any reported bug. Pairs with the `fix` skill, which builds its work directly on top of this checkpoint commit — the PR around it doesn't need to merge first.
 ---
 
 # Verify a GitHub issue
 
-Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: either a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's the `fix` skill's job, and it only starts once this skill's PR has merged.
+Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: either a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's the `fix` skill's job. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, before `fix` picks up from it.
 
-**Every step below that pushes a commit to the base-test branch ends by running the `pr:sync` skill.** Once the PR exists, it is the source of truth for title/description/changeset — never leave it stale after a push, even a small one (skip → PR, PR → tweak, doesn't matter).
+**Every step below that pushes a commit to the checkpoint branch ends by running the `pr:sync` skill.** Once the PR exists, it is the source of truth for title/description/changeset — never leave it stale after a push, even a small one.
 
 ## Step 1: Read the issue and the repo's own template
 
@@ -57,16 +57,22 @@ Write a test that mirrors the repro as closely as possible — same inputs, same
 
 Run it and read the failure. Confirm it fails for the reason the issue describes, not because of a typo or wrong setup in the test itself. If it doesn't fail the way the issue claims, that's a finding too — go back to the reporter (Step 3) with what you found instead of forcing a red test that proves the wrong thing.
 
-## Step 5: Skip the test and open the base PR
+## Step 5: Leave it failing, commit it as the checkpoint, open the PR
 
-- Mark the test skipped using whatever idiom the rest of the repo's test suite already uses (`.skip`, `@pytest.mark.skip(...)`, `xit`, etc. — don't introduce a new pattern), with a short comment linking the issue, e.g. `// skipped: reproduces #123, unskip once fixed`.
-- Commit and push on a new branch.
-- Open the PR as a **draft**, referencing the issue with a non-closing keyword (`Relates to #123` / `Refs #123` — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`).
-- Title convention: `test: reproduce #123 — <short bug description> (skipped)`.
-- Body: state plainly that this is a base test proving the bug exists, link the failing run/output you captured in Step 4, and note that the fix lands in a follow-up PR once this one merges.
+- Leave the test failing — don't skip it, don't mark it pending, don't reach for any "expected to fail" idiom. A skipped test goes invisible to CI; a failing one is the checkpoint this whole skill exists to produce. It's fine, expected even, for this PR's checks to be red.
+- Commit it on a new branch, with the marker `eddeee888:oss:verify` as the last line of the commit message — a plain trailer, not prose, so it's reliably grep-able later regardless of which branch or PR it ends up on:
+
+  ```
+  test: reproduce #123 — <short bug description>
+
+  eddeee888:oss:verify
+  ```
+- Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword (`Relates to #123` / `Refs #123` — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`).
+- Title convention: `test: reproduce #123 — <short bug description> (failing)`.
+- Body: state plainly that this is a checkpoint proving the bug exists, link the failing run/output you captured in Step 4, and note that `fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
 
 ```bash
-gh pr create --draft --title "test: reproduce #123 — <short description> (skipped)" --body "<body>"
+gh pr create --draft --title "test: reproduce #123 — <short description> (failing)" --body "<body>"
 ```
 
 ## Step 6: Sync
@@ -76,5 +82,6 @@ Immediately after opening the PR, run the `pr:sync` skill. Do the same after any
 ## When to stop instead of proceeding
 
 - No repro and the reporter hasn't confirmed the ask yet → post the request (Step 3) and stop. Don't write a speculative test against an unconfirmed guess at the bug.
-- The test doesn't fail the way the issue describes → don't skip-and-push a test that "passes" for the wrong reason or fails for an unrelated one; go back to the reporter with what you actually found.
-- No open PR yet when you'd otherwise sync → that's expected before Step 5; `pr:sync` only applies once the base-test PR exists.
+- The test doesn't fail the way the issue describes → don't commit and push a test that "passes" for the wrong reason or fails for an unrelated one; go back to the reporter with what you actually found.
+- Tempted to skip the test so the PR's checks come back green → don't. A green check here hides the exact thing this skill exists to surface; leave it red.
+- No open PR yet when you'd otherwise sync → that's expected before Step 5; `pr:sync` only applies once the checkpoint PR exists.
