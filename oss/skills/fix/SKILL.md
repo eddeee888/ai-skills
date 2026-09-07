@@ -1,13 +1,13 @@
 ---
 name: fix
-description: Turn a merged verify base-test PR into an actual fix. Root-causes the failing (skipped) test, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick and pushes it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after a verify base-test PR has merged. Requires that PR — and its skipped test — to already be on the base branch; this skill does not write the reproduction itself, `verify` does. Every push in this skill re-syncs via the pr-sync-changes skill.
+description: Turn a merged verify base-test PR into an actual fix. Root-causes the failing (skipped) test, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick and pushes it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after a verify base-test PR has merged. Requires that PR — and its skipped test — to already be on the base branch; this skill does not write the reproduction itself, `verify` does. Every push in this skill re-syncs via the `pr:pr-sync-changes` skill.
 ---
 
 # Fix a verified issue
 
 This is the second half of the TDD loop `verify` started: a skipped, failing test already sits on the base branch proving the bug is real. This skill's job is to make that test pass for real, honestly, and to make the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose which trade-off to take before code gets written.
 
-**Every push this skill makes ends by running the `pr-sync-changes` skill** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes based on feedback.
+**Every push this skill makes ends by running the `pr:pr-sync-changes` skill** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes based on feedback.
 
 ## Step 1: Confirm the base test actually merged
 
@@ -58,7 +58,7 @@ Reference the issue with a closing keyword this time (`Fixes #123`) — this PR 
 
 ## Step 7: Sync
 
-Run the `pr-sync-changes` skill right after opening the PR, and again after any subsequent push (review feedback, follow-up commits) — the fix PR's description should never fall behind its branch.
+Run the `pr:pr-sync-changes` skill right after opening the PR, and again after any subsequent push (review feedback, follow-up commits) — the fix PR's description should never fall behind its branch.
 
 ## When to stop instead of proceeding
 

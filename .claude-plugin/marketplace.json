@@ -1,0 +1,18 @@
+{
+  "name": "ai-skills",
+  "owner": {
+    "name": "eddeee888"
+  },
+  "plugins": [
+    {
+      "name": "oss",
+      "source": "./oss",
+      "description": "Skills for maintaining and contributing to open source projects."
+    },
+    {
+      "name": "pr",
+      "source": "./pr",
+      "description": "Skills for working with pull requests."
+    }
+  ]
+}
