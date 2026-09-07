@@ -68,7 +68,7 @@ Run it and read the failure. Confirm it fails for the reason the issue describes
   eddeee888:oss:verify
   ```
 - Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword (`Relates to #123` / `Refs #123` — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`).
-- Title convention: `test: reproduce #123 — <short bug description> (failing)`.
+- Title convention: `test: reproduce #123 — <short bug description> (failing)`. If the repo is a monorepo, prefix it with the package the repro actually exercises (the one Step 4 identified) — `[package-name] test: reproduce #123 — <short bug description> (failing)` — so the PR is recognisable among others without opening it.
 - Body: state plainly that this is a checkpoint proving the bug exists, link the failing run/output you captured in Step 4, and note that `fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
 
 ```bash

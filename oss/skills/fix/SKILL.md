@@ -66,11 +66,13 @@ For each option, give: what actually changes, blast radius (what else it touches
 
 Push the branch from Step 1 — the one built on top of the `eddeee888:oss:verify` commit, whether that was already the current branch or a new one checked out from it.
 
+If the repo is a monorepo (multiple workspaces/packages), prefix the title with the main package this fix actually lives in — `[package-name] fix: ...` — using the package Step 3's root-cause tracing pointed at, not whichever package the issue happened to be filed under. If the fix spans more than one package, lead with the one carrying the primary change; don't try to cram all of them into the title.
+
 ```bash
 gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
 ```
 
-Reference the issue with a closing keyword this time (`Fixes #123`) — this PR actually resolves it. The body should state which option was chosen and why, in a sentence or two, since the options were already discussed with the user; it doesn't need to re-litigate the alternatives.
+Reference the issue with `Related #123` in the body — never `Fixes #123` or `Closes #123`, even though this PR actually resolves it; the issue shouldn't auto-close on merge. The body should state which option was chosen and why, in a sentence or two, since the options were already discussed with the user; it doesn't need to re-litigate the alternatives.
 
 ## Step 7: Sync
 
