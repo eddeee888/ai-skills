@@ -12,7 +12,7 @@ namespace of slash commands:
   to open source projects. Skills invoke as `/oss:<skill-name>`, e.g.
   `/oss:verify`, `/oss:fix`.
 - [`pr/`](pr/) — the `pr` plugin, skills for working with pull requests.
-  Skills invoke as `/pr:<skill-name>`, e.g. `/pr:pr-sync-changes`.
+  Skills invoke as `/pr:<skill-name>`, e.g. `/pr:sync`.
 
 Each plugin has its own `.claude-plugin/plugin.json` manifest, and each skill
 lives in its own directory within a plugin, e.g. `oss/skills/<skill-name>/SKILL.md`.

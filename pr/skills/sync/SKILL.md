@@ -1,5 +1,5 @@
 ---
-name: pr-sync-changes
+name: sync
 description: Sync an open pull request's title, description, and changeset with whatever is actually on the branch right now. Use when the user asks to "update the PR description", "sync the PR with my changes", "the PR is stale", "make the changeset match my changes", or after pushing new commits to a branch that already has an open PR. Also trigger proactively right after a round of commits if a PR is already open on the branch — PR descriptions go stale the moment someone tacks on a "quick fix" commit, and this closes that gap before a reviewer sees it. Only applies to an existing PR; if there's no open PR on the branch, this skill's job is to skip, not to open one.
 ---
 
