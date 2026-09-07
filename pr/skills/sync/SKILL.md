@@ -1,11 +1,11 @@
 ---
 name: sync
-description: Sync an open pull request's title, description, and changeset with whatever is actually on the branch right now — including the issue-tracker link (GitHub, Jira, Linear, etc.) and any external context (resource URLs, blog posts, Miro links) when they genuinely exist. Use when the user asks to "update the PR description", "sync the PR with my changes", "the PR is stale", "make the changeset match my changes", or after pushing new commits to a branch that already has an open PR. Also trigger proactively right after a round of commits if a PR is already open on the branch — PR descriptions go stale the moment someone tacks on a "quick fix" commit, and this closes that gap before a reviewer sees it. Only applies to an existing PR; if there's no open PR on the branch, this skill's job is to skip, not to open one.
+description: Sync an open pull request with whatever is actually on the branch right now — rebase it onto its current base, then re-derive the title, description, and changeset from what's left, including the issue-tracker link (GitHub, Jira, Linear, etc.) and any external context (resource URLs, blog posts, Miro links) when they genuinely exist. Use when the user asks to "update the PR description", "sync the PR with my changes", "rebase and update the PR", "the PR is stale", "make the changeset match my changes", or after pushing new commits to a branch that already has an open PR. Also trigger proactively right after a round of commits if a PR is already open on the branch — PR descriptions go stale the moment someone tacks on a "quick fix" commit, and this closes that gap before a reviewer sees it. Only applies to an existing PR; if there's no open PR on the branch, this skill's job is to skip, not to open one.
 ---
 
 # Sync PR with branch changes
 
-A PR description is a snapshot of intent taken when the PR was opened. The branch keeps moving after that — new commits, scope changes, follow-up fixes — and the description doesn't update itself. This skill re-derives the title, description, and changeset from what's actually on the branch, so a reviewer never reads a summary that's lying to them.
+A PR description is a snapshot of intent taken when the PR was opened. The branch keeps moving after that — new commits, scope changes, follow-up fixes, and a base branch that's advanced out from under it — and neither the history nor the description updates itself. This skill brings the branch's history up to date with its base, then re-derives the title, description, and changeset from what's actually on the branch, so a reviewer never reads a summary that's lying to them or reviews a diff cluttered with someone else's already-merged commits.
 
 ## Step 1: Check whether a PR even exists
 
@@ -17,12 +17,30 @@ If this errors (no PR for the current branch) or `gh` isn't installed/authentica
 
 If it succeeds, keep the PR number and the `baseRefName` — everything downstream is diffed against that base, not against the last commit.
 
-## Step 2: Look at what's actually changed
+## Step 2: Rebase onto the base branch
 
-Diff against the PR's base, not just `HEAD~1`, so you catch everything since the PR started — including commits added after the description was last written:
+Before describing anything, make sure the branch is actually caught up with its base — otherwise you'd be writing a description for a diff that includes commits someone else already merged:
 
 ```bash
 git fetch origin <baseRefName> --quiet
+git rebase origin/<baseRefName>
+```
+
+Only do this on a branch that's yours alone. If you're not sure whether anyone else is pushing to it, ask before rewriting its history — rebasing out from under a collaborator loses their work on their next pull.
+
+If the rebase comes back clean, push it:
+
+```bash
+git push --force-with-lease
+```
+
+If it hits conflicts, stop. Resolve them yourself if they're obvious (the same file touched on both sides in a way that's clearly compatible), or hand them to the user with what's conflicting and why — don't force a rebase through with `--skip` or a guessed resolution just to get to the description update. Once the rebase is clean and pushed, move on.
+
+## Step 3: Look at what's actually changed
+
+With the branch rebased, diff against the PR's base to see exactly what this PR now contributes:
+
+```bash
 git diff origin/<baseRefName>...HEAD --stat
 git diff origin/<baseRefName>...HEAD
 git log origin/<baseRefName>..HEAD --oneline
@@ -32,7 +50,7 @@ Read enough of the actual diff to understand the behavior change, not just the f
 
 If the diff against the base is empty, the PR is already current — say so and stop. Don't force an edit just to have done something.
 
-## Step 3: Check for a changeset, but only if the repo actually uses one
+## Step 4: Check for a changeset, but only if the repo actually uses one
 
 Look for `.changeset/config.json` (Changesets) or an equivalent already in use in the repo. If neither exists, skip this step entirely — don't introduce a changelog convention as a side effect of a sync task; that's a bigger decision for the repo owner to make deliberately.
 
@@ -41,9 +59,9 @@ If a changeset system is present:
 - If one exists, update its summary so it matches the current diff.
 - If none exists, create one, matching the bump type and one-line voice already used by other entries in `.changeset/`.
 
-Either way, **the changeset always gets its own commit, never squashed into an implementation commit** — see Step 6 for exactly where it lands in the branch's history.
+Either way, **the changeset always gets its own commit, never squashed into an implementation commit** — see Step 7 for exactly where it lands in the branch's history.
 
-## Step 4: Draft the title and description
+## Step 5: Draft the title and description
 
 **Title** — one line, imperative, naming the net effect of the change. If the diff spans a few unrelated things, name the most user-visible one and note the rest is bundled in, rather than trying to cram every change into the title.
 
@@ -61,7 +79,7 @@ Keep both sections short. A trivial, single-purpose PR deserves one bullet per s
 
 Don't go hunting for tangential links to fill this out, and don't add a "Resources" section with nothing real in it. One line per link is plenty — this is a pointer, not a bibliography. If neither an issue link nor any external context exists, leave the section out entirely rather than forcing an empty one.
 
-## Step 5: Fit the update into the existing template — don't replace it
+## Step 6: Fit the update into the existing template — don't replace it
 
 Check the PR's current body and, if present, `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`). If the repo has its own section headers — "## Summary", "## Testing", "## Screenshots", a checklist, a "Related issue(s)" field — map What/Why/Resources onto whichever existing headers are the closest match instead of inventing new ones, and leave every section you have no new information for untouched (testing notes, screenshots, checklists). If there's no template to work from, default to:
 
@@ -76,11 +94,11 @@ Check the PR's current body and, if present, `.github/pull_request_template.md` 
 - ...
 ```
 
-(omit the `## Resources` section entirely when Step 4 found nothing to put there)
+(omit the `## Resources` section entirely when Step 5 found nothing to put there)
 
 The goal is a description that reads like it was written by the person who made the change, not one that got its structure bulldozed by a script.
 
-## Step 6: Apply it
+## Step 7: Apply it
 
 ```bash
 gh pr edit <number> --title "<new title>" --body "<new body>"
@@ -101,5 +119,7 @@ Then tell the user, briefly: whether the title changed, and a one-line summary o
 ## When to touch nothing
 
 - No open PR on the branch → skip, say so, stop. This skill never opens a PR.
+- Rebase conflicts you can't resolve confidently → stop and hand them to the user instead of guessing.
+- Unsure whether the branch is shared with anyone else → ask before force-pushing a rebase; don't rewrite history you don't know is yours alone.
 - No diff since the PR's base → say it's already current, don't force an edit.
 - No changeset tooling in the repo → don't add one; that's outside this skill's scope.
