@@ -1,5 +1,5 @@
 ---
-name: verify-issue
+name: verify
 description: Verify a GitHub issue is real and reproducible before any fix work starts. Checks the issue for a reproduction, asks the reporter for one if it's missing (using the repo's own issue template as the guide), writes a test that encodes the repro, and — once that test is confirmed failing for the right reason — pushes it as a skipped "base test" PR. Use when asked to "verify issue #123", "triage this issue", "check if this bug is real/reproducible", or as the mandatory first step before fixing any reported bug. Pairs with the `fix` skill, which only starts once this skill's PR is merged.
 ---
 

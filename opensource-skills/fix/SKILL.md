@@ -1,11 +1,11 @@
 ---
 name: fix
-description: Turn a merged verify-issue base-test PR into an actual fix. Root-causes the failing (skipped) test, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick and pushes it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after a verify-issue base-test PR has merged. Requires that PR — and its skipped test — to already be on the base branch; this skill does not write the reproduction itself, `verify-issue` does. Every push in this skill re-syncs via the pr-sync-changes skill.
+description: Turn a merged verify base-test PR into an actual fix. Root-causes the failing (skipped) test, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick and pushes it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after a verify base-test PR has merged. Requires that PR — and its skipped test — to already be on the base branch; this skill does not write the reproduction itself, `verify` does. Every push in this skill re-syncs via the pr-sync-changes skill.
 ---
 
 # Fix a verified issue
 
-This is the second half of the TDD loop `verify-issue` started: a skipped, failing test already sits on the base branch proving the bug is real. This skill's job is to make that test pass for real, honestly, and to make the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose which trade-off to take before code gets written.
+This is the second half of the TDD loop `verify` started: a skipped, failing test already sits on the base branch proving the bug is real. This skill's job is to make that test pass for real, honestly, and to make the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose which trade-off to take before code gets written.
 
 **Every push this skill makes ends by running the `pr-sync-changes` skill** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes based on feedback.
 
@@ -63,5 +63,5 @@ Run the `pr-sync-changes` skill right after opening the PR, and again after any 
 ## When to stop instead of proceeding
 
 - Base-test PR not merged yet → stop at Step 1, say so, don't fix ahead of it.
-- Root cause still unclear after Step 2/3 → don't guess an option set; go back to the issue/reporter (or the `verify-issue` skill) for more signal before presenting choices.
+- Root cause still unclear after Step 2/3 → don't guess an option set; go back to the issue/reporter (or the `verify` skill) for more signal before presenting choices.
 - User hasn't picked an option yet → don't implement a "likely" default; wait for their answer.
