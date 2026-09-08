@@ -65,12 +65,13 @@ Either way, **the changeset always gets its own commit, never squashed into an i
 
 **Title** — one line, imperative, naming the net effect of the change. If the diff spans a few unrelated things, name the most user-visible one and note the rest is bundled in, rather than trying to cram every change into the title. If the repo is a monorepo (multiple workspaces/packages), lead with a `[package-name]` prefix naming the main package the change lives in — e.g. `[package-name] fix: ...` — so the PR is recognisable in a list without opening it; if the diff touches several packages, prefix with whichever carries the primary change rather than listing them all.
 
-**Description** — two required sections, kept tight, since this is a PR body a reviewer skims, not a design doc:
+**Description** — three required sections, kept tight, since this is a PR body a reviewer skims, not a design doc:
 
 - **What** — the concrete change, as a few short bullets: files, behavior, APIs touched. Specific enough that a reviewer doesn't have to open the diff just to know what they're looking at.
 - **Why** — the reason this change exists at all. Pull this from commit messages, a linked issue, or the existing description if it already states intent; ask the user only if truly nothing in the branch indicates the motivation. Why is the *reason*, not a rephrasing of What — don't let it collapse into "because we changed X."
+- **Verification** — how a reader can trust the change actually works, as a few short bullets: tests added or updated, commands run and their result, manual steps taken (with the observed outcome, not just the step), or CI checks that cover it. Pull this from commit messages, added/modified test files, and the diff itself; ask the user only if the branch genuinely gives no indication of how it was verified. Don't pad it with "should work" or restate What as if running the code were a form of proof — if nothing was actually verified, say that plainly rather than inventing steps.
 
-Keep both sections short. A trivial, single-purpose PR deserves one bullet per section, not padding to look thorough.
+Keep all three sections short. A trivial, single-purpose PR deserves one bullet per section, not padding to look thorough.
 
 **Resources** — one more section, only when there's actually something to put in it:
 
@@ -81,13 +82,16 @@ Don't go hunting for tangential links to fill this out, and don't add a "Resourc
 
 ## Step 6: Fit the update into the existing template — don't replace it
 
-Check the PR's current body and, if present, `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`). If the repo has its own section headers — "## Summary", "## Testing", "## Screenshots", a checklist, a "Related issue(s)" field — map What/Why/Resources onto whichever existing headers are the closest match instead of inventing new ones, and leave every section you have no new information for untouched (testing notes, screenshots, checklists). If there's no template to work from, default to:
+Check the PR's current body and, if present, `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`). If the repo has its own section headers — "## Summary", "## Testing", "## How it was tested", "## Screenshots", a checklist, a "Related issue(s)" field — map What/Why/Verification/Resources onto whichever existing headers are the closest match instead of inventing new ones. Verification in particular almost always has a home already — "Testing", "How it was tested", "Test plan", "QA steps" — ease it into that section rather than adding a new one; only add a standalone "## Verification" heading if the template truly has nothing that fits. Leave every section you have no new information for untouched (screenshots, checklists, other fields). If there's no template to work from, default to:
 
 ```markdown
 ## What
 - ...
 
 ## Why
+- ...
+
+## Verification
 - ...
 
 ## Resources
