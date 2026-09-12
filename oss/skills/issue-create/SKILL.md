@@ -1,6 +1,6 @@
 ---
-name: create-issue
-description: Draft and file a well-formed bug-report issue on a GitHub repo, covering Context, Problem, Reproduction, and any specific environments — mapped onto the repo's own issue template where one exists. Use when asked to "file an issue", "open an issue on <repo>", "report this bug upstream", "draft a bug report for <repo>", or when a bug surfaces mid-conversation that belongs on a repo the user doesn't maintain here. Always asks for the target repo first and always shows the drafted issue for confirmation before creating it — never posts to GitHub without that confirmation. Pairs with the `verify` skill, which can pick up the issue once it's filed.
+name: issue-create
+description: Draft and file a well-formed bug-report issue on a GitHub repo, covering Context, Problem, Reproduction, and any specific environments — mapped onto the repo's own issue template where one exists. Use when asked to "file an issue", "open an issue on <repo>", "report this bug upstream", "draft a bug report for <repo>", or when a bug surfaces mid-conversation that belongs on a repo the user doesn't maintain here. Always asks for the target repo first and always shows the drafted issue for confirmation before creating it — never posts to GitHub without that confirmation. Pairs with the `issue-verify` skill, which can pick up the issue once it's filed.
 ---
 
 # Create a GitHub issue
@@ -65,7 +65,7 @@ Show the full drafted title and body back to the user, verbatim, before touching
 gh issue create --repo <owner>/<repo> --title "<confirmed title>" --body "<confirmed body>"
 ```
 
-Report back the issue URL. Don't do anything further with it here — filing the issue is this skill's job; verifying it (writing a failing test against it) is the `verify` skill's, and only once the repo maintainers have had a chance to weigh in.
+Report back the issue URL. Don't do anything further with it here — filing the issue is this skill's job; verifying it (writing a failing test against it) is the `issue-verify` skill's, and only once the repo maintainers have had a chance to weigh in.
 
 ## When to stop instead of proceeding
 

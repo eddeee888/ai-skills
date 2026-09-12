@@ -10,7 +10,7 @@ namespace of slash commands:
 
 - [`oss/`](oss/) — the `oss` plugin, skills for maintaining and contributing
   to open source projects. Skills invoke as `/oss:<skill-name>`, e.g.
-  `/oss:verify`, `/oss:fix`.
+  `/oss:issue-verify`, `/oss:issue-fix`.
 - [`pr/`](pr/) — the `pr` plugin, skills for working with pull requests.
   Skills invoke as `/pr:<skill-name>`, e.g. `/pr:sync`.
 
