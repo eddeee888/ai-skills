@@ -1,6 +1,6 @@
 ---
-name: verify
-description: Verify a GitHub issue is real and reproducible before any fix work starts. Checks the issue for a reproduction, asks the reporter for one if it's missing (using the repo's own issue template as the guide), writes a test that encodes the repro, and — once that test is confirmed failing for the right reason — pushes it, still failing, as a checkpoint commit marked `eddeee888:oss:verify`. Use when asked to "verify issue #123", "triage this issue", "check if this bug is real/reproducible", or as the mandatory first step before fixing any reported bug. Pairs with the `fix` skill, which builds its work directly on top of this checkpoint commit — the PR around it doesn't need to merge first.
+name: verify-issue
+description: Verify a GitHub issue is real and reproducible before any fix work starts. Checks the issue for a reproduction, asks the reporter for one if it's missing (using the repo's own issue template as the guide), writes a test that encodes the repro, and — once that test is confirmed failing for the right reason — pushes it, still failing, as a checkpoint commit marked `eddeee888:oss:verify-issue`. Use when asked to "verify issue #123", "triage this issue", "check if this bug is real/reproducible", or as the mandatory first step before fixing any reported bug. Pairs with the `fix` skill, which builds its work directly on top of this checkpoint commit — the PR around it doesn't need to merge first.
 ---
 
 # Verify a GitHub issue
@@ -60,12 +60,12 @@ Run it and read the failure. Confirm it fails for the reason the issue describes
 ## Step 5: Leave it failing, commit it as the checkpoint, open the PR
 
 - Leave the test failing — don't skip it, don't mark it pending, don't reach for any "expected to fail" idiom. A skipped test goes invisible to CI; a failing one is the checkpoint this whole skill exists to produce. It's fine, expected even, for this PR's checks to be red.
-- Commit it on a new branch, with the marker `eddeee888:oss:verify` as the last line of the commit message — a plain trailer, not prose, so it's reliably grep-able later regardless of which branch or PR it ends up on:
+- Commit it on a new branch, with the marker `eddeee888:oss:verify-issue` as the last line of the commit message — a plain trailer, not prose, so it's reliably grep-able later regardless of which branch or PR it ends up on:
 
   ```
   test: reproduce #123 — <short bug description>
 
-  eddeee888:oss:verify
+  eddeee888:oss:verify-issue
   ```
 - Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword (`Relates to #123` / `Refs #123` — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`).
 - Title convention: `test: reproduce #123 — <short bug description> (failing)`. If the repo is a monorepo, prefix it with the package the repro actually exercises (the one Step 4 identified) — `[package-name] test: reproduce #123 — <short bug description> (failing)` — so the PR is recognisable among others without opening it.
