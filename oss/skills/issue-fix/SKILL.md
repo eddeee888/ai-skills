@@ -1,6 +1,6 @@
 ---
 name: issue-fix
-description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — and pushes it as a draft PR marked `eddeee888:oss:issue-fix`. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. Every push in this skill re-syncs via the `pr:sync` skill.
+description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — committing it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushing it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. Every push in this skill re-syncs via the `pr:sync` skill.
 ---
 
 # Fix a verified issue
@@ -52,7 +52,7 @@ For each option, give: what actually changes, blast radius (what else it touches
 ## Step 5: Implement the chosen option
 
 - The checkpoint test from Step 1 is the acceptance criterion for this fix — it's still failing at this point, that's expected.
-- Make the change matching the option the user picked, nothing broader, as commits on top of the `eddeee888:oss:issue-verify` commit — don't rebase or rewrite that commit, it's the proof this fix is answering to.
+- Make the change matching the option the user picked, nothing broader, as commits on top of the `eddeee888:oss:issue-verify` commit — don't interactively rewrite, squash, or drop that commit, it's the proof this fix is answering to. (Step 7's `pr:sync` run will still rebase the branch onto its base as part of its own job — that replays the commit's SHA but leaves its content and trailer untouched; it's not the kind of rewrite this rule is about.)
 - Commit the fix with the marker `eddeee888:oss:issue-fix` as the last line of the commit message, same trailer convention as `issue-verify`:
 
   ```
@@ -72,7 +72,7 @@ If the repo is a monorepo (multiple workspaces/packages), prefix the title with 
 gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
 ```
 
-Reference the issue with `Related #123` in the body — never `Fixes #123` or `Closes #123`, even though this PR actually resolves it; the issue shouldn't auto-close on merge. The body should state which option was chosen and why, in a sentence or two, since the options were already discussed with the user; it doesn't need to re-litigate the alternatives.
+Reference the issue with a non-closing keyword (`Relates to #123` / `Refs #123`, same convention `issue-verify` uses) in the body — never `Fixes #123` or `Closes #123`, even though this PR actually resolves it; the issue shouldn't auto-close on merge. The body should state which option was chosen and why, in a sentence or two, since the options were already discussed with the user; it doesn't need to re-litigate the alternatives.
 
 ## Step 7: Sync
 
