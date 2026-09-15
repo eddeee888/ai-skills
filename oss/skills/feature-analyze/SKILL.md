@@ -1,6 +1,6 @@
 ---
 name: feature-analyze
-description: Size a feature request before committing to build it. Reads the request, maps what part of the codebase it would actually touch, and classifies it small (e.g. an additional config option, narrow blast radius), medium (spans multiple packages/files but stays additive), or large (potential breaking changes to one or many packages, big blast radius, needs an RFC and user-facing comms before implementation). Use when asked to "analyze this feature request", "how big is #123", "size this request", "what's the blast radius of this feature", or before scoping/estimating any feature request issue. Takes the URL of a feature request issue in the same repo. Read-only by default — it doesn't implement anything or post to GitHub unless the user asks it to share the analysis.
+description: Size a feature request before committing to build it. Reads the request, maps what part of the codebase it would actually touch, and classifies it small (e.g. an additional config option, narrow blast radius), medium (spans multiple packages/files but stays additive), or large (potential breaking changes to one or many packages, big blast radius, needs an RFC and user-facing comms before implementation). Use when asked to "analyze this feature request", "how big is #123", "size this request", "what's the blast radius of this feature", or before scoping/estimating any feature request issue. Takes either the URL/number of a feature request issue in the same repo, or a plain-text description of a feature/bug idea with no issue filed yet. Read-only by default — it doesn't implement anything or post to GitHub unless the user asks it to share the analysis.
 ---
 
 # Analyze a feature request
@@ -9,11 +9,15 @@ Building a feature before sizing it means the surprise — "this actually breaks
 
 ## Step 1: Read the feature request
 
-```bash
-gh issue view <url or number> --json number,title,body,url,labels,state,comments
-```
+- **Issue URL or number given** → pull the real content instead of sizing a guess:
 
-Confirm it's actually a feature request — a new capability or behavior — and not a bug report that ended up mislabeled. If the body describes something broken rather than something missing, say so and stop; that belongs to the `issue-verify` skill instead, not this one.
+  ```bash
+  gh issue view <url or number> --json number,title,body,url,labels,state,comments
+  ```
+
+- **No URL — just a feature/bug description in the conversation** → there's no issue to fetch; treat the description itself as the request. If it's thin (a one-liner with no use case or shape), ask a clarifying question before sizing rather than inventing the missing detail — same bar as an under-specified issue in Step 2.
+
+Either way, confirm it's actually a feature request — a new capability or behavior — and not a bug report that ended up mislabeled or described as one. If it describes something broken rather than something missing, say so and stop; that belongs to the `issue-verify` skill instead, not this one.
 
 ## Step 2: Pin down what's actually being asked
 
@@ -56,11 +60,15 @@ State the classification plus the 1-2 concrete reasons driving it — name the s
 
 ## Step 6: Present the analysis
 
-Show the user: what's being asked, the size classification with its reasons, the affected packages/files, and the matching recommendation from Step 5. This skill's job ends here — it doesn't implement the feature, and it doesn't post anything to GitHub unless the user explicitly asks to share the analysis. If they do, draft the comment, show it, and only post after they confirm — the same confirm-before-posting gate the `issue-create` skill uses:
+Show the user: what's being asked, the size classification with its reasons, the affected packages/files, and the matching recommendation from Step 5. This skill's job ends here — it doesn't implement the feature, and it doesn't post anything to GitHub unless the user explicitly asks to share the analysis.
 
-```bash
-gh issue comment <number> --body "<confirmed analysis>"
-```
+- **Sized from an existing issue** → if they ask to share it, draft the comment, show it, and only post after they confirm — the same confirm-before-posting gate the `issue-create` skill uses:
+
+  ```bash
+  gh issue comment <number> --body "<confirmed analysis>"
+  ```
+
+- **Sized from a plain-text description with no issue** → there's nothing to comment on yet. If the user wants the analysis filed, point them at the `issue-create` skill to open the issue first (the analysis can go in the body or a follow-up comment) rather than fabricating an issue number.
 
 ## When to stop instead of proceeding
 
