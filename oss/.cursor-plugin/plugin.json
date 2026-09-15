@@ -1,0 +1,8 @@
+{
+  "name": "oss",
+  "version": "0.1.0",
+  "description": "Skills for maintaining and contributing to open source projects — issue triage, release notes, changelog management, contribution guidelines, and similar.",
+  "author": { "name": "eddeee888" },
+  "license": "MIT",
+  "keywords": ["oss", "github", "issues"]
+}

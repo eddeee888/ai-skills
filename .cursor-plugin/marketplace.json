@@ -1,0 +1,21 @@
+{
+  "name": "ai-skills",
+  "owner": {
+    "name": "eddeee888"
+  },
+  "metadata": {
+    "description": "AI skills kit: open-source maintenance and pull-request workflows"
+  },
+  "plugins": [
+    {
+      "name": "oss",
+      "source": "oss",
+      "description": "Skills for maintaining and contributing to open source projects."
+    },
+    {
+      "name": "pr",
+      "source": "pr",
+      "description": "Skills for working with pull requests."
+    }
+  ]
+}
