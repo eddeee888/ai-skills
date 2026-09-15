@@ -82,7 +82,7 @@ Research a concise, accurate answer with real backing — documentation, a blog 
 
 ## Step 6: Wrap up
 
-If any implementation changes were pushed, run the `pr:sync` skill afterward so the PR description matches the branch. Report back concisely: how many threads were replied to or implemented, and how many are still open for the reviewer or user to resolve manually.
+If any implementation changes were pushed **and the PR is the user's own** (per Step 1), run the `pr:sync` skill afterward so the PR description matches the branch. Never do this on a PR the user doesn't own — pushing an approved fix from Step 4 is one thing, but editing someone else's PR title or description as a side effect of it is not this skill's call to make. Report back concisely: how many threads were replied to or implemented, and how many are still open for the reviewer or user to resolve manually.
 
 ## When to stop instead of proceeding
 
