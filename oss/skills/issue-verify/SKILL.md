@@ -7,7 +7,7 @@ description: Verify a GitHub issue is real and reproducible before any fix work 
 
 Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: either a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's the `issue-fix` skill's job. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, before `issue-fix` picks up from it.
 
-**Every step below that pushes a commit to the checkpoint branch ends by running the `pr:sync` skill.** Once the PR exists, it is the source of truth for title/description/changeset — never leave it stale after a push, even a small one.
+**Every step below that pushes a commit to the checkpoint branch ends by running the `pr:pr-sync` skill.** Once the PR exists, it is the source of truth for title/description/changeset — never leave it stale after a push, even a small one.
 
 ## Step 1: Read the issue and the repo's own template
 
@@ -77,11 +77,11 @@ gh pr create --draft --title "test: reproduce #123 — <short description> (fail
 
 ## Step 6: Sync
 
-Immediately after opening the PR, run the `pr:sync` skill. Do the same after any further push this skill makes to the same branch (e.g. if the user asks for wording changes to the test or PR body) — never leave the PR description behind the branch.
+Immediately after opening the PR, run the `pr:pr-sync` skill. Do the same after any further push this skill makes to the same branch (e.g. if the user asks for wording changes to the test or PR body) — never leave the PR description behind the branch.
 
 ## When to stop instead of proceeding
 
 - No repro and the reporter hasn't confirmed the ask yet → post the request (Step 3) and stop. Don't write a speculative test against an unconfirmed guess at the bug.
 - The test doesn't fail the way the issue describes → don't commit and push a test that "passes" for the wrong reason or fails for an unrelated one; go back to the reporter with what you actually found.
 - Tempted to skip the test so the PR's checks come back green → don't. A green check here hides the exact thing this skill exists to surface; leave it red.
-- No open PR yet when you'd otherwise sync → that's expected before Step 5; `pr:sync` only applies once the checkpoint PR exists.
+- No open PR yet when you'd otherwise sync → that's expected before Step 5; `pr:pr-sync` only applies once the checkpoint PR exists.

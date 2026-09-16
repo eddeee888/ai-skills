@@ -1,13 +1,13 @@
 ---
 name: issue-fix
-description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — committing it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushing it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. Every push in this skill re-syncs via the `pr:sync` skill.
+description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — committing it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushing it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. Every push in this skill re-syncs via the `pr:pr-sync` skill.
 ---
 
 # Fix a verified issue
 
 This is the second half of the TDD loop `issue-verify` started: a failing test already exists somewhere, committed with an `eddeee888:oss:issue-verify` marker, proving the bug is real. This skill's job is to make that test pass for real, honestly, and to make the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose which trade-off to take before code gets written.
 
-**Every push this skill makes ends by running the `pr:sync` skill** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes based on feedback.
+**Every push this skill makes ends by running the `pr:pr-sync` skill** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes based on feedback.
 
 ## Step 1: Find the `issue-verify` checkpoint commit
 
@@ -52,7 +52,7 @@ For each option, give: what actually changes, blast radius (what else it touches
 ## Step 5: Implement the chosen option
 
 - The checkpoint test from Step 1 is the acceptance criterion for this fix — it's still failing at this point, that's expected.
-- Make the change matching the option the user picked, nothing broader, as commits on top of the `eddeee888:oss:issue-verify` commit — don't interactively rewrite, squash, or drop that commit, it's the proof this fix is answering to. (Step 7's `pr:sync` run will still rebase the branch onto its base as part of its own job — that replays the commit's SHA but leaves its content and trailer untouched; it's not the kind of rewrite this rule is about.)
+- Make the change matching the option the user picked, nothing broader, as commits on top of the `eddeee888:oss:issue-verify` commit — don't interactively rewrite, squash, or drop that commit, it's the proof this fix is answering to. (Step 7's `pr:pr-sync` run will still rebase the branch onto its base as part of its own job — that replays the commit's SHA but leaves its content and trailer untouched; it's not the kind of rewrite this rule is about.)
 - Commit the fix with the marker `eddeee888:oss:issue-fix` as the last line of the commit message, same trailer convention as `issue-verify`:
 
   ```
@@ -76,7 +76,7 @@ Reference the issue with a non-closing keyword (`Relates to #123` / `Refs #123`,
 
 ## Step 7: Sync
 
-Run the `pr:sync` skill right after opening the PR, and again after any subsequent push (review feedback, follow-up commits) — the fix PR's description should never fall behind its branch.
+Run the `pr:pr-sync` skill right after opening the PR, and again after any subsequent push (review feedback, follow-up commits) — the fix PR's description should never fall behind its branch.
 
 ## When to stop instead of proceeding
 
