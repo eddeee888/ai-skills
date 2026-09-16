@@ -1,5 +1,5 @@
 ---
-name: address
+name: pr-address
 description: Work through a pull request's unresolved review comment threads and act on the ones the user has already signaled they're ready for. On the user's own PR, a thread only gets auto-actioned once the user themselves has replied last in it — e.g. a reviewer said "we should do this" and the user replied "Ok", or asked "why this approach?" and the user replied "let me check" — the skill then infers what to do from the original reviewer comment's nature: an authoritative instruction/suggestion gets implemented, a why-question gets answered with concise, backed-up reasoning. Any thread still waiting on the user's own reply, any thread on a PR the user doesn't own, and any acknowledged-but-high-risk change are never auto-actioned — the user is asked what to do with all of them in one batch before anything is applied. Never resolves a review thread automatically. Use when asked to "address PR comments", "handle the review feedback", "go through the review threads", "respond to reviewers", or after the user has left short replies like "Ok"/"let's do it"/"let me check" on review comments and wants them followed through on.
 ---
 
@@ -82,7 +82,7 @@ Research a concise, accurate answer with real backing — documentation, a blog 
 
 ## Step 6: Wrap up
 
-If any implementation changes were pushed **and the PR is the user's own** (per Step 1), run the `pr:sync` skill afterward so the PR description matches the branch. Never do this on a PR the user doesn't own — pushing an approved fix from Step 4 is one thing, but editing someone else's PR title or description as a side effect of it is not this skill's call to make. Report back concisely: how many threads were replied to or implemented, and how many are still open for the reviewer or user to resolve manually.
+If any implementation changes were pushed **and the PR is the user's own** (per Step 1), run the `pr:pr-sync` skill afterward so the PR description matches the branch. Never do this on a PR the user doesn't own — pushing an approved fix from Step 4 is one thing, but editing someone else's PR title or description as a side effect of it is not this skill's call to make. Report back concisely: how many threads were replied to or implemented, and how many are still open for the reviewer or user to resolve manually.
 
 ## When to stop instead of proceeding
 
