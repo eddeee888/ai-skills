@@ -17,10 +17,12 @@ Building a feature before sizing it means the surprise — "this actually breaks
 
 - **No URL — just a feature/bug description in the conversation** → there's no issue to fetch; treat the description itself as the request. If it's thin (a one-liner with no use case or shape), ask a clarifying question before sizing rather than inventing the missing detail — same bar as an under-specified issue in Step 2.
 
-Either way, confirm it's actually a feature request — a new capability or behavior — and not a bug report that ended up mislabeled or described as one. This is a classification call only, not a verification one: spotting the mismatch, not reproducing or confirming anything — that's `issue-verify`'s job, not this skill's. If it describes something broken rather than something missing, say so and stop, then hand off based on what you started from:
+Either way, confirm which of the two this actually is. This is a classification call only, not a verification one: spotting the mismatch, not reproducing or confirming anything — that's `issue-verify`'s job, not this skill's.
 
-- **Started from an existing issue** → it's already filed; point at `issue-verify` to confirm it's real and reproducible.
-- **Started from a plain-text description with no issue** → nothing's filed yet, so there's nothing for `issue-verify` to work from; point at `issue-create` to file it as a bug report first. `issue-verify` can pick it up once that issue exists.
+- **It describes something broken** — existing behavior that doesn't work as documented/intended, only phrased as if something were missing → say so and stop, then hand off based on what you started from:
+  - **Started from an existing issue** → it's already filed; point at `issue-verify` to confirm it's real and reproducible.
+  - **Started from a plain-text description with no issue** → nothing's filed yet, so there's nothing for `issue-verify` to work from; point at `issue-create` to file it as a bug report first. `issue-verify` can pick it up once that issue exists.
+- **It describes a new capability or behavior that doesn't exist today** — including a request that first reads like it could be a fix but, on inspection, is actually asking for smarter/different behavior than what currently exists (e.g. "make X smarter" or "X should also handle Y" rather than "X is broken") → this is a genuine feature request. Proceed to Step 2 — don't stop here. Reconsidering something *toward* "feature" is not itself a reason to stop; the stop condition above only fires when it lands on "bug."
 
 ## Step 2: Pin down what's actually being asked
 
@@ -75,7 +77,7 @@ Show the user: what's being asked, the size classification with its reasons, the
 
 ## When to stop instead of proceeding
 
-- The request isn't actually a feature request (it describes broken behavior) → say so and stop; hand off to `issue-verify` if it's already filed as an issue, or to `issue-create` to file it as a bug report first if it isn't.
+- The request isn't actually a feature request (it describes broken behavior) → say so and stop; hand off to `issue-verify` if it's already filed as an issue, or to `issue-create` to file it as a bug report first if it isn't. (This is the only direction that stops here — landing on "yes, it's a genuine feature," even after reconsidering, means proceed to Step 2, not stop.)
 - Not enough detail to know what shape the feature would take, and the shape changes the size call → ask rather than sizing a guessed-at implementation.
 - User asks you to implement it, not just size it → out of scope here; this skill sizes the request, it doesn't hand off into an implementation flow.
 - User hasn't confirmed a drafted comment → never post to the issue on an unconfirmed draft, even if the analysis looks complete.
