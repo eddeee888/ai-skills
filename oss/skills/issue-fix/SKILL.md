@@ -62,15 +62,24 @@ For each option, give: what actually changes, blast radius (what else it touches
   ```
 - Run the affected package's test suite (at minimum) to confirm the previously-failing test now passes for the right reason, and that nothing else regressed.
 
-## Step 6: Push a draft PR
+## Step 6: Push — open a PR only if this branch doesn't already have one
 
 Push the branch from Step 1 — the one built on top of the `eddeee888:oss:issue-verify` commit, whether that was already the current branch or a new one checked out from it.
 
-If the repo is a monorepo (multiple workspaces/packages), prefix the title with the main package this fix actually lives in — `[package-name] fix: ...` — using the package Step 3's root-cause tracing pointed at, not whichever package the issue happened to be filed under. If the fix spans more than one package, lead with the one carrying the primary change; don't try to cram all of them into the title.
+Check first whether this branch already has an open PR:
 
 ```bash
-gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
+gh pr view --json number 2>&1
 ```
+
+- **A PR already exists** (this was the "already in the current branch's history" case in Step 1 — you're continuing the PR `issue-verify` opened) → just `git push`. Never run `gh pr create` here; that either errors on a branch that already has an open PR, or produces a second PR for what should stay one continuous PR. Let Step 7's `pr:pr-sync` bring its title/description in line with the fix now on top.
+- **No PR exists yet** (Step 1's "otherwise" case — a fresh `fix/<issue-number>` branch) → push and open one as a draft:
+
+  If the repo is a monorepo (multiple workspaces/packages), prefix the title with the main package this fix actually lives in — `[package-name] fix: ...` — using the package Step 3's root-cause tracing pointed at, not whichever package the issue happened to be filed under. If the fix spans more than one package, lead with the one carrying the primary change; don't try to cram all of them into the title.
+
+  ```bash
+  gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
+  ```
 
 Reference the issue with a non-closing keyword (`Relates to #123` / `Refs #123`, same convention `issue-verify` uses) in the body — never `Fixes #123` or `Closes #123`, even though this PR actually resolves it; the issue shouldn't auto-close on merge. The body should state which option was chosen and why, in a sentence or two, since the options were already discussed with the user; it doesn't need to re-litigate the alternatives.
 
