@@ -10,7 +10,7 @@ Size a request before building it, so a blast radius or comms need surfaces up f
 ## Step 1: Read and classify the request
 
 - Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments`
-- No issue — just a description in the conversation → treat the description itself as the request. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail.
+- No issue — just a description in the conversation → treat the description itself as the request. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Before going further, search existing issues for a duplicate or closely related one (`gh issue list --search "<keywords>"`) — regardless of which way this turns out to classify, sizing (or filing) a duplicate wastes the same effort either direction. Found a match → point the user at it instead of continuing.
 
 Then confirm which of the two this actually is. This is a classification call only, not a verification one — spotting the mismatch, not reproducing or confirming anything (that's `issue-verify`'s job):
 
