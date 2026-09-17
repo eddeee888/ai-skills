@@ -9,7 +9,18 @@ Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill tur
 
 **Every step below that pushes a commit to the checkpoint branch ends by running the `pr:pr-sync` skill.** Once the PR exists, it is the source of truth for title/description/changeset — never leave it stale after a push, even a small one.
 
-## Step 1: Read the issue and the repo's own template
+## Step 1: Check for an existing checkpoint, then read the issue
+
+Before doing anything else, check whether this issue already has a checkpoint from a previous run:
+
+```bash
+git fetch origin --quiet
+git log --all --oneline --grep="eddeee888:oss:issue-verify" | grep -F "#<number>"
+```
+
+Found a match → stop. Tell the user a checkpoint already exists (name the commit and branch) and point them at `issue-fix` to pick it up, rather than re-verifying from scratch. Only proceed past this if the user explicitly wants to redo it (e.g. the original repro turned out wrong).
+
+Nothing found → read the issue and the repo's own template:
 
 ```bash
 gh issue view <number> --json number,title,body,url,labels,state,comments
@@ -72,7 +83,7 @@ Run it and read the failure. Confirm it fails for the reason the issue describes
 - Body: state plainly that this is a checkpoint proving the bug exists, link the failing run/output you captured in Step 4, and note that `issue-fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
 
 ```bash
-gh pr create --draft --title "test: reproduce #123 — <short description> (failing)" --body "<body>"
+gh pr create --draft --title "test: reproduce #123 — <short bug description> (failing)" --body "<body>"
 ```
 
 ## Step 6: Sync
@@ -81,6 +92,7 @@ Immediately after opening the PR, run the `pr:pr-sync` skill. Do the same after 
 
 ## When to stop instead of proceeding
 
+- A checkpoint already exists for this issue → stop at Step 1, point at `issue-fix` instead of verifying it a second time.
 - No repro and the reporter hasn't confirmed the ask yet → post the request (Step 3) and stop. Don't write a speculative test against an unconfirmed guess at the bug.
 - The test doesn't fail the way the issue describes → don't commit and push a test that "passes" for the wrong reason or fails for an unrelated one; go back to the reporter with what you actually found.
 - Tempted to skip the test so the PR's checks come back green → don't. A green check here hides the exact thing this skill exists to surface; leave it red.
