@@ -5,81 +5,84 @@ description: Turn an `issue-verify` checkpoint commit into an actual fix. Locate
 
 # Fix a verified issue
 
-This is the second half of the TDD loop `issue-verify` started: a failing test already exists somewhere, committed with an `eddeee888:oss:issue-verify` marker, proving the bug is real. This skill's job is to make that test pass for real, honestly, and to make the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose which trade-off to take before code gets written.
+Second half of the TDD loop `issue-verify` started: a failing test already exists, committed with an `eddeee888:oss:issue-verify` marker, proving the bug is real. This skill makes that test pass for real, and makes the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose the trade-off before code gets written.
 
-**Every push this skill makes ends by running the `pr:pr-sync` skill** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes based on feedback.
+**Every push this skill makes ends by running `pr:pr-sync`** — the fix PR's description should always match what's actually on its branch, including through mid-review pushes.
 
 ## Step 1: Find the `issue-verify` checkpoint commit
 
-The failing test could be on the branch you're already on (continuing the same PR `issue-verify` opened) or on a completely different one — don't assume either way, look:
+The failing test could be on the branch you're already on (continuing the PR `issue-verify` opened) or a completely different one — don't assume, look:
 
 ```bash
 git fetch origin --quiet
 git log --all --oneline --grep="eddeee888:oss:issue-verify"
 ```
 
-If nothing turns up, stop and ask the user where the failing test lives — a different fork/remote, or `issue-verify` genuinely hasn't run yet. Don't guess a starting point or write the fix against a test that doesn't exist yet; that throws away the entire point of doing this as two skills.
-
-If more than one commit matches (multiple issues verified over time), disambiguate using the issue number in the commit message before proceeding.
+Nothing found → stop, ask the user where it lives (a different fork/remote, or `issue-verify` genuinely hasn't run) rather than guessing a starting point. More than one match → disambiguate using the issue number in the commit message.
 
 This commit is your base for everything that follows:
 
-- If it's already in the current branch's history, keep working right here — no new branch needed.
-- Otherwise, branch from it directly, not from the tip of the base branch: `git checkout -b fix/<issue-number> <verify-commit-sha>`. The checkpoint commit's PR does not need to be merged for this — building on top of the commit is enough.
+- Already in the current branch's history → keep working right here, no new branch needed.
+- Otherwise → branch from it directly, not from the base branch's tip: `git checkout -b fix/<issue-number> <verify-commit-sha>`. The checkpoint's PR doesn't need to be merged for this — building on top of the commit is enough.
 
 ## Step 2: Re-root-cause it
 
-Pull up the failing test and the issue thread again. Run the test locally — read the actual failure (stack trace, assertion diff, error type), don't rely on memory of what the issue said the problem was; the checkpoint commit may have surfaced something more specific.
+Pull up the failing test and the issue thread again. Run the test locally and read the actual failure (stack trace, assertion diff, error type) — don't rely on memory of what the issue said; the checkpoint commit may have surfaced something more specific.
 
 ## Step 3: Is the bug ours, or a dependency's?
 
 Trace the failure to its actual origin:
 
-- **Ours** — the failure originates in this repo's own code path.
-- **A dependency's** — the failure originates in a direct or transitive dependency. Pin down which one, which version, and the evidence (the exact function/file in the dependency's source, a matching upstream issue/changelog entry, etc.).
+- **Ours** — originates in this repo's own code path.
+- **A dependency's** — originates in a direct or transitive dependency. Pin down which one, which version, and the evidence (the exact function/file in its source, a matching upstream issue/changelog entry).
 
-This determines what options even make sense in the next step — don't skip straight to "how do we fix it" without knowing which side of the boundary the bug is actually on.
+This decides what options make sense next — don't skip to "how do we fix it" before knowing which side of the boundary the bug is on.
 
 ## Step 4: Present 2-3 options, and ask
 
-Draft 2-3 concrete, real approaches — not a token "do nothing" option — sized to what Step 3 found. Depending on where the root cause sits, options typically look like:
+Draft 2-3 concrete approaches — not a token "do nothing" — sized to what Step 3 found:
 
-- If ours: fix it directly in our code vs. a narrower/more defensive fix vs. a larger refactor that also prevents the class of bug.
-- If a dependency's: upgrade to the version that already fixes it vs. patch/override locally (e.g. a lockfile override or vendored patch) with a tracked upstream issue vs. work around it in our own code without touching the dependency.
+- Ours: fix it directly vs. a narrower/more defensive fix vs. a larger refactor that also prevents the class of bug.
+- Dependency's: upgrade to the version that already fixes it vs. patch/override locally (lockfile override or vendored patch) with a tracked upstream issue vs. work around it in our own code.
 
-For each option, give: what actually changes, blast radius (what else it touches), risk, and rough effort. Ask the user which they want — don't default to whichever seems fastest without their input; that's the decision this skill exists to surface, not skip.
+For each option: what changes, blast radius, risk, rough effort. Ask which they want — don't default to whichever's fastest without their input; that's the decision this skill exists to surface.
 
 ## Step 5: Implement the chosen option
 
-- The checkpoint test from Step 1 is the acceptance criterion for this fix — it's still failing at this point, that's expected.
-- Make the change matching the option the user picked, nothing broader, as commits on top of the `eddeee888:oss:issue-verify` commit — don't interactively rewrite, squash, or drop that commit, it's the proof this fix is answering to. (Step 7's `pr:pr-sync` run will still rebase the branch onto its base as part of its own job — that replays the commit's SHA but leaves its content and trailer untouched; it's not the kind of rewrite this rule is about.)
-- Commit the fix with the marker `eddeee888:oss:issue-fix` as the last line of the commit message, same trailer convention as `issue-verify`:
+- The Step 1 checkpoint test is the acceptance criterion — it's still failing at this point, that's expected.
+- Commit only the chosen option, nothing broader, on top of the `eddeee888:oss:issue-verify` commit — never interactively rewrite, squash, or drop that commit, it's the proof this fix answers to. (Step 7's `pr:pr-sync` rebase still replays its SHA but leaves its content and trailer untouched — that's not the kind of rewrite this rule is about.)
+- Commit message ends with the marker, same trailer convention as `issue-verify`:
 
   ```
   fix: <short description> (#<issue number>)
 
   eddeee888:oss:issue-fix
   ```
-- Run the affected package's test suite (at minimum) to confirm the previously-failing test now passes for the right reason, and that nothing else regressed.
+- Run the affected package's test suite (at minimum) to confirm the previously-failing test now passes for the right reason, and nothing else regressed.
 
-## Step 6: Push a draft PR
+## Step 6: Push — open a PR only if this branch doesn't already have one
 
-Push the branch from Step 1 — the one built on top of the `eddeee888:oss:issue-verify` commit, whether that was already the current branch or a new one checked out from it.
-
-If the repo is a monorepo (multiple workspaces/packages), prefix the title with the main package this fix actually lives in — `[package-name] fix: ...` — using the package Step 3's root-cause tracing pointed at, not whichever package the issue happened to be filed under. If the fix spans more than one package, lead with the one carrying the primary change; don't try to cram all of them into the title.
+Push the Step 1 branch. Check first whether it already has an open PR:
 
 ```bash
-gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
+gh pr view --json number 2>&1
 ```
 
-Reference the issue with a non-closing keyword (`Relates to #123` / `Refs #123`, same convention `issue-verify` uses) in the body — never `Fixes #123` or `Closes #123`, even though this PR actually resolves it; the issue shouldn't auto-close on merge. The body should state which option was chosen and why, in a sentence or two, since the options were already discussed with the user; it doesn't need to re-litigate the alternatives.
+- **A PR already exists** (Step 1's "already in the current branch's history" case — you're continuing `issue-verify`'s PR) → just `git push`. Never run `gh pr create` here — it either errors on a branch that already has an open PR, or opens a second PR for what should stay one. Step 7's `pr:pr-sync` brings its title/description in line with the fix now on top.
+- **No PR exists yet** (Step 1's "otherwise" case — a fresh `fix/<issue-number>` branch) → push and open one as a draft. In a monorepo, prefix the title with the package Step 3's root-cause tracing pointed at (`[package-name] fix: ...`), not whichever package the issue was filed under; if the fix spans several packages, lead with the one carrying the primary change.
+
+  ```bash
+  gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
+  ```
+
+Reference the issue with a non-closing keyword (`Relates to #123` / `Refs #123`, same convention as `issue-verify`) — never `Fixes #123`/`Closes #123`, even though this PR resolves it; the issue shouldn't auto-close on merge. State which option was chosen and why in a sentence or two — the options were already discussed with the user, no need to re-litigate them.
 
 ## Step 7: Sync
 
-Run the `pr:pr-sync` skill right after opening the PR, and again after any subsequent push (review feedback, follow-up commits) — the fix PR's description should never fall behind its branch.
+Run `pr:pr-sync` right after opening the PR, and again after any subsequent push (review feedback, follow-up commits) — the fix PR's description should never fall behind its branch.
 
 ## When to stop instead of proceeding
 
 - No `eddeee888:oss:issue-verify` commit found anywhere → stop at Step 1, say so, ask the user where it lives rather than guessing a base to build on.
-- Root cause still unclear after Step 2/3 → don't guess an option set; go back to the issue/reporter (or the `issue-verify` skill) for more signal before presenting choices.
+- Root cause still unclear after Step 2/3 → don't guess an option set; go back to the issue/reporter (or `issue-verify`) for more signal before presenting choices.
 - User hasn't picked an option yet → don't implement a "likely" default; wait for their answer.
