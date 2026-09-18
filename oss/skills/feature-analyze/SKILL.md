@@ -68,6 +68,7 @@ Signals:
 - Root cause is an isolated bad condition/edge case in one function → pulls toward "small".
 - Root cause is a shared helper, or the bug shows up wherever a shared type/interface is consumed → pulls toward "medium" or "large".
 - A correct fix would change documented behavior, an existing public API's contract, or output that other code/users already depend on → pulls toward "large" regardless of how small the code change looks.
+- Root cause traces outside this repo entirely — into a dependency's own code — rather than anywhere in this codebase → note which dependency, which version, and the evidence (the function/file in its source, a matching upstream issue/changelog entry). This changes which size rubric applies below.
 
 ### Step 4: Classify the fix's size
 
@@ -76,6 +77,7 @@ Same escalate-only rule: one large-sized element makes the whole fix large, even
 - **Small** — the fix (once verified) would be confined to one function/file, with no change to any documented behavior or public contract for other inputs: a missing null check, an off-by-one, a wrong condition.
 - **Medium** — the fix would need to touch a shared helper, or land in more than one package/file, but still without changing the documented contract for callers who aren't hitting the bug.
 - **Large** — any of: a correct fix would change documented/public behavior that other code relies on (so the "fix" is itself a breaking change); the root cause is tangled into a core assumption spanning multiple packages; a real fix needs a design decision (e.g. which of two conflicting documented behaviors is "correct") before code can be written.
+- **Dependency-rooted** (sizes differently from the above, when Step 3 traced the cause to a dependency): a fix already released upstream → small (bump the version). No upstream fix yet, but workable with a local patch/override and a tracked upstream issue → medium. No upstream fix and the bug is load-bearing enough that our own public API needs a workaround → large. This mirrors the options `issue-fix` Step 4 will present once the bug is verified — don't re-litigate them here, just flag the finding.
 
 State the classification plus the 1-2 concrete reasons driving it, tied to the root-cause hypothesis from Step 3 — not "this looks like a big fix."
 
