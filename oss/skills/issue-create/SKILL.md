@@ -11,7 +11,15 @@ A bug report that's missing context, a clear problem statement, a reproduction, 
 
 This skill isn't scoped to one repo — always ask which one the issue is for (`owner/repo` or a full GitHub URL) before doing anything else. Don't assume it's the repo the current session happens to be in; a bug found while working on one repo often belongs on a dependency's repo instead.
 
-## Step 2: Fetch that repo's issue template, if it has one
+## Step 2: Check for a duplicate
+
+```bash
+gh issue list --repo <owner>/<repo> --search "<keywords>" --state all
+```
+
+Skim titles/bodies for a close match. Found one → show it to the user and ask whether to proceed anyway (it may genuinely be distinct) rather than drafting a duplicate by default. Nothing close → continue.
+
+## Step 3: Fetch that repo's issue template, if it has one
 
 ```bash
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE 2>/dev/null
@@ -22,7 +30,7 @@ Pull down whatever templates exist (classic single `.md` templates, or structure
 
 If there's no `.github/ISSUE_TEMPLATE/` at all, also check for a plain `.github/ISSUE_TEMPLATE.md` — some repos use the single-file form instead of the directory. If neither exists, there's no template to follow; proceed with the four sections below as-is.
 
-## Step 3: Gather the four sections
+## Step 4: Gather the four sections
 
 Pull together, from the conversation so far and by asking the user for whatever's missing:
 
@@ -33,7 +41,7 @@ Pull together, from the conversation so far and by asking the user for whatever'
 
 Don't fabricate detail for a section nobody's provided — ask, or leave it explicitly marked as unknown, rather than guessing to make the draft look complete.
 
-## Step 4: Draft the issue, fitting the repo's template
+## Step 5: Draft the issue, fitting the repo's template
 
 **If a template exists:** map Context/Problem/Reproduction/Environment onto its existing headers/fields instead of inventing new ones — a "Description" field gets Context + Problem, a "Reproduction steps" field gets Reproduction, an "Environment"/"Additional context" field gets the environment details, and so on by closest match. Keep every field the template requires, even ones this skill has no content for (mark them clearly rather than deleting them) — a required field that goes missing on a form-based template can make submission fail outright.
 
@@ -55,21 +63,21 @@ Don't fabricate detail for a section nobody's provided — ask, or leave it expl
 
 Draft a title too: one line, specific, naming the actual behavior (not "bug in X" — say what's wrong).
 
-## Step 5: Show the draft, get confirmation
+## Step 6: Show the draft, get confirmation
 
-Show the full drafted title and body back to the user, verbatim, before touching GitHub. Treat this as a hard gate, not a formality — apply any edits they ask for and show the result again if it changed materially. Only move to Step 6 once they've explicitly confirmed it's ready to post.
+Show the full drafted title and body back to the user, verbatim, before touching GitHub. Treat this as a hard gate, not a formality — apply any edits they ask for and show the result again if it changed materially. Only move to Step 7 once they've explicitly confirmed it's ready to post.
 
-## Step 6: Create it
+## Step 7: Create it
 
 ```bash
 gh issue create --repo <owner>/<repo> --title "<confirmed title>" --body "<confirmed body>"
 ```
 
-Report back the issue URL. Don't do anything further with it here — filing the issue is this skill's job; verifying it (writing a failing test against it) is the `issue-verify` skill's, and only once the repo maintainers have had a chance to weigh in.
+Report back the issue URL. Don't do anything further with it here — filing the issue is this skill's job; verifying it (writing a failing test against it) is the `issue-verify` skill's, and only once the repo maintainers have had a chance to weigh in. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo. Without that, the issue just waits on its own maintainers; there's no local pipeline to hand it into.
 
 ## When to stop instead of proceeding
 
 - No repo given yet → ask before doing anything else; don't guess a repo from context.
-- A reproduction is missing or too vague → push back for a concrete one in Step 3 rather than drafting around a gap.
+- A reproduction is missing or too vague → push back for a concrete one in Step 4 rather than drafting around a gap.
 - User hasn't confirmed the draft → never run `gh issue create` on an unconfirmed draft, even if every section looks filled in.
 - Multiple templates and it's unclear which fits → ask, don't default to the first one alphabetically.
