@@ -1,11 +1,11 @@
 ---
 name: pr-address
-description: Work through a pull request's unresolved review comment threads and act on the ones the user has already signaled they're ready for. On the user's own PR, a thread only gets auto-actioned once the user themselves has replied last in it — e.g. a reviewer said "we should do this" and the user replied "Ok", or asked "why this approach?" and the user replied "let me check" — the skill then infers what to do from the original reviewer comment's nature: an authoritative instruction/suggestion gets implemented, a why-question gets answered with concise, backed-up reasoning. Any thread still waiting on the user's own reply, any thread on a PR the user doesn't own, and any acknowledged-but-high-risk change are never auto-actioned — the user is asked what to do with all of them in one batch before anything is applied. Never resolves a review thread automatically. Use when asked to "address PR comments", "handle the review feedback", "go through the review threads", "respond to reviewers", or after the user has left short replies like "Ok"/"let's do it"/"let me check" on review comments and wants them followed through on.
+description: Work through a pull request's unresolved review comment threads and act on the ones the user has already signaled they're ready for. On the user's own PR, a thread only gets auto-actioned once the user themselves has replied last in it — e.g. a reviewer said "we should do this" and the user replied "Ok", or asked "why this approach?" and the user replied "let me check" — the skill then infers what to do from the original reviewer comment's nature: an authoritative instruction/suggestion gets implemented, a why-question gets answered with concise, backed-up reasoning. A thread with no reviewer input at all — the user commenting on their own diff — needs no separate go-ahead: their own comment already carries the authority a reviewer's comment plus a reply would together, so it's classified and acted on the same way, straight away. Any thread still waiting on someone else's reply, any thread on a PR the user doesn't own, and any acknowledged-but-high-risk change are never auto-actioned — the user is asked what to do with all of them in one batch before anything is applied. Never resolves a review thread automatically. Use when asked to "address PR comments", "handle the review feedback", "go through the review threads", "respond to reviewers", or after the user has left short replies like "Ok"/"let's do it"/"let me check" on review comments and wants them followed through on.
 ---
 
 # Address PR review comments
 
-A reviewer's comment isn't actionable until the user has actually weighed in on it — a "do this" from a teammate isn't the user's decision to implement until the user has said so, even with a one-word "Ok". This skill treats the user's own reply in a thread as that authorization signal, then carries out what was authorized: an authoritative instruction gets implemented, a why-question gets answered with real backing. Everything the user hasn't yet weighed in on — including anything flagged risky even after a go-ahead — gets surfaced to them in one batch, before any action is taken, rather than being guessed at or applied piecemeal.
+A reviewer's comment isn't actionable until the user has actually weighed in on it — a "do this" from a teammate isn't the user's decision to implement until the user has said so, even with a one-word "Ok". This skill treats the user's own reply in a thread as that authorization signal, then carries out what was authorized: an authoritative instruction gets implemented, a why-question gets answered with real backing. When there's no reviewer in a thread at all — the user commenting on their own diff — that comment is already the user telling the skill what to do, with no separate reply to wait for; it's carried out the same way. Everything the user hasn't yet weighed in on — including anything flagged risky even after a go-ahead — gets surfaced to them in one batch, before any action is taken, rather than being guessed at or applied piecemeal.
 
 ## Step 1: Identify the PR and whether it's the user's
 
@@ -20,7 +20,7 @@ Compare the PR's `author.login` to the authenticated user's login. This result g
 
 ## Step 2: Fetch review threads
 
-Pull review threads (not flat issue-level comments — those don't have reply-chain semantics, so they're out of scope here) via GraphQL so resolution state and comment order are available:
+Pull review threads (not flat issue-level comments — the PR's general Conversation-tab comments, including anything the user posted there themselves; those don't have reply-chain semantics, so they're out of scope here) via GraphQL so resolution state and comment order are available:
 
 ```bash
 gh api graphql -f query='
@@ -45,16 +45,20 @@ Drop any thread where `isResolved` is true. Keep each thread's ordered comment l
 
 ## Step 3: Classify every unresolved thread into two buckets
 
-For each thread, look at who left the last comment and what it says:
+For each thread, first check whether a reviewer — anyone other than the user — ever left a comment in it.
 
-- **Ready to act automatically** — the last comment is the user's own, reads like a short go-ahead/acknowledgment (not already a full answer or the actual content itself — e.g. "Ok", "let's do it", "let me check", not a paragraph that already answers the question), *and* the original reviewer comment it's acknowledging is not critical/high risk (risk framing lives in Step 5a). Tag it with the nature of the *original reviewer comment*, not the reply:
-  - **Authoritative** — an instruction, correction, or a ```suggestion``` code block ("do this", "use X instead", "type it this way").
-  - **Why-question** — asks for reasoning or justification ("why this approach?", "why not X?").
-- **Needs the user first** — everything else:
-  - The PR isn't the user's at all.
-  - The PR is the user's, but the last comment is from someone other than the user (no reply yet).
-  - The last comment is the user's own, but it's already a complete answer/instruction rather than a short go-ahead — nothing to do here; note it as already-handled and don't ask about it.
-  - The user did acknowledge it, but the underlying ask is critical/high risk and needs explicit confirmation before it's touched.
+- **No reviewer ever participated in the thread** (every comment, including the first, is the user's own — a note the user left on their own diff) — on the user's own PR, that comment already carries the authority a reviewer's comment plus the user's own go-ahead would together, since the user is both the one raising it and the one who'd normally have to authorize it. There's no separate reply to wait for. Classify it the same way the reply-driven case below does — not critical/high risk (risk framing lives in Step 5a) → straight into the "ready to act automatically" bucket; critical/high risk → "needs the user first," same as an acknowledged-but-risky reviewer thread would be:
+  - **Authoritative** — reads like an instruction or an actionable ask ("add a null check here", a ```suggestion``` code block).
+  - **Why-question** — reads like an open question needing research ("should this handle X too?").
+- **A reviewer did participate in the thread** — look at who left the last comment and what it says:
+  - **Ready to act automatically** — the last comment is the user's own, reads like a short go-ahead/acknowledgment (not already a full answer or the actual content itself — e.g. "Ok", "let's do it", "let me check", not a paragraph that already answers the question), *and* the original reviewer comment it's acknowledging is not critical/high risk (risk framing lives in Step 5a). Tag it with the nature of the *original reviewer comment*, not the reply:
+    - **Authoritative** — an instruction, correction, or a ```suggestion``` code block ("do this", "use X instead", "type it this way").
+    - **Why-question** — asks for reasoning or justification ("why this approach?", "why not X?").
+  - **Needs the user first** — everything else:
+    - The PR isn't the user's at all.
+    - The last comment is from someone other than the user (no reply yet).
+    - The last comment is the user's own, but it's already a complete answer/instruction rather than a short go-ahead — nothing to do here; note it as already-handled and don't ask about it.
+    - The user did acknowledge it, but the underlying ask is critical/high risk and needs explicit confirmation before it's touched.
 
 ## Step 4: Resolve the "needs the user first" bucket before applying anything
 
