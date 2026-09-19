@@ -16,6 +16,8 @@ Each plugin is its own namespace of skills:
 
 Each plugin has `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests. Each skill lives in its own directory within a plugin, e.g. `oss/skills/<skill-name>/SKILL.md`.
 
+Formatting/process rules shared by more than one skill (e.g. the `[package-name]` PR title prefix for monorepos) live in [`CONVENTIONS.md`](CONVENTIONS.md) rather than being restated in each `SKILL.md` — skills point to it instead of duplicating the rule.
+
 ## Install
 
 ### Claude Code
