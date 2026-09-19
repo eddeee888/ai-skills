@@ -74,7 +74,7 @@ Run it and read the failure. Confirm it fails for the reason the issue describes
   eddeee888:oss:issue-verify
   ```
 - Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword, per this marketplace's shared convention (see `CONVENTIONS.md` at the repo root) — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`.
-- Title convention: `test: reproduce <short bug description> (failing) (#123)` — the issue reference goes at the end, per this marketplace's shared trailing-reference convention (`CONVENTIONS.md`). In a monorepo, apply the shared `[package-name]` title-prefix convention (`CONVENTIONS.md`), prefixed with the package the repro actually exercises (the one Step 4 identified).
+- Title convention: `test: reproduce <short bug description> (failing) (#123)` — the issue reference goes at the end, per this marketplace's shared trailing-reference convention (`CONVENTIONS.md`). In a monorepo, apply the shared `[package-name]` title-prefix convention (`CONVENTIONS.md`), prefixed with the package the repro actually exercises (the one Step 4 identified) — e.g. `[package-name] test: reproduce <short bug description> (failing) (#123)`.
 - Body: state plainly that this is a checkpoint proving the bug exists, link the failing run/output you captured in Step 4, and note that `issue-fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
 
 ```bash
