@@ -5,7 +5,7 @@ description: Work through a pull request's unresolved review comment threads and
 
 # Address PR review comments
 
-A reviewer's comment isn't actionable until the user has actually weighed in on it — a "do this" from a teammate isn't the user's decision to implement until the user has said so, even with a one-word "Ok". This skill treats the user's own reply in a thread as that authorization signal, then carries out what was authorized: an authoritative instruction gets implemented, a why-question gets answered with real backing. Everything the user hasn't yet weighed in on — including anything flagged risky even after a go-ahead — gets surfaced to them in one batch, before any action is taken, rather than being guessed at or applied piecemeal.
+A reviewer's comment isn't actionable until the user has actually weighed in on it — a "do this" from a teammate isn't the user's decision to implement until the user has said so, even with a one-word "Ok". This skill treats the user's own reply in a thread as that authorization signal, then carries out what was authorized: an authoritative instruction gets implemented, a why-question gets answered with real backing. Everything the user hasn't yet weighed in on — including anything flagged risky even after a go-ahead — gets surfaced to them in one batch, before any action is taken.
 
 ## Step 1: Identify the PR and whether it's the user's
 
@@ -14,13 +14,13 @@ gh pr view --json number,url,author,headRefName,baseRefName 2>&1
 gh api user --jq .login
 ```
 
-Use the current branch's PR unless the user gave a specific PR number/URL. If no PR is found, stop — see "When to stop" below.
+Use the current branch's PR unless the user gave a specific PR number/URL. No PR found → stop, see "When to stop" below.
 
-Compare the PR's `author.login` to the authenticated user's login. This result gates everything downstream: only on the user's own PR can any thread ever be auto-actioned. On someone else's PR, every thread goes through Step 4 — none are eligible for Step 3's automatic bucket.
+Compare the PR's `author.login` to the authenticated user's login. This gates everything downstream: only on the user's own PR can any thread ever be auto-actioned. On someone else's PR, every thread goes through Step 4.
 
 ## Step 2: Fetch review threads
 
-Pull review threads (not flat issue-level comments — those don't have reply-chain semantics, so they're out of scope here) via GraphQL so resolution state and comment order are available:
+Pull review threads (not flat issue-level comments — those lack reply-chain semantics) via GraphQL, so resolution state and comment order are available:
 
 ```bash
 gh api graphql -f query='
@@ -41,53 +41,53 @@ gh api graphql -f query='
   }' -f owner=<owner> -f repo=<repo> -F pr=<number>
 ```
 
-Drop any thread where `isResolved` is true. Keep each thread's ordered comment list — the author and content of the last comment is what Step 3 classifies on.
+Drop any resolved thread. Keep each thread's ordered comments — the last comment's author and content is what Step 3 classifies on.
 
 ## Step 3: Classify every unresolved thread into two buckets
 
 For each thread, look at who left the last comment and what it says:
 
-- **Ready to act automatically** — the last comment is the user's own, reads like a short go-ahead/acknowledgment (not already a full answer or the actual content itself — e.g. "Ok", "let's do it", "let me check", not a paragraph that already answers the question), *and* the original reviewer comment it's acknowledging is not critical/high risk (risk framing lives in Step 5a). Tag it with the nature of the *original reviewer comment*, not the reply:
-  - **Authoritative** — an instruction, correction, or a ```suggestion``` code block ("do this", "use X instead", "type it this way").
-  - **Why-question** — asks for reasoning or justification ("why this approach?", "why not X?").
+- **Ready to act automatically** — the last comment is the user's own, a short go-ahead/acknowledgment (not already a full answer — e.g. "Ok", "let's do it", "let me check", not a paragraph that already answers the question), *and* the original reviewer comment isn't critical/high risk (risk framing lives in Step 5a). Tag it with the nature of the *original* comment, not the reply:
+  - **Authoritative** — an instruction, correction, or a ```suggestion``` code block ("do this", "use X instead").
+  - **Why-question** — asks for reasoning or justification ("why this approach?").
 - **Needs the user first** — everything else:
   - The PR isn't the user's at all.
   - The PR is the user's, but the last comment is from someone other than the user (no reply yet).
-  - The last comment is the user's own, but it's already a complete answer/instruction rather than a short go-ahead — nothing to do here; note it as already-handled and don't ask about it.
-  - The user did acknowledge it, but the underlying ask is critical/high risk and needs explicit confirmation before it's touched.
+  - The last comment is the user's own, but it's already a complete answer/instruction rather than a short go-ahead — nothing to do; note it as already-handled, don't ask about it.
+  - The user acknowledged it, but the underlying ask is critical/high risk and needs explicit confirmation.
 
 ## Step 4: Resolve the "needs the user first" bucket before applying anything
 
-If that bucket is non-empty, summarize each item briefly — file:line, who said what, and for a risky-but-acknowledged item, why it's flagged as risky — and ask the user what they want done with each: implement it, draft a reply for them to send, or leave it alone. Don't apply any automatic action while items are still waiting on the user; settle this bucket first. Whatever the user directs here folds into Step 5 alongside the automatic bucket.
+Non-empty → summarize each item briefly (file:line, who said what, and for a risky-but-acknowledged item, why it's flagged) and ask what they want done with each: implement it, draft a reply, or leave it alone. Don't apply any automatic action while items are still waiting on the user. Whatever they direct here folds into Step 5 alongside the automatic bucket.
 
-If this bucket is empty, skip straight to Step 5 and apply the automatic bucket without pausing.
+Empty → skip straight to Step 5.
 
 ## Step 5: Handling comments
 
-Apply every thread now settled — the automatic bucket from Step 3, plus whatever the user just approved in Step 4 — grouped by the nature of the original reviewer comment. This is the extension point for future comment categories: add new lettered sub-steps here (5c, 5d, ...) rather than new top-level steps.
+Apply every thread now settled — the automatic bucket from Step 3, plus whatever the user just approved in Step 4 — grouped by the nature of the original comment. This is the extension point for future comment categories: add new lettered sub-steps here (5c, 5d, ...) rather than new top-level steps.
 
 ### 5a. Authoritative
 
-Implement the change, including applying a `suggestion` block literally when one is present. Before implementing anything from this sub-step (whether it arrived here via Step 3's automatic bucket or Step 4's user approval), assess risk the same way this project weighs any action: is it hard to reverse, does it touch security/auth, cause data loss, touch production config/infra, break a public API, or otherwise carry a wide blast radius? If genuinely low-risk, implement it, run the affected tests, commit, and push. Reply on the thread summarizing what changed:
+Implement the change, applying a `suggestion` block literally when present. Before implementing anything from this sub-step, assess risk the same way this project weighs any action: is it hard to reverse, does it touch security/auth, cause data loss, touch production config/infra, break a public API, or otherwise carry a wide blast radius? Genuinely low-risk → implement it, run the affected tests, commit, and push. Reply on the thread summarizing what changed:
 
 ```bash
 gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
 ```
 
-Do **not** resolve the thread — that's for the reviewer or the user to do, never automatic.
+Do **not** resolve the thread — that's for the reviewer or the user.
 
 ### 5b. Why-question
 
-Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or a link to relevant GitHub code/repos. Before posting, check whether any backing resource is private or otherwise inaccessible to the PR's reviewers (an internal repo, an internal wiki/Slack link, anything a public audience couldn't open). Drop those from the public reply — post only the concise answer plus publicly-accessible resources as a reply on the thread — and instead surface the private resource to the user directly in the session (chat), never into the PR comment. Reply the same way as 5a. Do **not** resolve the thread.
+Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Before posting, drop any backing resource that's private or otherwise inaccessible to the PR's reviewers; surface it to the user directly in-session instead, never into the PR comment. Reply the same way as 5a. Do **not** resolve the thread.
 
 ## Step 6: Wrap up
 
-If any implementation changes were pushed **and the PR is the user's own** (per Step 1), run the `pr:pr-sync` skill afterward so the PR description matches the branch. Never do this on a PR the user doesn't own — pushing an approved fix from Step 4 is one thing, but editing someone else's PR title or description as a side effect of it is not this skill's call to make. Report back concisely: how many threads were replied to or implemented, and how many are still open for the reviewer or user to resolve manually.
+Implementation changes were pushed **and the PR is the user's own** (per Step 1) → run `pr:pr-sync` so the description matches the branch. Never on a PR the user doesn't own — pushing an approved fix from Step 4 is one thing, editing someone else's PR title or description as a side effect of it is not this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
 
 ## When to stop instead of proceeding
 
 - No PR found for the current branch or given argument → stop, say so. This skill doesn't create PRs.
-- Can't determine risk confidently → treat it as risky and route it through Step 4 rather than guessing.
-- A why-question's only backing is a private/inaccessible resource → still answer in the PR reply from your own understanding where possible, but never paste the private link/resource into the PR; hand it to the user in-session instead.
-- The user hasn't replied in a thread yet → never auto-act on it, no matter how clearly authoritative or trivial the reviewer's ask looks.
-- Never resolve a review thread automatically — replying is as far as this skill goes; resolution is left to a human.
+- Can't determine risk confidently → treat it as risky and route it through Step 4.
+- A why-question's only backing is a private/inaccessible resource → still answer in the PR reply from your own understanding where possible, but never paste the private link into the PR; hand it to the user in-session instead.
+- The user hasn't replied in a thread yet → never auto-act on it, no matter how clearly authoritative or trivial the ask looks.
+- Never resolve a review thread automatically — replying is as far as this skill goes.

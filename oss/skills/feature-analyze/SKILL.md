@@ -12,7 +12,7 @@ This skill never reproduces a bug, writes a test, or pushes a commit — it read
 ## Step 1: Read and classify the request
 
 - Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments`
-- No issue — just a description in the conversation → treat the description itself as the request. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Before going further, search existing issues for a duplicate or closely related one (`gh issue list --search "<keywords>"`) — regardless of which way this turns out to classify, analyzing (or filing) a duplicate wastes the same effort either direction. Found a match → point the user at it instead of continuing.
+- No issue — just a description in the conversation → treat the description itself as the request. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Search existing issues for a duplicate first (`gh issue list --search "<keywords>"`). Found a match → point the user at it instead of continuing.
 
 Then classify which of the two this actually is, and jump to the matching path below:
 
@@ -23,7 +23,7 @@ Then classify which of the two this actually is, and jump to the matching path b
 
 ### Step 2: Pin down the feature being asked
 
-Restate the new behavior/option/capability wanted and the use case behind it (from the issue body/comments). If the request is genuinely vague ("would be nice to have X" with no shape), say so explicitly rather than quietly picking one shape to size — Step 4's classification depends on which shape you size, and a vague request can swing from small to large depending on the shape assumed.
+Restate the new behavior/option/capability wanted and the use case behind it. Genuinely vague ("would be nice to have X" with no shape) → say so explicitly rather than quietly picking one shape to size — Step 4's classification depends on which shape you size.
 
 ### Step 3: Map the codebase surface it touches
 
@@ -37,18 +37,18 @@ Signals:
 
 ### Step 4: Classify the size
 
-Escalate only — a request that's mostly small but has one large-sized element (e.g. one breaking type change) is large, full stop, not "small with an asterisk."
+Escalate only — a request that's mostly small but has one large-sized element is large, full stop, not "small with an asterisk."
 
 - **Small** — additive, backward-compatible, confined to one package/file: a new config option with a safe default, a new optional parameter, a new export alongside existing ones. Existing callers are unaffected if they change nothing.
-- **Medium** — still additive/non-breaking, but the surface spans multiple packages or files: plumbing through a shared type, a new package, or coordinated changes across a monorepo's workspaces. No caller breaks, but more than one place needs to adapt.
-- **Large** — any of: a breaking change to an existing public API, config shape, exported type, or documented behavior; blast radius reaching most/all consumers (a default behavior change, a new required integration step); needs an RFC/design doc, a deprecation window, or a migration guide before or alongside implementation; needs proactive user comms (blog post, changelog highlight, social post) rather than a routine changelog line.
+- **Medium** — still additive/non-breaking, but the surface spans multiple packages or files: plumbing through a shared type, a new package, or coordinated changes across a monorepo's workspaces.
+- **Large** — any of: a breaking change to an existing public API, config shape, exported type, or documented behavior; blast radius reaching most/all consumers; needs an RFC/design doc, a deprecation window, or a migration guide; needs proactive user comms (blog post, changelog highlight, social post) rather than a routine changelog line.
 
-State the classification plus the 1-2 concrete reasons driving it — the specific breaking surface, package count, or comms need. Not "this seems big."
+State the classification plus the 1-2 concrete reasons driving it — not "this seems big."
 
 ### Step 5: Recommend next steps
 
-- **Small** → safe to scope directly into an implementation plan; no extra process needed.
-- **Medium** → name every package/file that needs touching before implementation starts, and flag whether the cross-package design needs a second pair of eyes first.
+- **Small** → safe to scope directly into an implementation plan.
+- **Medium** → name every package/file that needs touching before implementation starts, and flag whether the cross-package design needs a second pair of eyes.
 - **Large** → don't recommend jumping to implementation. Call out what breaks and for whom, whether a deprecation path is possible instead of a hard break, and that an RFC/announcement needs drafting and agreement before (or alongside) the code. Name the audience this project actually uses for breaking changes rather than assuming a channel.
 
 Continue to Step 6.
@@ -57,33 +57,33 @@ Continue to Step 6.
 
 ### Step 2: Pin down the bug being reported
 
-Restate the observed behavior vs. the expected behavior (from the issue body/comments, or the plain-text description). If it's unclear what's actually expected to happen instead, say so rather than guessing — a bug analysis needs both sides of the mismatch.
+Restate the observed behavior vs. the expected behavior. Unclear what's actually expected instead → say so rather than guessing.
 
 ### Step 3: Trace the likely root cause
 
-Read the code path the reported behavior would run through and form a hypothesis for where it goes wrong — by reading, not by running anything. Name the specific function/module/condition you suspect, and say plainly when the code alone doesn't pin it down to one spot (e.g. two plausible causes, or a dependency's behavior in the mix) — a tentative "likely X, possibly Y" beats a confident guess dressed as certainty. For a monorepo, note every package whose behavior the root cause implicates, not just the one the issue was filed under.
+Read the code path the reported behavior would run through and form a hypothesis for where it goes wrong — by reading, not by running anything. Name the specific function/module/condition you suspect, and say plainly when the code alone doesn't pin it down to one spot — a tentative "likely X, possibly Y" beats a confident guess dressed as certainty. For a monorepo, note every package whose behavior the root cause implicates.
 
 Signals:
 
 - Root cause is an isolated bad condition/edge case in one function → pulls toward "small".
 - Root cause is a shared helper, or the bug shows up wherever a shared type/interface is consumed → pulls toward "medium" or "large".
 - A correct fix would change documented behavior, an existing public API's contract, or output that other code/users already depend on → pulls toward "large" regardless of how small the code change looks.
-- Root cause traces outside this repo entirely — into a dependency's own code — rather than anywhere in this codebase → note which dependency, which version, and the evidence (the function/file in its source, a matching upstream issue/changelog entry). This changes which size rubric applies below.
+- Root cause traces outside this repo entirely, into a dependency's own code → note which dependency, which version, and the evidence (the function/file in its source, a matching upstream issue/changelog entry). This changes which size rubric applies below.
 
 ### Step 4: Classify the fix's size
 
 Same escalate-only rule: one large-sized element makes the whole fix large, even if the rest is trivial.
 
-- **Small** — the fix (once verified) would be confined to one function/file, with no change to any documented behavior or public contract for other inputs: a missing null check, an off-by-one, a wrong condition.
+- **Small** — the fix (once verified) would be confined to one function/file, with no change to any documented behavior or public contract: a missing null check, an off-by-one, a wrong condition.
 - **Medium** — the fix would need to touch a shared helper, or land in more than one package/file, but still without changing the documented contract for callers who aren't hitting the bug.
-- **Large** — any of: a correct fix would change documented/public behavior that other code relies on (so the "fix" is itself a breaking change); the root cause is tangled into a core assumption spanning multiple packages; a real fix needs a design decision (e.g. which of two conflicting documented behaviors is "correct") before code can be written.
+- **Large** — any of: a correct fix would change documented/public behavior that other code relies on (so the "fix" is itself a breaking change); the root cause is tangled into a core assumption spanning multiple packages; a real fix needs a design decision before code can be written.
 - **Dependency-rooted** (sizes differently from the above, when Step 3 traced the cause to a dependency): a fix already released upstream → small (bump the version). No upstream fix yet, but workable with a local patch/override and a tracked upstream issue → medium. No upstream fix and the bug is load-bearing enough that our own public API needs a workaround → large. This mirrors the options `issue-fix` Step 4 will present once the bug is verified — don't re-litigate them here, just flag the finding.
 
-State the classification plus the 1-2 concrete reasons driving it, tied to the root-cause hypothesis from Step 3 — not "this looks like a big fix."
+State the classification plus the 1-2 concrete reasons driving it, tied to the root-cause hypothesis from Step 3.
 
 ### Step 5: Recommend next steps
 
-Whatever the size, this skill hasn't confirmed the bug is real — say that plainly, and point at the actual next step rather than implying the analysis alone is enough to act on:
+Whatever the size, this skill hasn't confirmed the bug is real — say that plainly, and point at the actual next step:
 
 - Already filed as an issue → point at `issue-verify` to confirm it's real and reproducible before any fix lands; mention the size hypothesis so whoever picks it up isn't starting cold.
 - Not filed yet → point at `issue-create` to file it as a bug report first (carrying the root-cause hypothesis into the report), then `issue-verify` to confirm it.
@@ -93,7 +93,7 @@ Continue to Step 6.
 
 ## Step 6: Present the analysis
 
-Show the user: what's being asked or reported, the size classification with its reasons, the affected packages/files (or the root-cause hypothesis, for a bug), and the matching recommendation from Step 5 of whichever path ran. This skill's job ends here — no implementation, no reproduction, no test, and nothing posted to GitHub unless the user asks to share it.
+Show the user: what's being asked or reported, the size classification with its reasons, the affected packages/files (or the root-cause hypothesis, for a bug), and the matching recommendation from Step 5. This skill's job ends here — no implementation, no reproduction, no test, and nothing posted to GitHub unless the user asks to share it.
 
 - Sized from an existing issue → if asked to share it, draft the comment, show it, and only post after confirmation: `gh issue comment <number> --body "<confirmed analysis>"`
 - Sized from a plain-text feature description with nothing filed → `issue-create` only drafts bug reports, not feature requests. If the user wants it filed, draft a title/body from the analysis (matching the repo's feature-request template if it has one), confirm with the user, then `gh issue create`.

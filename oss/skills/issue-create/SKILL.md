@@ -17,7 +17,7 @@ This skill isn't scoped to one repo — always ask which one the issue is for (`
 gh issue list --repo <owner>/<repo> --search "<keywords>" --state all
 ```
 
-Skim titles/bodies for a close match. Found one → show it to the user and ask whether to proceed anyway (it may genuinely be distinct) rather than drafting a duplicate by default. Nothing close → continue.
+Found a close match → show it to the user and ask whether to proceed anyway. Nothing close → continue.
 
 ## Step 3: Fetch that repo's issue template, if it has one
 
@@ -26,24 +26,24 @@ gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE 2>/dev/null
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE/config.yml 2>/dev/null
 ```
 
-Pull down whatever templates exist (classic single `.md` templates, or structured issue-form `.yml` templates). If there's more than one (e.g. `bug_report.md` and `feature_request.md`), pick the one meant for bug reports — that's what this skill drafts. If it's genuinely ambiguous which one applies, ask the user rather than guessing.
+Pull down whatever templates exist. More than one (e.g. `bug_report.md` and `feature_request.md`) → pick the one meant for bug reports; ask the user if it's genuinely ambiguous which one applies.
 
-If there's no `.github/ISSUE_TEMPLATE/` at all, also check for a plain `.github/ISSUE_TEMPLATE.md` — some repos use the single-file form instead of the directory. If neither exists, there's no template to follow; proceed with the four sections below as-is.
+No `.github/ISSUE_TEMPLATE/` at all → also check for a plain `.github/ISSUE_TEMPLATE.md`. Neither exists → proceed with the four sections below as-is.
 
 ## Step 4: Gather the four sections
 
 Pull together, from the conversation so far and by asking the user for whatever's missing:
 
-- **Context** — what the user was doing, what setup/usage led here. Enough background that a maintainer isn't starting from zero.
+- **Context** — what the user was doing, what setup/usage led here.
 - **Problem** — the actual bug: expected behavior vs. actual behavior, stated plainly.
-- **Reproduction** — concrete steps, a minimal code sample, or a link to a live repro (CodeSandbox/StackBlitz/a small repo). Vague steps ("it breaks sometimes") aren't a reproduction — push for something concrete before drafting.
-- **Any specific environments** — versions, OS, browser, runtime, or any other condition the bug is specific to (or "reproduces on all environments tested" if that's genuinely the case — don't invent specifics that weren't given).
+- **Reproduction** — concrete steps, a minimal code sample, or a link to a live repro (CodeSandbox/StackBlitz/a small repo). Vague steps ("it breaks sometimes") aren't a reproduction — push for something concrete.
+- **Any specific environments** — versions, OS, browser, runtime, or "reproduces on all environments tested" if genuinely so.
 
-Don't fabricate detail for a section nobody's provided — ask, or leave it explicitly marked as unknown, rather than guessing to make the draft look complete.
+Don't fabricate detail for a section nobody's provided — ask, or leave it explicitly marked as unknown.
 
 ## Step 5: Draft the issue, fitting the repo's template
 
-**If a template exists:** map Context/Problem/Reproduction/Environment onto its existing headers/fields instead of inventing new ones — a "Description" field gets Context + Problem, a "Reproduction steps" field gets Reproduction, an "Environment"/"Additional context" field gets the environment details, and so on by closest match. Keep every field the template requires, even ones this skill has no content for (mark them clearly rather than deleting them) — a required field that goes missing on a form-based template can make submission fail outright.
+**If a template exists:** map Context/Problem/Reproduction/Environment onto its existing headers/fields by closest match instead of inventing new ones. Keep every field the template requires, even ones with no content (mark them clearly rather than deleting them) — a required field going missing on a form-based template can make submission fail outright.
 
 **If no template exists:** default to:
 
@@ -73,7 +73,7 @@ Show the full drafted title and body back to the user, verbatim, before touching
 gh issue create --repo <owner>/<repo> --title "<confirmed title>" --body "<confirmed body>"
 ```
 
-Report back the issue URL. Don't do anything further with it here — filing the issue is this skill's job; verifying it (writing a failing test against it) is the `issue-verify` skill's, and only once the repo maintainers have had a chance to weigh in. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo. Without that, the issue just waits on its own maintainers; there's no local pipeline to hand it into.
+Report back the issue URL. Filing the issue is this skill's job; verifying it (writing a failing test against it) is `issue-verify`'s, and only once the repo maintainers have had a chance to weigh in. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo; without that, the issue just waits on its own maintainers.
 
 ## When to stop instead of proceeding
 
