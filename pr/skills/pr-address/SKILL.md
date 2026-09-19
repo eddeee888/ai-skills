@@ -20,7 +20,7 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-Pull review threads (not flat issue-level comments — those lack reply-chain semantics) via GraphQL, so resolution state and comment order are available:
+Pull review threads (not flat issue-level comments — the PR's general Conversation-tab comments, including anything you posted there yourself; those lack reply-chain semantics and are out of scope here) via GraphQL, so resolution state and comment order are available:
 
 ```bash
 gh api graphql -f query='
@@ -45,7 +45,9 @@ Drop any resolved thread. Keep each thread's ordered comments — the last comme
 
 ## Step 3: Classify every unresolved thread into two buckets
 
-For each thread, look at who left the last comment and what it says:
+First, drop any thread where every comment — including the first — was authored by the user themselves. If no one but the user has ever weighed in on a thread (a self-note left on their own diff, a "TODO: revisit" with no reply), there's nothing to address: no reviewer raised anything, so there's nothing for the user to have authorized. Skip it silently, don't put it in either bucket, don't ask about it.
+
+For everything else, look at who left the last comment and what it says:
 
 - **Ready to act automatically** — the last comment is the user's own, a short go-ahead/acknowledgment (not already a full answer — e.g. "Ok", "let's do it", "let me check", not a paragraph that already answers the question), *and* the original reviewer comment isn't critical/high risk (risk framing lives in Step 5a). Tag it with the nature of the *original* comment, not the reply:
   - **Authoritative** — an instruction, correction, or a ```suggestion``` code block ("do this", "use X instead").
