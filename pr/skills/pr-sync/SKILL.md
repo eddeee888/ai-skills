@@ -63,7 +63,7 @@ Either way, **the changeset always gets its own commit, never squashed into an i
 
 ## Step 5: Draft the title and description
 
-**Title** — one line, imperative, naming the net effect of the change. If the diff spans a few unrelated things, name the most user-visible one and note the rest is bundled in, rather than trying to cram every change into the title. If the repo is a monorepo (multiple workspaces/packages), lead with a `[package-name]` prefix naming the main package the change lives in — e.g. `[package-name] fix: ...` — so the PR is recognisable in a list without opening it; if the diff touches several packages, prefix with whichever carries the primary change rather than listing them all.
+**Title** — one line, imperative, naming the net effect of the change. If the diff spans a few unrelated things, name the most user-visible one and note the rest is bundled in, rather than trying to cram every change into the title. If the repo is a monorepo (multiple workspaces/packages), apply this marketplace's shared `[package-name]` title-prefix convention (see `CONVENTIONS.md` at the repo root).
 
 **Description** — three required sections, in this order, kept tight, since this is a PR body a reviewer skims, not a design doc:
 

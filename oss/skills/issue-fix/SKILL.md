@@ -69,13 +69,13 @@ gh pr view --json number 2>&1
 ```
 
 - **A PR already exists** (Step 1's "already in the current branch's history" case — you're continuing `issue-verify`'s PR) → just `git push`. Never run `gh pr create` here — it either errors on a branch that already has an open PR, or opens a second PR for what should stay one. Step 7's `pr:pr-sync` brings its title/description in line with the fix now on top.
-- **No PR exists yet** (Step 1's "otherwise" case — a fresh `fix/<issue-number>` branch) → push and open one as a draft. In a monorepo, prefix the title with the package Step 3's root-cause tracing pointed at (`[package-name] fix: ...`), not whichever package the issue was filed under; if the fix spans several packages, lead with the one carrying the primary change.
+- **No PR exists yet** (Step 1's "otherwise" case — a fresh `fix/<issue-number>` branch) → push and open one as a draft. In a monorepo, apply this marketplace's shared `[package-name]` title-prefix convention (see `CONVENTIONS.md` at the repo root), prefixed with the package Step 3's root-cause tracing pointed at, not whichever package the issue was filed under.
 
   ```bash
   gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
   ```
 
-Reference the issue with a non-closing keyword (`Relates to #123` / `Refs #123`, same convention as `issue-verify`) — never `Fixes #123`/`Closes #123`, even though this PR resolves it; the issue shouldn't auto-close on merge. State which option was chosen and why in a sentence or two — the options were already discussed with the user, no need to re-litigate them.
+Reference the issue with a non-closing keyword, per this marketplace's shared convention (see `CONVENTIONS.md`) — never `Fixes #123`/`Closes #123`, even though this PR resolves it; the issue shouldn't auto-close on merge. State which option was chosen and why in a sentence or two — the options were already discussed with the user, no need to re-litigate them.
 
 ## Step 7: Sync
 
