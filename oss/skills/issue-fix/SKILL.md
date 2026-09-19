@@ -1,6 +1,6 @@
 ---
 name: issue-fix
-description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — committing it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushing it as a draft PR. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. Every push in this skill re-syncs via the `pr:pr-sync` skill.
+description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — committing it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushing it (opening a draft PR only if the branch doesn't already have one). Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. Every push in this skill re-syncs via the `pr:pr-sync` skill.
 ---
 
 # Fix a verified issue
@@ -23,7 +23,7 @@ Nothing found → stop, ask the user where it lives (a different fork/remote, or
 This commit is your base for everything that follows:
 
 - Already in the current branch's history → keep working right here, no new branch needed.
-- Otherwise → branch from it directly, not from the base branch's tip: `git checkout -b fix/<issue-number> <verify-commit-sha>`. The checkpoint's PR doesn't need to be merged for this — building on top of the commit is enough.
+- Otherwise → branch from it directly, not from the base branch's tip: `git checkout -b fix/<issue-number> <verify-commit-sha>` — paired with `issue-verify`'s `repro/<issue-number>` naming (see `CONVENTIONS.md` at the repo root). The checkpoint's PR doesn't need to be merged for this — building on top of the commit is enough.
 
 ## Step 2: Re-root-cause it
 

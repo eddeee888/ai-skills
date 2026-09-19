@@ -10,7 +10,7 @@ A PR description is a snapshot of intent taken when the PR was opened. The branc
 ## Step 1: Check whether a PR even exists
 
 ```bash
-gh pr view --json number,title,body,url,baseRefName,headRefName,isDraft 2>&1
+gh pr view --json number,title,body,url,baseRefName,headRefName 2>&1
 ```
 
 If this errors (no PR for the current branch) or `gh` isn't installed/authenticated, stop immediately. Tell the user there's no open PR to sync and don't create one — opening a new PR is a different task with different judgment calls (base branch, reviewers, draft-or-not), and quietly doing it as a side effect of "sync" would surprise them.
@@ -63,13 +63,13 @@ Either way, **the changeset always gets its own commit, never squashed into an i
 
 ## Step 5: Draft the title and description
 
-**Title** — one line, imperative, naming the net effect of the change. If the diff spans a few unrelated things, name the most user-visible one and note the rest is bundled in, rather than trying to cram every change into the title. If the repo is a monorepo (multiple workspaces/packages), apply this marketplace's shared `[package-name]` title-prefix convention (see `CONVENTIONS.md` at the repo root).
+**Title** — one line, imperative, naming the net effect of the change. If the diff spans a few unrelated things, name the most user-visible one and note the rest is bundled in, rather than trying to cram every change into the title. If the repo is a monorepo (multiple workspaces/packages), apply this marketplace's shared `[package-name]` title-prefix convention (see `CONVENTIONS.md` at the repo root). If the current title already ends in a `(#123)`-style issue reference, keep that reference, in the same trailing form, in the new title — this marketplace's shared convention (`CONVENTIONS.md`); don't let a resync silently drop it.
 
 **Description** — three required sections, in this order, kept tight, since this is a PR body a reviewer skims, not a design doc:
 
 - **Why** — the reason this change exists at all. Pull this from commit messages, a linked issue, or the existing description if it already states intent; ask the user only if truly nothing in the branch indicates the motivation. Why is the *reason*, not a rephrasing of What — don't let it collapse into "because we changed X." This section must open with a paragraph starting `This PR ...` that states plainly how the change solves the issue — not just what the issue was, but the mechanism by which this PR fixes or addresses it. Bullets on the underlying motivation can follow that opening paragraph.
 - **What** — the concrete change, as a few short bullets: files, behavior, APIs touched. Specific enough that a reviewer doesn't have to open the diff just to know what they're looking at.
-- **Verification** — how a reader can trust the change actually works, as a few short bullets: tests added or updated, commands run and their result, manual steps taken (with the observed outcome, not just the step), or CI checks that cover it. Pull this from commit messages, added/modified test files, and the diff itself; ask the user only if the branch genuinely gives no indication of how it was verified. Don't pad it with "should work" or restate What as if running the code were a form of proof — if nothing was actually verified, say that plainly rather than inventing steps. Where a check already ran in CI, name the test type rather than the exact command run (this marketplace's shared checklist convention — see `CONVENTIONS.md` at the repo root).
+- **Verification** — how a reader can trust the change actually works, as a few short bullets: tests added or updated, commands run and their result, manual steps taken (with the observed outcome, not just the step), or CI checks that cover it. Pull this from commit messages, added/modified test files, and the diff itself; ask the user only if the branch genuinely gives no indication of how it was verified. Don't pad it with "should work" or restate What as if running the code were a form of proof — if nothing was actually verified, say that plainly rather than inventing steps. Where a check already ran in CI, name the test type rather than the exact command run (this marketplace's shared checklist convention — see `CONVENTIONS.md` at the repo root). If the branch's own tests are currently failing and that looks intentional — a reproduction/checkpoint commit with no fix yet, not a broken build — say so plainly instead of checklisting it as passing (this marketplace's shared convention — see `CONVENTIONS.md`).
 
 Keep all three sections short. A trivial, single-purpose PR deserves one bullet per section (plus the required `This PR ...` opening line in Why), not padding to look thorough.
 
@@ -77,7 +77,7 @@ In each of these three sections, bold the specific claim that matters in a bulle
 
 **Resources** — one more section, only when there's actually something to put in it:
 
-- The issue this PR tracks, wherever it lives — a GitHub issue, a Jira ticket, a Linear issue, etc. Pull it from a `Fixes #123`/`Relates to <KEY>`-style reference already in a commit message or the existing PR body, the branch name, or what the user has already mentioned in conversation.
+- The issue this PR tracks, wherever it lives — a GitHub issue, a Jira ticket, a Linear issue, etc. Pull it from a `Fixes #123`/`Relates to <KEY>`-style reference already in a commit message or the existing PR body, the branch name, or what the user has already mentioned in conversation. Preserve whichever keyword is already in use, closing or non-closing — never normalize `Relates to`/`Refs` up to `Fixes`/`Closes` (or the reverse) as a side effect of rewriting this section; whether the PR should close the issue on merge isn't a resync's call to make (this marketplace's shared convention — see `CONVENTIONS.md`).
 - Any external context that actually informed the fix — an upstream issue, a design doc, a blog post, a Miro board — again only if one genuinely exists in the branch's history or conversation.
 
 Don't go hunting for tangential links to fill this out, and don't add a "Resources" section with nothing real in it. One line per link is plenty — this is a pointer, not a bibliography. If neither an issue link nor any external context exists, leave the section out entirely rather than forcing an empty one.

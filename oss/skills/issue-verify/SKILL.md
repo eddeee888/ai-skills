@@ -66,7 +66,7 @@ Run it and read the failure. Confirm it fails for the reason the issue describes
 ## Step 5: Leave it failing, commit it as the checkpoint, open the PR
 
 - Leave the test failing — don't skip it, don't mark it pending, don't reach for any "expected to fail" idiom. A skipped test goes invisible to CI; a failing one is the checkpoint this skill exists to produce. It's fine, expected even, for this PR's checks to be red.
-- Commit it on a new branch, with the marker `eddeee888:oss:issue-verify` as the last line of the commit message — a plain trailer, not prose, so it's reliably grep-able later regardless of which branch or PR it ends up on:
+- Commit it on a new branch named `repro/<issue-number>` (paired with `issue-fix`'s `fix/<issue-number>` convention — see `CONVENTIONS.md` at the repo root), with the marker `eddeee888:oss:issue-verify` as the last line of the commit message — a plain trailer, not prose, so it's reliably grep-able later regardless of which branch or PR it ends up on:
 
   ```
   test: reproduce #123 — <short bug description>
@@ -74,11 +74,11 @@ Run it and read the failure. Confirm it fails for the reason the issue describes
   eddeee888:oss:issue-verify
   ```
 - Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword, per this marketplace's shared convention (see `CONVENTIONS.md` at the repo root) — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`.
-- Title convention: `test: reproduce #123 — <short bug description> (failing)`. In a monorepo, apply the shared `[package-name]` title-prefix convention (`CONVENTIONS.md`), prefixed with the package the repro actually exercises (the one Step 4 identified).
+- Title convention: `test: reproduce <short bug description> (failing) (#123)` — the issue reference goes at the end, per this marketplace's shared trailing-reference convention (`CONVENTIONS.md`). In a monorepo, apply the shared `[package-name]` title-prefix convention (`CONVENTIONS.md`), prefixed with the package the repro actually exercises (the one Step 4 identified).
 - Body: state plainly that this is a checkpoint proving the bug exists, link the failing run/output you captured in Step 4, and note that `issue-fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
 
 ```bash
-gh pr create --draft --title "test: reproduce #123 — <short bug description> (failing)" --body "<body>"
+gh pr create --draft --title "test: reproduce <short bug description> (failing) (#123)" --body "<body>"
 ```
 
 ## Step 6: Sync

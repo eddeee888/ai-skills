@@ -21,6 +21,21 @@ touched. This makes a PR recognizable in a list without opening it.
 Used by: `pr:pr-sync` (Step 5, title), `oss:issue-verify` (Step 5, checkpoint
 PR title), `oss:issue-fix` (Step 6, fix PR title).
 
+This applies to PR titles only — issue titles (drafted by `oss:issue-create`
+and `oss:feature-analyze`) aren't package-prefixed by this convention.
+
+## Trailing issue reference in the PR title: `(#123)`
+
+When a PR title references the issue it's for, put that reference at the
+end, in parens — `fix: <description> (#123)`, `test: reproduce <bug>
+(failing) (#123)` — never mid-title. When resyncing a title that already
+carries this reference, keep it in the new title, in the same trailing
+form; don't let a resync silently drop it.
+
+Used by: `oss:issue-verify` (Step 5, checkpoint PR title), `oss:issue-fix`
+(Step 6, fix PR title), `pr:pr-sync` (Step 5, title — preserving it on
+resync).
+
 ## Non-closing issue references: `Relates to #123` / `Refs #123`
 
 When a PR references an issue but doesn't fully resolve it on merge — a
@@ -30,7 +45,23 @@ non-closing keyword (`Relates to #123` / `Refs #123`), never `Fixes #123` /
 closes it, instead of GitHub auto-closing it as a side effect of merging
 one of these PRs.
 
-Used by: `oss:issue-verify` (Step 5), `oss:issue-fix` (Step 6).
+Whichever keyword is already in use — closing or non-closing — stays as-is
+on a resync. Never normalize `Relates to`/`Refs` up to `Fixes`/`Closes` (or
+the reverse) as a side effect of rewriting the PR body; whether this PR
+should close the issue on merge isn't a resync's call to make.
+
+Used by: `oss:issue-verify` (Step 5), `oss:issue-fix` (Step 6), `pr:pr-sync`
+(Step 5, Resources — preserving whichever keyword is already there).
+
+## Checkpoint/fix branch naming: `repro/<issue-number>` / `fix/<issue-number>`
+
+A checkpoint (failing-test) branch is named `repro/<issue-number>`; the fix
+branch built on top of it, when it needs a new branch of its own, is named
+`fix/<issue-number>`. Naming them as a pair makes it obvious at a glance
+which fix branch answers to which checkpoint.
+
+Used by: `oss:issue-verify` (Step 5, checkpoint branch), `oss:issue-fix`
+(Step 1, fix branch).
 
 ## Bold the critical claim in Why/What/Verification bullets
 
@@ -57,3 +88,16 @@ manually, outside what CI already covers — a manual repro, an ad hoc
 script, a one-off check.
 
 Used by: `pr:pr-sync` (Step 5, Verification).
+
+## Don't checklist an intentionally-failing check as done
+
+When a branch's own tests are currently failing on purpose — a
+reproduction/checkpoint commit that has no fix yet, not a broken build —
+say so plainly in the Verification section instead of checklisting it as
+passing: `- [ ] Unit tests — intentionally failing, reproduces the bug`,
+never `- [x] Unit tests`. A checked box reads as "this works"; a checkpoint
+PR's whole point is that it doesn't, yet.
+
+Used by: `pr:pr-sync` (Step 5, Verification — applies whenever the diff's
+own tests are failing and that looks intentional, whichever skill produced
+the branch).
