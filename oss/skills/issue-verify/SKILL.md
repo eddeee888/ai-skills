@@ -5,7 +5,7 @@ description: Verify a GitHub issue is real and reproducible before any fix work 
 
 # Verify a GitHub issue
 
-Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's `issue-fix`'s job. For a lighter, unverified read-only guess at root cause and size before this, see `feature-analyze`. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, first.
+Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's `issue-fix`'s job. For a lighter, unverified read-only guess at root cause and size before this, see `issue-analyze`. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, first.
 
 **Every step that pushes a commit ends by running `pr:pr-sync`.** Once the PR exists, it's the source of truth for title/description/changeset — never leave it stale after a push, even a small one.
 
