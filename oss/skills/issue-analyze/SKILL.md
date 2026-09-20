@@ -1,5 +1,5 @@
 ---
-name: feature-analyze
+name: issue-analyze
 description: Size a feature request before committing to build it, or give a high-level, read-only root-cause take on a bug report — without reproducing it, writing a test, or pushing anything (that's `issue-verify`/`issue-fix`'s job). Reads the request, maps what part of the codebase it would actually touch, and classifies it small (e.g. an additional config option, or a fix confined to one function, narrow blast radius), medium (spans multiple packages/files but stays additive, or a fix that touches shared logic/several call sites), or large (potential breaking changes to one or many packages, big blast radius, needs an RFC and user-facing comms before implementation — or, for a bug, a root cause tangled in a core assumption where even a correct fix changes documented behavior). Use when asked to "analyze this feature request", "how big is #123", "size this request", "what's the blast radius of this feature", "is this a feature or a bug", "roughly what's causing this bug and how big is the fix", or before scoping/estimating any feature or bug issue. Takes either the URL/number of an issue in the same repo, or a plain-text feature/bug description with no issue filed yet. Read-only by default — it doesn't implement, reproduce, write tests, or post to GitHub unless the user asks it to share the analysis.
 ---
 
