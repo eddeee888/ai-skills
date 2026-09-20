@@ -1,59 +1,25 @@
 ---
 name: issue-analyze
-description: Size a feature request before committing to build it, or give a high-level, read-only root-cause take on a bug report — without reproducing it, writing a test, or pushing anything (that's `issue-verify`/`issue-fix`'s job). Reads the request, maps what part of the codebase it would actually touch, and classifies it small (e.g. an additional config option, or a fix confined to one function, narrow blast radius), medium (spans multiple packages/files but stays additive, or a fix that touches shared logic/several call sites), or large (potential breaking changes to one or many packages, big blast radius, needs an RFC and user-facing comms before implementation — or, for a bug, a root cause tangled in a core assumption where even a correct fix changes documented behavior). Use when asked to "analyze this feature request", "how big is #123", "size this request", "what's the blast radius of this feature", "is this a feature or a bug", "roughly what's causing this bug and how big is the fix", or before scoping/estimating any feature or bug issue. Takes either the URL/number of an issue in the same repo, or a plain-text feature/bug description with no issue filed yet. Read-only by default — it doesn't implement, reproduce, write tests, or post to GitHub unless the user asks it to share the analysis.
+description: Size an issue before committing to work on it — either a feature request, or a high-level, read-only root-cause take on a bug report, without reproducing it, writing a test, or pushing anything (that's `issue-verify`/`issue-fix`'s job). Reads the issue, maps what part of the codebase it would actually touch, and classifies it small (e.g. a fix confined to one function, or an additional config option, narrow blast radius), medium (a fix that touches shared logic/several call sites, or a change that spans multiple packages/files but stays additive), or large (potential breaking changes to one or many packages, big blast radius, needs an RFC and user-facing comms before implementation — or, for a bug, a root cause tangled in a core assumption where even a correct fix changes documented behavior). Use when asked to "analyze this issue", "size this issue", "size this request", "roughly what's causing this bug and how big is the fix", "how big is #123", "analyze this feature request", "what's the blast radius of this feature", "is this a feature or a bug", or before scoping/estimating any bug or feature issue. Takes either the URL/number of an issue in the same repo, or a plain-text bug/feature description with no issue filed yet. Read-only by default — it doesn't implement, reproduce, write tests, or post to GitHub unless the user asks it to share the analysis.
 ---
 
-# Analyze a feature request or bug
+# Analyze an issue: a bug report or a feature request
 
-Size a request before building it, so a blast radius, root-cause shape, or comms need surfaces up front instead of mid-implementation: what's actually being asked (or actually broken), what it touches, and whether it's small enough to just build/fix, or big enough to need a design pass, deeper verification, or a breaking-change process first.
+Size an issue before working on it, so a blast radius, root-cause shape, or comms need surfaces up front instead of mid-implementation: what's actually broken (or actually being asked for), what it touches, and whether it's small enough to just fix/build, or big enough to need deeper verification, a design pass, or a breaking-change process first.
 
-This skill never reproduces a bug, writes a test, or pushes a commit — it reads code and reasons about it. Confirming a bug is real and reproducible is `issue-verify`'s job; picking and implementing a fix is `issue-fix`'s. This skill's bug path is a fast, read-only triage step that can run before either of those, or on its own for a quick gut-check.
+This skill never reproduces a bug, writes a test, or pushes a commit — it reads code and reasons about it. Confirming a bug is real and reproducible is `issue-verify`'s job; picking and implementing a fix is `issue-fix`'s. This skill is a fast, read-only triage step that can run before either of those, or on its own for a quick gut-check.
 
-## Step 1: Read and classify the request
+## Step 1: Read and classify the issue
 
 - Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments`
-- No issue — just a description in the conversation → treat the description itself as the request. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Search existing issues for a duplicate first (`gh issue list --search "<keywords>"`). Found a match → point the user at it instead of continuing.
+- No issue — just a description in the conversation → treat the description itself as the issue. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Search existing issues for a duplicate first (`gh issue list --search "<keywords>"`). Found a match → point the user at it instead of continuing.
 
 Then classify which of the two this actually is, and jump to the matching path below:
 
-- **Describes something broken** — existing behavior that doesn't work as intended, just phrased as if something were missing → this is a bug. Go to "Path B: bug report".
-- **Describes a new capability that doesn't exist today** — including a request that first reads like a fix but, on inspection, is really "make X smarter" or "X should also handle Y" rather than "X is broken" → it's a genuine feature request. Go to "Path A: feature request". Reconsidering something *toward* feature is never a reason to stop.
+- **Describes something broken** — existing behavior that doesn't work as intended, just phrased as if something were missing → this is a bug. Go to "Path A: bug report".
+- **Describes a new capability that doesn't exist today** — including a request that first reads like a fix but, on inspection, is really "make X smarter" or "X should also handle Y" rather than "X is broken" → it's a genuine feature request. Go to "Path B: feature request". Reconsidering something *toward* feature is never a reason to stop.
 
-## Path A: feature request
-
-### Step 2: Pin down the feature being asked
-
-Restate the new behavior/option/capability wanted and the use case behind it. Genuinely vague ("would be nice to have X" with no shape) → say so explicitly rather than quietly picking one shape to size — Step 4's classification depends on which shape you size.
-
-### Step 3: Map the codebase surface it touches
-
-Search the repo for the area(s) involved: the existing API/config surface, the package(s) that own it, and any extension points that already generalize toward what's being asked. For a monorepo, list every workspace whose public API, exported types, or config schema would need to change — not just the one the issue happened to be filed under.
-
-Signals:
-
-- Existing config/option plumbing it could hook into, no call-site changes → pulls toward "small".
-- Shared types/interfaces used by more than one package that would need to change → pulls toward "medium" or "large".
-- Public API signatures, exported types, CLI flags, or documented behavior changing incompatibly for existing users → pulls toward "large" regardless of how small the diff looks.
-
-### Step 4: Classify the size
-
-Escalate only — a request that's mostly small but has one large-sized element is large, full stop, not "small with an asterisk."
-
-- **Small** — additive, backward-compatible, confined to one package/file: a new config option with a safe default, a new optional parameter, a new export alongside existing ones. Existing callers are unaffected if they change nothing.
-- **Medium** — still additive/non-breaking, but the surface spans multiple packages or files: plumbing through a shared type, a new package, or coordinated changes across a monorepo's workspaces.
-- **Large** — any of: a breaking change to an existing public API, config shape, exported type, or documented behavior; blast radius reaching most/all consumers; needs an RFC/design doc, a deprecation window, or a migration guide; needs proactive user comms (blog post, changelog highlight, social post) rather than a routine changelog line.
-
-State the classification plus the 1-2 concrete reasons driving it — not "this seems big."
-
-### Step 5: Recommend next steps
-
-- **Small** → safe to scope directly into an implementation plan.
-- **Medium** → name every package/file that needs touching before implementation starts, and flag whether the cross-package design needs a second pair of eyes.
-- **Large** → don't recommend jumping to implementation. Call out what breaks and for whom, whether a deprecation path is possible instead of a hard break, and that an RFC/announcement needs drafting and agreement before (or alongside) the code. Name the audience this project actually uses for breaking changes rather than assuming a channel.
-
-Continue to Step 6.
-
-## Path B: bug report
+## Path A: bug report
 
 ### Step 2: Pin down the bug being reported
 
@@ -72,7 +38,7 @@ Signals:
 
 ### Step 4: Classify the fix's size
 
-Same escalate-only rule: one large-sized element makes the whole fix large, even if the rest is trivial.
+Escalate only — a fix that's mostly small but has one large-sized element is large, full stop, not "small with an asterisk."
 
 - **Small** — the fix (once verified) would be confined to one function/file, with no change to any documented behavior or public contract: a missing null check, an off-by-one, a wrong condition.
 - **Medium** — the fix would need to touch a shared helper, or land in more than one package/file, but still without changing the documented contract for callers who aren't hitting the bug.
@@ -91,16 +57,50 @@ Whatever the size, this skill hasn't confirmed the bug is real — say that plai
 
 Continue to Step 6.
 
+## Path B: feature request
+
+### Step 2: Pin down the feature being asked
+
+Restate the new behavior/option/capability wanted and the use case behind it. Genuinely vague ("would be nice to have X" with no shape) → say so explicitly rather than quietly picking one shape to size — Step 4's classification depends on which shape you size.
+
+### Step 3: Map the codebase surface it touches
+
+Search the repo for the area(s) involved: the existing API/config surface, the package(s) that own it, and any extension points that already generalize toward what's being asked. For a monorepo, list every workspace whose public API, exported types, or config schema would need to change — not just the one the issue happened to be filed under.
+
+Signals:
+
+- Existing config/option plumbing it could hook into, no call-site changes → pulls toward "small".
+- Shared types/interfaces used by more than one package that would need to change → pulls toward "medium" or "large".
+- Public API signatures, exported types, CLI flags, or documented behavior changing incompatibly for existing users → pulls toward "large" regardless of how small the diff looks.
+
+### Step 4: Classify the size
+
+Same escalate-only rule: one large-sized element makes the whole request large, even if the rest is trivial.
+
+- **Small** — additive, backward-compatible, confined to one package/file: a new config option with a safe default, a new optional parameter, a new export alongside existing ones. Existing callers are unaffected if they change nothing.
+- **Medium** — still additive/non-breaking, but the surface spans multiple packages or files: plumbing through a shared type, a new package, or coordinated changes across a monorepo's workspaces.
+- **Large** — any of: a breaking change to an existing public API, config shape, exported type, or documented behavior; blast radius reaching most/all consumers; needs an RFC/design doc, a deprecation window, or a migration guide; needs proactive user comms (blog post, changelog highlight, social post) rather than a routine changelog line.
+
+State the classification plus the 1-2 concrete reasons driving it — not "this seems big."
+
+### Step 5: Recommend next steps
+
+- **Small** → safe to scope directly into an implementation plan.
+- **Medium** → name every package/file that needs touching before implementation starts, and flag whether the cross-package design needs a second pair of eyes.
+- **Large** → don't recommend jumping to implementation. Call out what breaks and for whom, whether a deprecation path is possible instead of a hard break, and that an RFC/announcement needs drafting and agreement before (or alongside) the code. Name the audience this project actually uses for breaking changes rather than assuming a channel.
+
+Continue to Step 6.
+
 ## Step 6: Present the analysis
 
-Show the user: what's being asked or reported, the size classification with its reasons, the affected packages/files (or the root-cause hypothesis, for a bug), and the matching recommendation from Step 5. This skill's job ends here — no implementation, no reproduction, no test, and nothing posted to GitHub unless the user asks to share it.
+Show the user: what's being reported or asked, the size classification with its reasons, the root-cause hypothesis (or the affected packages/files, for a feature), and the matching recommendation from Step 5. This skill's job ends here — no implementation, no reproduction, no test, and nothing posted to GitHub unless the user asks to share it.
 
 - Sized from an existing issue → if asked to share it, draft the comment, show it, and only post after confirmation: `gh issue comment <number> --body "<confirmed analysis>"`
-- Sized from a plain-text feature description with nothing filed → `issue-create` only drafts bug reports, not feature requests. If the user wants it filed, draft a title/body from the analysis (matching the repo's feature-request template if it has one), confirm with the user, then `gh issue create`.
 - Sized from a plain-text bug description with nothing filed → if the user wants it filed, hand off to `issue-create` with the root-cause hypothesis as context rather than drafting the issue here.
+- Sized from a plain-text feature description with nothing filed → `issue-create` only drafts bug reports, not feature requests. If the user wants it filed, draft a title/body from the analysis (matching the repo's feature-request template if it has one), confirm with the user, then `gh issue create`.
 
 ## Also stop instead of proceeding
 
-- User asks you to implement or fix it, not just size/analyze it → out of scope here; this skill sizes the request, it doesn't hand off into an implementation flow.
+- User asks you to implement or fix it, not just size/analyze it → out of scope here; this skill sizes the issue, it doesn't hand off into an implementation flow.
 - User asks you to confirm/reproduce a bug or write a failing test → that's `issue-verify`, not this skill; stay read-only.
 - A drafted comment or issue hasn't been confirmed → never post it, even if the analysis looks complete.
