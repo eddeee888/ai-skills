@@ -47,6 +47,7 @@ For each option: what changes, blast radius, risk, rough effort. Ask which they 
 
 ## Step 5: Implement the chosen option
 
+- Before writing code, get a `profile` of the repo and a `brief` from the `pr:pr-sidekick` agent (`CONVENTIONS.md`), passing the brief the files the chosen option touches and a one-line summary of it — the profile says how to run the affected package's tests (below) and whether Step 6's title needs a package prefix; the brief brings the rules the user's reviewers have already asked for in this repo, so they shape the fix up front. It lives in the `pr` plugin; not installed → skip it.
 - The Step 1 checkpoint test is the acceptance criterion — it's still failing at this point, that's expected.
 - Commit only the chosen option, nothing broader, on top of the `eddeee888:oss:issue-verify` commit — never interactively rewrite, squash, or drop that commit, it's the proof this fix answers to. (Step 7's `pr:pr-sync` rebase still replays its SHA but leaves its content and trailer untouched — that's not the kind of rewrite this rule is about.)
 - Commit message ends with the marker, same trailer convention as `issue-verify`:
@@ -57,6 +58,7 @@ For each option: what changes, blast radius, risk, rough effort. Ask which they 
   eddeee888:oss:issue-fix
   ```
 - Run the affected package's test suite (at minimum) to confirm the previously-failing test now passes for the right reason, and nothing else regressed.
+- Before pushing, run `pr:pr-sidekick` in `check-diff` mode against the checkpoint commit and fix anything it flags that's within the chosen option's scope.
 
 ## Step 6: Push — open a new PR only when Step 1 branched off (or `--new-pr` was passed)
 

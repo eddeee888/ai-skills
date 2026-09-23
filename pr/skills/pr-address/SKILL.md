@@ -20,6 +20,8 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
+**Hand Steps 2–3 to the `pr:pr-sidekick` agent in `classify` mode** when it's available (`CONVENTIONS.md`): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. It returns the buckets, notes where a thread matches something it remembers, and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+
 Pull review threads (not flat issue-level comments — the PR's general Conversation-tab comments, including anything you posted there yourself; those lack reply-chain semantics and are out of scope here) via GraphQL, so resolution state and comment order are available:
 
 ```bash
@@ -72,7 +74,14 @@ Apply every thread now settled — the automatic bucket from Step 3, plus whatev
 
 ### 5a. Authoritative
 
-Implement the change, applying a `suggestion` block literally when present. Before implementing anything from this sub-step, assess risk the same way this project weighs any action: is it hard to reverse, does it touch security/auth, cause data loss, touch production config/infra, break a public API, or otherwise carry a wide blast radius? Genuinely low-risk → implement it, run the affected tests, commit, and push. Reply on the thread summarizing what changed:
+Implement the change, applying a `suggestion` block literally when present. Before implementing anything from this sub-step, assess risk the same way this project weighs any action: is it hard to reverse, does it touch security/auth, cause data loss, touch production config/infra, break a public API, or otherwise carry a wide blast radius? Genuinely low-risk → implement it:
+
+1. Get a `brief` from `pr:pr-sidekick` (`CONVENTIONS.md`), passing the files about to change and the thread's ask, so remembered rules shape the change from the start.
+2. Implement it and run the affected tests.
+3. Run `pr:pr-sidekick` in `check-diff` mode on the result; fix anything it flags that's in scope for this thread.
+4. Commit and push.
+
+Reply on the thread summarizing what changed:
 
 ```bash
 gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
