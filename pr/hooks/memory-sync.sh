@@ -58,12 +58,21 @@ clone() {
   git -C "$tmp/memory" checkout -q "$branch" 2>/dev/null ||
     git -C "$tmp/memory" symbolic-ref HEAD "refs/heads/$branch"
   if [ -d "$dir" ]; then
-    # Memory written before sync was set up: keep a backup, and carry over
-    # anything the repo doesn't already have (the repo wins on conflicts).
-    local backup
+    # Memory written before this machine first synced (sync just set up, or
+    # a cloud session that couldn't reach the repo at start): keep a backup,
+    # copy over files the repo lacks, and append local lines the repo's copy
+    # of a shared file doesn't have — the same keep-both rule as union_merge.
+    local backup f
     backup="$dir.bak-$(date +%Y%m%d%H%M%S)"
     cp -R "$dir" "$backup"
-    cp -Rn "$dir/." "$tmp/memory/" 2>/dev/null
+    (cd "$dir" && find . -type f ! -path './.git/*') | while IFS= read -r f; do
+      if [ -e "$tmp/memory/$f" ]; then
+        grep -vxFf "$tmp/memory/$f" "$dir/$f" >> "$tmp/memory/$f"
+      else
+        mkdir -p "$(dirname "$tmp/memory/$f")"
+        cp "$dir/$f" "$tmp/memory/$f"
+      fi
+    done
     rm -rf "$dir"
     warn "merged existing memory into the sync repo; backup at $backup"
   fi

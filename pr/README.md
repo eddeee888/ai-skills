@@ -58,16 +58,21 @@ and `SessionEnd`.
    - **Claude Code on the web** — add the same variable to the cloud
      environment's environment variables, and make sure the Claude GitHub
      App can access the repo (github.com/settings/installations → the
-     Claude app → Repository access).
+     Claude app → Repository access). A cloud session can only reach a repo
+     once it's attached to the session, so start sessions with the memory
+     repo included. Not attached at start → the pull is skipped with a
+     warning; ask Claude to add the repo, and the next push picks it up,
+     keeping anything learned in the meantime.
 
 How it behaves:
 
 - **Opt-in and never blocking.** Unset variable → the hooks do nothing. An
   unreachable repo or failed push is reported on stderr and retried on the
   next push; it never stops the session.
-- **Existing memory is kept.** The first sync carries local memory into the
-  repo (the repo wins on conflicting files) and backs up the old directory
-  to `agent-memory.bak-<timestamp>`.
+- **Existing memory is kept.** The first sync on a machine carries local
+  memory into the repo — new files as is, and lines missing from the repo's
+  copy of a shared file appended to it — and backs up the old directory to
+  `agent-memory.bak-<timestamp>`.
 - **Concurrent edits merge.** Two machines changing the same entry keep
   both lines (git's `union` merge) instead of stopping on a conflict; the
   sidekick merges the duplicate on its next write.
