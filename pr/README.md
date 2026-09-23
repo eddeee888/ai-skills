@@ -10,7 +10,7 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
 
 ## Agents
 
-- [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your PR side-kick, with
+- [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your PR sidekick, with
   persistent memory (`memory: user`, stored under
   `~/.claude/agent-memory/`) of the review themes and
   preferences you keep coming back to. The skills consult it at fixed points:
@@ -23,7 +23,7 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
 
   It only advises: the skills still do every push, reply, and PR edit.
   Memory lives on your machine only; when a rule has clearly settled, the
-  side-kick suggests moving it into the repo's `CLAUDE.md` so teammates get
+  sidekick suggests moving it into the repo's `CLAUDE.md` so teammates get
   it too. To code with its memory loaded for a whole session, run
   `claude --agent pr:pr-sidekick`.
 

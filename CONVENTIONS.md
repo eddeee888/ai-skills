@@ -90,7 +90,7 @@ calls where. Three rules hold everywhere:
 - **Optional.** The agent isn't available (the `pr` plugin isn't installed,
   or the tool doesn't run Claude Code agents, e.g. Cursor) → do that step
   inline exactly as the skill describes, and carry on. Never stop because
-  the side-kick is missing.
+  the sidekick is missing.
 - **Advice, not authority.** A brief or check informs the step; the user's
   current ask and the skill's own rules still win. When a remembered rule
   conflicts with what's being asked right now, surface the conflict to the
