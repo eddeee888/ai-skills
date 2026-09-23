@@ -14,6 +14,8 @@ Each plugin is its own namespace of skills:
 - [`oss/`](oss/) — the `oss` plugin, skills for maintaining and contributing to open source projects. Skills invoke as `/oss:<skill-name>` in Claude Code, e.g. `/oss:issue-verify`, `/oss:issue-fix`. In Cursor, invoke the skill name (e.g. `/issue-verify`).
 - [`pr/`](pr/) — the `pr` plugin, skills for working with pull requests. Skills invoke as `/pr:<skill-name>` in Claude Code, e.g. `/pr:pr-sync`. In Cursor, invoke `/pr-sync`.
 
+The `pr` plugin also ships an agent, [`pr-sidekick`](pr/agents/pr-sidekick.md): a side-kick with persistent memory of your recurring review themes, which the `pr` skills and `oss:issue-fix` consult when classifying threads, coding, and writing PR descriptions (Claude Code only).
+
 Each plugin has `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests. Each skill lives in its own directory within a plugin, e.g. `oss/skills/<skill-name>/SKILL.md`.
 
 Formatting/process rules shared by more than one skill (e.g. the `[package-name]` PR title prefix for monorepos) live in [`CONVENTIONS.md`](CONVENTIONS.md) rather than being restated in each `SKILL.md` — skills point to it instead of duplicating the rule.

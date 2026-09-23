@@ -58,6 +58,8 @@ The changeset always gets its own commit, never squashed into an implementation 
 
 ## Step 5: Draft the title and description
 
+Before drafting, get a `brief` from `pr:pr-sidekick` for "PR description" in this repo (`CONVENTIONS.md`) — how the user likes descriptions written and what this repo's reviewers ask to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
+
 **Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` at the repo root). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md`); don't let a resync silently drop it.
 
 **Description** — three required sections, in this order, kept tight, since this is a PR body a reviewer skims, not a design doc:
@@ -100,6 +102,8 @@ This PR ...
 The goal is a description that reads like it was written by the person who made the change, not one bulldozed by a script.
 
 ## Step 7: Apply it
+
+First, run `pr:pr-sidekick` in `check-description` mode on the drafted title and body (`CONVENTIONS.md`). It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
 
 ```bash
 gh pr edit <number> --title "<new title>" --body "<new body>"
