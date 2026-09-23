@@ -1,7 +1,6 @@
 # pr
 
-Claude Code plugin — skills for working with pull requests: reviewing,
-describing, syncing, or otherwise assisting with the PR lifecycle.
+Plugin for Claude Code and Cursor — skills for working with pull requests: reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.
 
 Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 `/pr:<skill-name>` once this plugin is installed, e.g. `/pr:pr-sync`.
@@ -31,29 +30,29 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   Memory lives on your machine only; when a rule has clearly settled, the
   sidekick suggests moving it into the repo's `CLAUDE.md` so teammates get
   it too. To code with its memory loaded for a whole session, run
-  `claude --agent pr:pr-sidekick`.
+  `claude --agent pr:pr-sidekick`. In Cursor the same file is the
+  `pr-sidekick` subagent — the skills delegate to it, and it reads and
+  writes `~/.claude/agent-memory/pr-pr-sidekick/` itself (Claude Code
+  preloads that directory; Cursor does not).
 
   Memory sync across machines and cloud sessions is opt-in; see below.
 
-  Claude Code only — the skills fall back to doing each step themselves
-  when the agent isn't available (e.g. in Cursor). See
-  [`CONVENTIONS.md`](../CONVENTIONS.md#consulting-the-prpr-sidekick-agent).
+  The `pr` plugin has to be installed for the agent to exist. Without it,
+  the skills do each step themselves. See
+  [`CONVENTIONS.md`](../CONVENTIONS.md#consulting-the-pr-sidekick-agent).
 
 ### Syncing the sidekick's memory
 
-Agent memory lives in `~/.claude/agent-memory/`, so by default it stays on
-one machine — and a cloud session's container, and its memory, is thrown
-away when the session ends. The plugin ships hooks
-([`hooks/hooks.json`](hooks/hooks.json) →
-[`hooks/memory-sync.sh`](hooks/memory-sync.sh)) that sync that directory
-with a private git repo: pull on `SessionStart`, commit and push on `Stop`
-and `SessionEnd`.
+Agent memory lives in `~/.claude/agent-memory/` (this agent's files are in `pr-pr-sidekick/`), so by default it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a private git repo: pull when a session starts, commit and push when it stops.
 
 1. Create an empty **private** repo, e.g. `<you>/agent-memory`.
 2. Set `PR_SIDEKICK_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
    or a full git URL):
-   - **Locally** — in `~/.claude/settings.json`:
+   - **Locally, Claude Code** — in `~/.claude/settings.json`:
      `"env": { "PR_SIDEKICK_MEMORY_REPO": "<you>/agent-memory" }`. Your git
+     credentials need push access to the repo.
+   - **Locally, Cursor** — the same variable, as the `pr` plugin variable
+     (Plugins → Configure) or in the environment the hooks run with. Git
      credentials need push access to the repo.
    - **Claude Code on the web** — add the same variable to the cloud
      environment's environment variables, and make sure the Claude GitHub
