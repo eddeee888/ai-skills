@@ -59,9 +59,11 @@ and `SessionEnd`.
      environment's environment variables, and make sure the Claude GitHub
      App can access the repo (github.com/settings/installations → the
      Claude app → Repository access). A cloud session can only reach a repo
-     once it's attached to the session, so start sessions with the memory
-     repo included. Not attached at start → the pull is skipped with a
-     warning; ask Claude to add the repo, and the next push picks it up,
+     once it's attached to it. You can add the memory repo in the repository
+     selector when starting a session, but you don't have to: when the
+     startup pull can't reach it, the hook asks Claude (through the
+     `SessionStart` context) to attach the repo itself and pull again. If
+     that fails, the next push still picks the repo up once it's attached,
      keeping anything learned in the meantime.
 
 How it behaves:

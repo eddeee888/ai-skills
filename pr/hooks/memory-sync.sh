@@ -22,7 +22,20 @@ case "$repo" in
   *) url="https://github.com/$repo.git" ;;
 esac
 
+self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
 warn() { echo "pr-sidekick memory sync: $*" >&2; }
+
+# SessionStart stdout goes into Claude's context: when the memory repo can't
+# be reached, ask Claude to attach it (a cloud session only reaches repos
+# attached to it) and pull again, instead of leaving the user to notice.
+ask_claude_to_attach() {
+  cat <<MSG
+pr-sidekick memory sync: couldn't reach the memory repo \`$repo\` (PR_SIDEKICK_MEMORY_REPO), so the sidekick's memory from earlier sessions isn't loaded.
+- In a Claude Code on the web session with an \`add_repo\` tool: attach \`$repo\` with push access (no need to clone it yourself), then run \`"$self" pull\` so memory is in place before the pr-sidekick agent is used. Mention it to the user in one line.
+- Otherwise, or if attaching fails: tell the user in one line that memory sync couldn't reach \`$repo\` and why, and carry on — the skills work without memory.
+MSG
+}
 
 g() {
   # Commit as the user when git knows who they are; otherwise as the sync.
@@ -48,8 +61,9 @@ remote_has_branch() {
 clone() {
   local tmp
   tmp="$(mktemp -d)" || return 1
-  if ! git clone -q "$url" "$tmp/memory" 2>/dev/null; then
+  if ! GIT_TERMINAL_PROMPT=0 git clone -q "$url" "$tmp/memory" 2>/dev/null; then
     warn "can't clone $repo — check it exists and this session can reach it"
+    [ "$mode" = pull ] && ask_claude_to_attach
     rm -rf "$tmp"
     return 1
   fi
@@ -108,7 +122,8 @@ push() {
   g push -q origin "HEAD:$branch" 2>/dev/null || warn "push to $repo failed; will retry next time"
 }
 
-case "${1:-}" in
+mode="${1:-}"
+case "$mode" in
   pull) pull ;;
   push) push ;;
   *) warn "usage: memory-sync.sh pull|push" ;;
