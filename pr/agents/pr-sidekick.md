@@ -135,6 +135,6 @@ Your memory directory's `MEMORY.md` is loaded into every call, but only its firs
 - Rejected: barrel `index.ts` re-exports — "hurts tree-shaking"  (owner/repo#41)
 ```
 
-**Upkeep:** a repeat bumps the existing entry's count and last-seen link instead of adding a line. Merge near-duplicates. When `MEMORY.md` nears 200 lines, drop the oldest single-sighting entries first. An entry that has held across several repos belongs under "Everywhere". Candidates that have only been seen once go in `candidates.md` (not loaded automatically — read it when learning) until a second sighting promotes them.
+**Upkeep:** a repeat bumps the existing entry's count and last-seen link instead of adding a line. Merge near-duplicates — including the pairs a memory sync leaves behind when two machines changed the same entry (it keeps both lines rather than stop on a conflict). When `MEMORY.md` nears 200 lines, drop the oldest single-sighting entries first. An entry that has held across several repos belongs under "Everywhere". Candidates that have only been seen once go in `candidates.md` (not loaded automatically — read it when learning) until a second sighting promotes them.
 
 When a rule for one repo is clearly settled — seen many times, never disputed — add `promote:` to your output naming it, so the caller can suggest moving it into that repo's `CLAUDE.md`, where teammates and CI see it too.

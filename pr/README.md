@@ -33,6 +33,43 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   it too. To code with its memory loaded for a whole session, run
   `claude --agent pr:pr-sidekick`.
 
+  Memory sync across machines and cloud sessions is opt-in; see below.
+
   Claude Code only — the skills fall back to doing each step themselves
   when the agent isn't available (e.g. in Cursor). See
   [`CONVENTIONS.md`](../CONVENTIONS.md#consulting-the-prpr-sidekick-agent).
+
+### Syncing the sidekick's memory
+
+Agent memory lives in `~/.claude/agent-memory/`, so by default it stays on
+one machine — and a cloud session's container, and its memory, is thrown
+away when the session ends. The plugin ships hooks
+([`hooks/hooks.json`](hooks/hooks.json) →
+[`hooks/memory-sync.sh`](hooks/memory-sync.sh)) that sync that directory
+with a private git repo: pull on `SessionStart`, commit and push on `Stop`
+and `SessionEnd`.
+
+1. Create an empty **private** repo, e.g. `<you>/agent-memory`.
+2. Set `PR_SIDEKICK_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
+   or a full git URL):
+   - **Locally** — in `~/.claude/settings.json`:
+     `"env": { "PR_SIDEKICK_MEMORY_REPO": "<you>/agent-memory" }`. Your git
+     credentials need push access to the repo.
+   - **Claude Code on the web** — add the same variable to the cloud
+     environment's environment variables, and make sure the Claude GitHub
+     App can access the repo (github.com/settings/installations → the
+     Claude app → Repository access).
+
+How it behaves:
+
+- **Opt-in and never blocking.** Unset variable → the hooks do nothing. An
+  unreachable repo or failed push is reported on stderr and retried on the
+  next push; it never stops the session.
+- **Existing memory is kept.** The first sync carries local memory into the
+  repo (the repo wins on conflicting files) and backs up the old directory
+  to `agent-memory.bak-<timestamp>`.
+- **Concurrent edits merge.** Two machines changing the same entry keep
+  both lines (git's `union` merge) instead of stopping on a conflict; the
+  sidekick merges the duplicate on its next write.
+- **It syncs the whole `agent-memory/` directory,** so any other agent you
+  give `memory: user` is carried along too.
