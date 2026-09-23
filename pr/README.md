@@ -13,13 +13,19 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your PR sidekick, with
   persistent memory (`memory: user`, stored under
   `~/.claude/agent-memory/`) of the review themes and
-  preferences you keep coming back to. The skills consult it at fixed points:
+  preferences you keep coming back to. It also keeps a cached `profile` of
+  each repo you work in (test runner, monorepo layout, changesets, PR/issue
+  templates, contribution rules), refreshed only when the files behind it
+  change. The skills consult it at fixed points:
   - `pr-address` — `classify` the unresolved threads, then `brief` before
     implementing a thread's ask and `check-diff` before pushing it.
-  - `pr-sync` — `brief` before drafting the description, and
+  - `pr-sync` — `profile` for changesets, the title prefix, and the PR
+    template; `brief` before drafting the description, and
     `check-description` on the draft before applying it (flagging claims the
     diff doesn't back up, and learning from your edits to past drafts).
-  - `oss:issue-fix` — `brief` and `check-diff` around the fix.
+  - `oss:issue-create` / `oss:issue-verify` — `profile` for the issue
+    template, and for where tests live and how to run them.
+  - `oss:issue-fix` — `profile`, then `brief` and `check-diff` around the fix.
 
   It only advises: the skills still do every push, reply, and PR edit.
   Memory lives on your machine only; when a rule has clearly settled, the

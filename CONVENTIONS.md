@@ -83,7 +83,8 @@ the branch.
 ## Consulting the `pr:pr-sidekick` agent
 
 `pr/agents/pr-sidekick.md` remembers the user's recurring review themes and
-preferences. Skills consult it at fixed points — `classify`, `brief`,
+preferences, and keeps a cached profile of each repo's working setup. Skills
+consult it at fixed points — `profile`, `classify`, `brief`,
 `check-diff`, `check-description` — and each skill names which mode it
 calls where. Three rules hold everywhere:
 
@@ -101,4 +102,5 @@ calls where. Three rules hold everywhere:
   belongs in the repo's `CLAUDE.md`, not only in private memory.
 
 Used by: `pr:pr-address` (classify, brief, check-diff), `pr:pr-sync`
-(brief, check-description), `oss:issue-fix` (brief, check-diff).
+(profile, brief, check-description), `oss:issue-create` (profile),
+`oss:issue-verify` (profile), `oss:issue-fix` (profile, brief, check-diff).

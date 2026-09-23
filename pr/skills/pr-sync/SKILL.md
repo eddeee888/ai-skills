@@ -48,6 +48,8 @@ Empty diff → the PR is already current; say so and stop.
 
 ## Step 4: Check for a changeset, but only if the repo actually uses one
 
+Get a `profile` of the repo from `pr:pr-sidekick` first (`CONVENTIONS.md`). It answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. Not available → check each inline as written.
+
 Look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip this step entirely; don't introduce a changelog convention as a side effect of a sync task.
 
 If present:

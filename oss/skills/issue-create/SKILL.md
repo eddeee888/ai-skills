@@ -21,6 +21,8 @@ Found a close match → show it to the user and ask whether to proceed anyway. N
 
 ## Step 3: Fetch that repo's issue template, if it has one
 
+`pr:pr-sidekick` available (`CONVENTIONS.md`) → get a `profile` of the target repo; it doesn't need to be checked out. It names the bug-report template and its required fields, and flags contribution rules that bind an issue — fetch just that one template's full text. If it couldn't tell which template is the bug report, handle it as below. Not available → look it up inline:
+
 ```bash
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE 2>/dev/null
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE/config.yml 2>/dev/null
