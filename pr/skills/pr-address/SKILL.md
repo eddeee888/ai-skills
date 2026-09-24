@@ -80,7 +80,7 @@ Before implementing anything from this sub-step, assess risk the same way this p
 
 1. **Group.** One subagent per ready thread; threads that touch the same file share one subagent, so two children never edit one file. Don't spawn explorers to survey the repo first — each child finds what it needs from its own path and line.
 2. **Brief.** Get one `brief` from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md`), passing the files about to change and each thread's ask. Keep only the rules it returns that apply — they go into the child's prompt, since the child can't consult the sidekick itself.
-3. **Spawn, one at a time.** Children share this checkout and branch, so run them in sequence, never in parallel. Claude Code: the `general-purpose` agent. Cursor: a subagent. The task prompt is only this, filled in — no transcript, no PR diff, no copy of this skill, no repo tour:
+3. **Spawn, one at a time.** Children share this checkout and branch, so only one runs at any moment: start the next only after the previous one has returned. Never run two in parallel. Claude Code: the `general-purpose` agent. Cursor: a subagent. The task prompt is only this, filled in — no transcript, no PR diff, no copy of this skill, no repo tour:
 
    ```text
    Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
@@ -93,7 +93,8 @@ Before implementing anything from this sub-step, assess risk the same way this p
      gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
    Do not resolve the thread. Stay inside the ask. If it needs more than the
    ask (other files' behavior, security/auth, a public API, config/infra), or
-   tests fail for a reason you can't fix inside the ask, stop without pushing.
+   tests fail for a reason you can't fix inside the ask, stop without pushing
+   and discard your uncommitted edits, so the next task starts clean.
    Reply with at most 5 lines: files changed, commit sha, tests run,
    reply posted (yes/no), or why you stopped.
    ```
@@ -118,7 +119,7 @@ This stays in this chat — a lookup or two is cheap. When answering would take 
 
 ## Step 6: Wrap up
 
-Implementation changes were pushed — by you or by any 5a subagent — **and the PR is the user's own** (per Step 1) → run `pr:pr-sync` once, after the last push, so the description matches the branch. Subagents never run it themselves. Never on a PR the user doesn't own — pushing an approved fix from Step 4 is one thing, editing someone else's PR title or description as a side effect of it is not this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
+Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent — even though its own description invites a run after new commits. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr-sync` will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
 
 ## When to stop instead of proceeding
 
