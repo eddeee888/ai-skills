@@ -5,7 +5,13 @@
 # this script directly; Cursor calls it through cursor-memory-sync.sh.
 #
 #   memory-sync.sh pull   # SessionStart: bring memory down
-#   memory-sync.sh push   # Stop / SessionEnd: send changes up
+#   memory-sync.sh push   # Stop (every turn): send changes up
+#   memory-sync.sh end    # SessionEnd: push, retrying an unreachable repo
+#
+# Stop fires after every turn, so push stays off the network unless there's
+# something to send: nothing new → no ls-remote, pull or push. A repo that
+# couldn't be cloned isn't retried on each turn either — only once the last
+# failure is RETRY_MINUTES old, and always at session end.
 #
 # Opt-in: does nothing unless PR_SIDEKICK_MEMORY_REPO is set, to `owner/repo`
 # (GitHub over HTTPS) or a full git URL. Never fails the session: every
@@ -24,6 +30,8 @@ case "$repo" in
 esac
 
 self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+unreachable="$dir.unreachable"
+RETRY_MINUTES=10
 
 warn() { echo "pr-sidekick memory sync: $*" >&2; }
 
@@ -66,8 +74,10 @@ clone() {
     warn "can't clone $repo — check it exists and this session can reach it"
     [ "$mode" = pull ] && ask_claude_to_attach
     rm -rf "$tmp"
+    touch "$unreachable"
     return 1
   fi
+  rm -f "$unreachable"
   # Check out the sync branch whatever the remote's default is; an empty repo
   # just gets pointed at it for the first push.
   git -C "$tmp/memory" checkout -q "$branch" 2>/dev/null ||
@@ -108,25 +118,42 @@ pull() {
     { g rebase --abort 2>/dev/null; warn "pull failed; keeping local memory as is"; }
 }
 
+# True when HEAD has commits origin doesn't — judged from the last fetch, no
+# network call. An empty clone (no commits yet) has nothing to send.
+ahead() {
+  git -C "$dir" rev-parse -q --verify HEAD >/dev/null || return 1
+  if git -C "$dir" rev-parse -q --verify "refs/remotes/origin/$branch" >/dev/null; then
+    [ -n "$(git -C "$dir" log --oneline "origin/$branch..HEAD")" ]
+  fi
+}
+
 push() {
-  [ -d "$dir/.git" ] || { pull || return 0; }
+  if [ ! -d "$dir/.git" ]; then
+    # Nothing written locally → nothing to carry into the repo yet.
+    [ -n "$(find "$dir" -type f 2>/dev/null | head -n 1)" ] || return 0
+    # The clone failed recently: don't retry it on every turn.
+    if [ "$mode" != end ] && [ -n "$(find "$unreachable" -mmin -"$RETRY_MINUTES" 2>/dev/null)" ]; then
+      return 0
+    fi
+    clone || return 0
+  fi
   union_merge
   g add -A
   if ! g diff --cached --quiet; then
     g commit -q -m "sync from $(hostname)" || return 0
   fi
+  ahead || return 0
   if remote_has_branch; then
     g pull -q --rebase origin "$branch" 2>/dev/null ||
       { g rebase --abort 2>/dev/null; warn "remote changed in a conflicting way; resolve in $dir"; return 0; }
   fi
-  [ -n "$(g log --oneline "origin/$branch..HEAD" 2>/dev/null || g log --oneline -1)" ] || return 0
   g push -q origin "HEAD:$branch" 2>/dev/null || warn "push to $repo failed; will retry next time"
 }
 
 mode="${1:-}"
 case "$mode" in
   pull) pull ;;
-  push) push ;;
-  *) warn "usage: memory-sync.sh pull|push" ;;
+  push | end) push ;;
+  *) warn "usage: memory-sync.sh pull|push|end" ;;
 esac
 exit 0

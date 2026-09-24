@@ -2,6 +2,8 @@
 
 Read by the subagent `SKILL.md` hands these steps to (or by the main chat when there's no subagent). The sidekick's profile (`scout-repo`) and brief (`brief-task`) come in your prompt — don't call the sidekick yourself. Where a step says to ask the user or hand something to them, return it as your question instead.
 
+Your prompt's `Resuming:` line, when it isn't `no`, carries a question you returned earlier and the user's answer. Check what's already done — `git status -sb` against `origin/<headRefName>`, whether the changeset commit exists — and pick up at the step that asked, using the answer. Don't rebase, commit or push again what's already on origin.
+
 ## Step 2: Rebase onto the base branch
 
 ```bash

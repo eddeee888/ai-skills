@@ -14,7 +14,7 @@
     ],
     "sessionEnd": [
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" push \"${PR_SIDEKICK_MEMORY_REPO}\"",
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" end \"${PR_SIDEKICK_MEMORY_REPO}\"",
         "timeout": 30
       }
     ]

@@ -30,10 +30,13 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
     `grill-description` on the draft before applying it (flagging claims the
     diff doesn't back up, and learning any description preference you
     stated).
+  - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
+    its code survey starts from.
   - `oss:issue-create` / `oss:issue-verify` — `scout-repo` for the issue
     template, and for where tests live and how to run them.
-  - `oss:issue-fix` — `scout-repo` + `brief-task` in one call, then `sweep-diff`
-    on the fix a subagent commits.
+  - `oss:issue-fix` — `scout-repo` before running the failing test,
+    `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
+    subagent commits.
 
   It only advises: the skills still do every push, reply, and PR edit.
   Personal files stay in that person's `memory/users/<github-login>/` tree.
@@ -64,7 +67,7 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 
 ### Syncing the sidekick's memory
 
-The checkout is `~/.claude/agent-memory/`. Sidekick rules are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull when a session starts, commit and push when it stops.
+The checkout is `~/.claude/agent-memory/`. Sidekick rules are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull when a session starts, commit and push when a turn ends and when the session ends. A turn that learned nothing makes no network call.
 
 1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Sidekick files committed there live under `memory/`.
 2. Set `PR_SIDEKICK_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
@@ -88,9 +91,10 @@ The checkout is `~/.claude/agent-memory/`. Sidekick rules are under `memory/` in
 
 How it behaves:
 
-- **Opt-in and never blocking.** Unset variable → the hooks do nothing. An
-  unreachable repo or failed push is reported on stderr and retried on the
-  next push; it never stops the session.
+- **Opt-in and never blocking.** Unset variable → the hooks do nothing. A
+  failed push is reported on stderr and retried on the next push. A repo
+  that can't be cloned is retried at most every 10 minutes, and once more
+  when the session ends — not on every turn. Neither ever stops the session.
 - **Existing memory is kept.** The first sync on a machine carries local
   memory into the repo — new files as is, and lines missing from the repo's
   copy of a shared file appended to it — and backs up the old directory to

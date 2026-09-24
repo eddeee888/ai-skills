@@ -22,20 +22,25 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `triage-threads` + `scout-repo` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below (or, on the MCP route, that it should use `get_review_comments`), and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `triage-threads` + `scout-repo` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, the GitHub route, whether the PR is theirs (Step 1), the query below (or, on the MCP route, that it should use `get_review_comments`), and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
 
 Pull review threads via GraphQL, for resolution state and comment order. Conversation-tab comments are out of scope — they have no reply chain.
 
 ```bash
-gh api graphql -f query='
-  query($owner: String!, $repo: String!, $pr: Int!) {
+gh api graphql --paginate -f query='
+  query($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
     repository(owner: $owner, name: $repo) {
       pullRequest(number: $pr) {
-        reviewThreads(first: 100) {
+        reviewThreads(first: 100, after: $endCursor) {
+          pageInfo { hasNextPage endCursor }
           nodes {
             id
             isResolved
-            comments(first: 50) {
+            opening: comments(first: 1) {
+              nodes { databaseId author { login } body path line originalLine }
+            }
+            recent: comments(last: 20) {
+              totalCount
               nodes { databaseId author { login } body path line originalLine }
             }
           }
@@ -46,7 +51,7 @@ gh api graphql -f query='
   --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
 ```
 
-The `--jq` filter keeps resolved threads out of context. Step 3 classifies on each thread's last comment. An outdated comment has `line: null`; use its `originalLine`.
+`--paginate` follows every page of threads, and the `--jq` filter keeps resolved ones out of context. Each thread carries its opening comment (`opening`, which Step 3 tags by nature) and its latest 20 (`recent`, whose last node is the last comment Step 3 classifies on) — never a truncated middle that hides the real last comment. `recent.totalCount` above 21 means comments in between aren't shown; if Step 3's bucket would turn on who wrote them, the thread needs the user first. An outdated comment has `line: null`; use its `originalLine`.
 
 On the MCP route, use `pull_request_read` method `get_review_comments` instead, per the review-threads row in `CONVENTIONS.md` → "GitHub access" — it also says where each comment's `databaseId` comes from.
 
@@ -95,21 +100,24 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    1. <path>:<line>, comment id <databaseId> — <one-line ask>
    2. ...
 
-   For each thread in order: read its full comment with
+   Read each thread's full comment with
      gh api repos/<owner>/<repo>/pulls/comments/<databaseId> --jq .body
-     (MCP: pull_request_read method get_review_comments; the comment whose
-     html_url ends in #discussion_r<databaseId>)
-   implement it (apply a suggestion block literally), run the tests affected
-   by it with a quiet reporter, and commit it on its own once they pass.
-   Stay inside each ask. If a thread needs more than its ask (other files'
-   behavior, security/auth, a public API, config/infra), or its tests fail for
-   a reason you can't fix inside the ask, discard that thread's uncommitted
-   edits and go on to the next one.
+     (MCP: call pull_request_read method get_review_comments once, following
+     `after` through every page, and look up every thread above in that one
+     result — the comment whose html_url ends in #discussion_r<databaseId>.
+     Never refetch the list per thread.)
+   For each thread in order: implement it (apply a suggestion block
+   literally), run the tests affected by it with a quiet reporter, and commit
+   it on its own once they pass. Stay inside each ask. If a thread needs more
+   than its ask (other files' behavior, security/auth, a public API,
+   config/infra), or its tests still fail after 3 attempts inside the ask,
+   discard that thread's uncommitted edits and go on to the next one.
    After the last thread, run the affected tests for all committed threads
    together. Fix a break only inside the asks; otherwise stop without pushing.
    Once they pass, push once, then reply on each committed thread with a
-   one-line summary:
-     gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
+   one-line summary, single-quoted (write any ' as '\'') — never in double
+   quotes, where backticks in the summary would run as commands:
+     gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body='<summary>'
      (MCP: add_reply_to_pull_request_comment with commentId <databaseId>)
    Do not resolve any thread. Do not run pr-sync.
    Return one line per thread: comment id, done (commit sha, reply posted
@@ -117,10 +125,10 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    ```
 
 3. **Check.** Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `sweep-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
-4. **Merge the result.** Note the per-thread lines and move on — don't ask for a longer report. A skipped thread → bring it back to the user with the reason, as in Step 4. A batch that stopped before pushing leaves its commits local → don't start the next batch; bring the whole batch and its failing tests to the user. A thread marked done without a reply → post the reply yourself:
+4. **Merge the result.** Note the per-thread lines and move on — don't ask for a longer report. A skipped thread → bring it back to the user with the reason, as in Step 4. A batch that stopped before pushing leaves its commits local → don't start the next batch; bring the whole batch and its failing tests to the user. A thread marked done without a reply → post the reply yourself (text quoted per `CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
    ```bash
-   gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
+   gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body='<summary>'
    ```
 
 A thread the user approved in Step 4 despite its risk flag gets its own single-thread subagent, same prompt shape, run only after any low-risk batches — never batched with other threads, since it's the one most likely to stop. Before moving on, show the user its result line and commit, and run `sweep-diff` on it as above. No way to spawn a subagent → do every thread here: implement and test → `sweep-diff` → commit and push → reply.
@@ -129,7 +137,7 @@ Do **not** resolve the thread — that's for the reviewer or the user.
 
 ### 5b. Why-question
 
-Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Before posting, drop any backing resource that's private or otherwise inaccessible to the PR's reviewers; surface it to the user directly in-session instead, never into the PR comment. Reply the same way as 5a. Do **not** resolve the thread.
+Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Before posting, drop any backing resource that's private or otherwise inaccessible to the PR's reviewers; surface it to the user directly in-session instead, never into the PR comment. Reply the same way as 5a — a multi-line answer goes in a file, `-F body=@<file>` (`CONVENTIONS.md` → "Passing drafted text to `gh`"). Do **not** resolve the thread.
 
 Answer here only from what this chat already knows. Anything that needs a web fetch or reading code — a docs page or a source file can be thousands of tokens — goes to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
 

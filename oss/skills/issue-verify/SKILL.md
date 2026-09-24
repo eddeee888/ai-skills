@@ -13,10 +13,21 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 ## Step 1: Check for an existing checkpoint, then read the issue
 
+Cheap, exact checks first — a checkpoint branch by its conventional name, and a checkpoint already in the current branch's history:
+
+```bash
+git ls-remote --heads origin "repro/<number>"
+git log --oneline --grep="eddeee888:oss:issue-verify" HEAD | grep -E "#<number>([^0-9]|$)"
+```
+
+Both empty → one wider sweep, since a checkpoint can sit on a differently named branch:
+
 ```bash
 git fetch origin --quiet
-git log --all --oneline --grep="eddeee888:oss:issue-verify" | grep -F "#<number>"
+git log --all --oneline --grep="eddeee888:oss:issue-verify" | grep -E "#<number>([^0-9]|$)"
 ```
+
+The `([^0-9]|$)` keeps `#12` from matching `#123`.
 
 Match found → stop. Tell the user a checkpoint already exists (name the commit and branch) and point them at `issue-fix` instead of re-verifying. Only proceed past this if the user explicitly wants to redo it (e.g. the original repro turned out wrong).
 
@@ -50,10 +61,10 @@ Point at the specific thing the template asks for, not a generic "please provide
 - Template has a reproduction field → name it: *"Could you share a link to a minimal reproduction? This issue template asks for one under '\<field name\>' — a CodeSandbox/StackBlitz link or a small repo works best."*
 - No template → ask directly for exact package version(s), a minimal code sample, and expected vs. actual behavior.
 
-Show the draft to the user before posting — "confirmed" means they've approved the wording, not that the reporter has replied. Then:
+Show the draft to the user before posting — "confirmed" means they've approved the wording, not that the reporter has replied. Then write it to a file and post it from there — never inline in `--body "…"` (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
 ```bash
-gh issue comment <number> --body "<confirmed draft>"
+gh issue comment <number> --body-file <file>
 ```
 
 Stop here — there's nothing to test yet. This skill doesn't poll for a reply; re-run it once the reporter has responded.
@@ -75,10 +86,12 @@ Expected: <expected behavior>. Actual: <what the issue reports>.
 Write a test that mirrors the repro as closely as possible, asserting the
 expected/correct behavior, not the buggy one. Run just that test with a quiet
 or summary reporter. Confirm it fails for the reason the issue describes, not
-because of a typo or wrong setup in the test itself. Don't skip it, don't
-commit, don't push.
+because of a typo or wrong setup in the test itself; fix the test's own
+mistakes at most 3 times, then stop and report what's still wrong. Don't
+skip it, don't commit, don't push.
 Return at most 5 lines: test path, the failure in one or two lines, and
-whether it matches the issue (yes/no, why).
+whether it matches the issue (yes/no, why) — or, after 3 tries, why the
+test still doesn't run cleanly.
 ```
 
 It doesn't fail the way the issue claims → that's a finding too. Discard the test and go back to the reporter (Step 3) with what was found, instead of forcing a red test that proves the wrong thing.
@@ -95,10 +108,12 @@ It doesn't fail the way the issue claims → that's a finding too. Discard the t
   ```
 - Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword, per this marketplace's shared convention (`CONVENTIONS.md` → "Non-closing issue references") — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`.
 - Title convention: `test: reproduce <short bug description> (failing) (#123)` — the issue reference goes at the end (`CONVENTIONS.md` → "Trailing issue reference"). In a monorepo, apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"), prefixed with the package the repro actually exercises (the one Step 4 identified) — e.g. `[package-name] test: reproduce <short bug description> (failing) (#123)`.
-- Body: state plainly that this is a checkpoint proving the bug exists, link the failing run/output you captured in Step 4, and note that `issue-fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
+- Body: state plainly that this is a checkpoint proving the bug exists, quote the failure you captured in Step 4 (test name and the one or two lines of assertion output — CI hasn't run yet, so there's no run to link), and note that `issue-fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
+
+Write the title and body to files first, then (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
 ```bash
-gh pr create --draft --title "test: reproduce <short bug description> (failing) (#123)" --body "<body>"
+gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
 ```
 
 ## Step 6: Suggest a sync after further pushes

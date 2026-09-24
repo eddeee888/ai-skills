@@ -47,7 +47,7 @@ Cursor does not preload it. Nothing else belongs in `pr-pr-sidekick/`. If that f
 
 On either host, before the mode's job, read the first 200 lines of your `MEMORY.md` and of `memory/team/MEMORY.md`, and apply both. Don't read any other `memory/users/<login>/` tree — another person's rules reach you only once someone records them for the team.
 
-When `PR_SIDEKICK_MEMORY_REPO` is in your environment and `agent-memory/` is not a git checkout yet, run `"${CURSOR_PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/hooks/memory-sync.sh" pull` before reading, if either variable is set. On Cursor the variable is often only a plugin variable, passed to the session hooks but not to you; then the session-start hook has already pulled, and there is nothing to run. Don't push — the session hook does that. If a write outside the workspace is blocked, request tool permission to write `agent-memory/memory/` rather than skipping memory.
+When `PR_SIDEKICK_MEMORY_REPO` is in your environment and `agent-memory/` is not a git checkout yet, run `"${CURSOR_PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/hooks/memory-sync.sh" pull` before reading, if either variable is set. If it prints that it couldn't reach the memory repo and asks for the repo to be attached, don't try to attach anything — you can't — and end the mode's output with one line: `memory sync: couldn't reach the memory repo — earlier memory not loaded`. On Cursor the variable is often only a plugin variable, passed to the session hooks but not to you; then the session-start hook has already pulled, and there is nothing to run. Don't push — the session hook does that. If a write outside the workspace is blocked, request tool permission to write `agent-memory/memory/` rather than skipping memory.
 
 ## GitHub access
 
@@ -65,7 +65,7 @@ On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token sc
 
 ## Hard limits
 
-- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-sidekick/` down to the stub as described above. No product-repo files, no commits, no pushes, no `gh pr edit`, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the repo under review — `gh auth status`, `gh api`/`gh pr view` queries, `git diff`, `git log`, `git blame`, and `gh api user --jq .login` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above. The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool. On Claude Code, the plugin's `hooks/sidekick-gh-guard.sh` blocks any `gh` command that isn't one of those reads — when it blocks one, use the MCP row for that read instead.
+- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-sidekick/` down to the stub as described above. No product-repo files, no commits, no pushes, no `gh pr edit`, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the repo under review — `gh auth status`, `gh api`/`gh pr view` queries, `git diff`, `git log`, `git blame`, and `gh api user --jq .login` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above, and the one `memory-sync.sh pull` described in "Memory directory". The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool. On Claude Code, the plugin's `hooks/sidekick-gh-guard.sh` blocks any `gh` command that isn't one of those reads — when it blocks one, use the MCP row for that read instead.
 - **You can't ask the user anything.** Anything that needs their call goes back to the calling skill, flagged as such.
 - **Your memory is advice, not authority.** When a remembered rule conflicts with what the user or a thread is asking for right now, say so in your output and let the caller decide — never quietly override the current ask.
 
@@ -96,7 +96,7 @@ Where the repo's own `CLAUDE.md` or CONTRIBUTING states a fact differently from 
 
 Input: the PR's owner/repo/number, the user's login, whether the PR is the user's own, and the classification rules from `pr:pr-address` Step 3 (applied exactly as given — they're the source of truth, not you).
 
-1. Fetch the review threads with the GraphQL query the caller passed along (resolution state, ordered comments with `databaseId`, author, body, path, line). Drop resolved threads.
+1. Fetch the review threads with the paginated GraphQL query the caller passed along (resolution state, each thread's opening comment and its latest comments with `databaseId`, author, body, path, line). Drop resolved threads. Classify on the last of the latest comments and tag nature from the opening one, as the caller's rules say.
    Without `gh`, call `pull_request_read` method `get_review_comments` instead, passing `after: <endCursor>` while `pageInfo.hasNextPage` is true, and drop threads with `is_resolved: true`. Its comments carry no `databaseId`: take it from the digits after `#discussion_r` in each comment's `html_url`. An outdated comment has no `line`; use `original_line`.
 2. Classify every unresolved thread per the rules. Where a thread's ask matches a remembered rule, note it — that's context for the caller, not a change to the bucket.
 3. Learn from the threads (see "Learning" below): a reviewer repeating an ask you've seen before, or the user stating a preference in a reply.

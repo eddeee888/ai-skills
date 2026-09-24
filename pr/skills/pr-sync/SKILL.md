@@ -21,11 +21,14 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    base <baseRefName>. Current title: <title>.
    Follow Steps 2–6 in <this skill's directory>/draft.md.
    Sidekick profile and brief: <what it returned, or "none">
+   Resuming: <"no" | the question you returned last time, and the user's answer>
    GitHub: <"gh" | "MCP — read the PR body with pull_request_read method get
    instead of gh; load it with ToolSearch first if needed">
    Stop and return a question instead of guessing when the branch may be
    shared with someone else, a rebase conflict isn't obvious, or nothing
-   states the motivation for Why.
+   states the motivation for Why. When resuming, use the answer and pick up
+   at the step that asked; don't redo a rebase, changeset commit or push
+   that's already on origin.
    Write the drafted title to $(git rev-parse --git-dir)/pr-sync-title.txt
    and the body to $(git rev-parse --git-dir)/pr-sync-body.md, outside the
    working tree. Don't edit the PR.
@@ -34,7 +37,7 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    moved — or the question, or "already current".
    ```
 
-   "Already current" → say so and stop.
+   "Already current" → say so and stop. A question → ask the user, then spawn it again with `Resuming:` filled in (`CONVENTIONS.md` → "Hand long loops to a subagent").
 3. **Here:** Step 7, on the draft files.
 
 No way to spawn a subagent → read `draft.md` and run Steps 2–6 here.
@@ -50,6 +53,15 @@ On the MCP route, find the branch's PR with `list_pull_requests` (`head: <owner>
 Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) → stop, tell the user there's no PR to sync, and don't create one — opening a PR is a different task with its own judgment calls (base branch, reviewers, draft-or-not).
 
 Succeeds → keep the PR number and `baseRefName`; everything downstream diffs against that base, not the last commit.
+
+Before spending a sidekick call and a subagent, check there's anything to sync:
+
+```bash
+git fetch origin <baseRefName> --quiet
+git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
+```
+
+`no diff` → the branch has nothing beyond its base; say the PR is already current and stop.
 
 Get the repo's profile and a brief for "PR description" in one call (`scout-repo` + `brief-task`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"). Both go into the subagent's prompt: the profile answers the changeset, title-prefix and template questions in Steps 4–6, the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
 

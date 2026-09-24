@@ -76,11 +76,13 @@ Show the full drafted title and body back to the user, verbatim, before touching
 
 ## Step 7: Create it
 
+Write the confirmed title and body to files first — never inline them in `--title "…"`/`--body "…"`, where backticks in a bug report's code run as shell commands (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
+
 ```bash
-gh issue create --repo <owner>/<repo> --title "<confirmed title>" --body "<confirmed body>"
+gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>
 ```
 
-Report back the issue URL. Filing the issue is this skill's job; verifying it (writing a failing test against it) is `issue-verify`'s, and only once the repo maintainers have had a chance to weigh in. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo; without that, the issue just waits on its own maintainers.
+Report back the issue URL. Filing the issue is this skill's job; verifying it (writing a failing test against it) is `issue-verify`'s, when the user wants to take it further. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo; without that, the issue just waits on its own maintainers.
 
 ## When to stop instead of proceeding
 
