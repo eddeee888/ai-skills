@@ -20,7 +20,7 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` mode** when it's available (`CONVENTIONS.md`): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. It returns the buckets, notes where a thread matches something it remembers, and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` mode** when it's available (`CONVENTIONS.md`): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` (`CONVENTIONS.md`). It returns the buckets, notes where a thread matches something it remembers, and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
 
 Pull review threads (not flat issue-level comments — the PR's general Conversation-tab comments, including anything you posted there yourself; those lack reply-chain semantics and are out of scope here) via GraphQL, so resolution state and comment order are available:
 

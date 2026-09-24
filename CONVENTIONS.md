@@ -89,11 +89,12 @@ the branch.
 - Claude Code — the `pr:pr-sidekick` agent.
 - Cursor — delegate to the `pr-sidekick` subagent and wait for it. It starts blank, so the delegation prompt carries the mode and every input that mode lists. Its reply is the mode's output; continue the skill from there.
 
-Three rules hold everywhere:
+These rules hold everywhere:
 
 - **Optional.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the sidekick is missing, and don't treat Cursor itself as missing.
 - **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
 - **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that settled belongs in the repo's `CLAUDE.md`, not only in private memory.
+- **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The sidekick appends it only to `memory/team/MEMORY.md` in the memory repo.
 
 Used by: `pr:pr-address` (classify, brief, check-diff), `pr:pr-sync`
 (profile, brief, check-description), `oss:issue-create` (profile),
