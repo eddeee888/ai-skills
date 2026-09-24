@@ -20,8 +20,8 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   each repo you work in (test runner, monorepo layout, changesets, PR/issue
   templates, contribution rules), refreshed only when the files behind it
   change. The skills consult it at fixed points:
-  - `pr-address` — `classify` the unresolved threads, then `brief` before
-    implementing a thread's ask and `check-diff` on the change. Low-risk
+  - `pr-address` — `classify` the unresolved threads (with the remembered
+    rules each one matches), then `check-diff` on each batch. Low-risk
     asks are implemented by a subagent, up to 10 threads per batch, that
     sees only those threads, not the parent chat, so the edit/test loop
     stays cheap in a long session.
@@ -32,7 +32,7 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   - `oss:issue-create` / `oss:issue-verify` — `profile` for the issue
     template, and for where tests live and how to run them.
   - `oss:issue-fix` — `profile` + `brief` in one call, then `check-diff`
-    around the fix.
+    on the fix a subagent commits.
 
   It only advises: the skills still do every push, reply, and PR edit.
   Personal files stay in that person's `memory/users/<github-login>/` tree.

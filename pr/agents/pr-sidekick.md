@@ -98,6 +98,7 @@ needs-user:
   - thread: <id>  comment: <databaseId>  at: <path>:<line>
     reason: <not your PR | awaiting user reply | risky: why>
     ask: <one line>
+    remembered: <matching rule (you | team), or "none">
 already-handled:
   - thread: <id>  at: <path>:<line>  note: <one line>
 ```

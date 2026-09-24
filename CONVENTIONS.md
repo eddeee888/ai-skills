@@ -2,7 +2,8 @@
 
 Formatting/process rules used by more than one skill in this marketplace.
 Skills point here instead of restating a rule — change it once, and every
-skill that points to it picks it up.
+skill that points to it picks it up. Each pointer names its section
+(`CONVENTIONS.md` → "<section>"); read only that section, not the whole file.
 
 This file sits at the repo root, alongside both plugins, so it's present on
 disk regardless of which individual plugin(s) a user installs.
@@ -96,6 +97,6 @@ These rules hold everywhere:
 - **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that settled belongs in the repo's `CLAUDE.md`, not only in private memory.
 - **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The sidekick appends it only to `memory/team/MEMORY.md` in the memory repo.
 
-Used by: `pr:pr-address` (classify, brief, check-diff), `pr:pr-sync`
+Used by: `pr:pr-address` (classify, check-diff), `pr:pr-sync`
 (profile, brief, check-description), `oss:issue-create` (profile),
 `oss:issue-verify` (profile), `oss:issue-fix` (profile, brief, check-diff).

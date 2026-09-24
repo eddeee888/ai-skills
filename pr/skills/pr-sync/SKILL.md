@@ -47,13 +47,13 @@ Empty diff → the PR is already current; say so and stop.
 
 ## Step 4: Check for a changeset, but only if the repo actually uses one
 
-Get a `profile` of the repo and a `brief` for "PR description" in one call (`profile` + `brief`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, first (`CONVENTIONS.md`). The profile answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. The brief is for Step 5. Not available → check each inline as written.
+Get a `profile` of the repo and a `brief` for "PR description" in one call (`profile` + `brief`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, first (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"). The profile answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. The brief is for Step 5. Not available → check each inline as written.
 
-Look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip this step entirely; don't introduce a changelog convention as a side effect of a sync task.
+With a profile, its `changesets` line answers this. Without one, look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip this step entirely; don't introduce a changelog convention as a side effect of a sync task.
 
 If present:
 - A changeset file already exists for this branch → update its summary to match the current diff.
-- None exists → create one, matching the bump type and voice already used in `.changeset/`.
+- None exists → create one, matching the bump style the profile reports. No profile → read one or two recent entries in `.changeset/`, not all of them.
 
 The changeset always gets its own commit, never squashed into an implementation commit (Step 7 covers exactly where it lands).
 
@@ -61,26 +61,26 @@ The changeset always gets its own commit, never squashed into an implementation 
 
 Step 4's `brief` says how the user likes descriptions written and what this repo's reviewers ask to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
 
-**Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` at the repo root). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md`); don't let a resync silently drop it.
+**Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md` → "Trailing issue reference"); don't let a resync silently drop it.
 
 **Description** — three required sections, in this order, kept tight, since this is a PR body a reviewer skims, not a design doc:
 
 - **Why** — the reason this change exists at all. Pull it from commit messages, a linked issue, or the existing description if it already states intent; ask the user only if nothing indicates the motivation. Why is the *reason*, not a rephrasing of What. Must open with a paragraph starting `This PR ...` stating the mechanism by which it solves the issue, not just what the issue was — motivation bullets can follow.
 - **What** — the concrete change, as a few short bullets: files, behavior, APIs touched. Specific enough that a reviewer doesn't have to open the diff to know what they're looking at.
-- **Verification** — how a reader can trust the change actually works: tests added/updated, commands run and their result, manual steps (with the observed outcome), or CI checks that cover it. Pull this from commit messages, test files, and the diff; ask the user only if the branch gives no indication. Don't pad with "should work" — if nothing was verified, say that plainly. A check that already ran in CI gets named by test type, not the literal command (`CONVENTIONS.md`). Tests failing on purpose — a checkpoint commit with no fix yet — get stated plainly, never checklisted as passing (`CONVENTIONS.md`).
+- **Verification** — how a reader can trust the change actually works: tests added/updated, commands run and their result, manual steps (with the observed outcome), or CI checks that cover it. Pull this from commit messages, test files, and the diff; ask the user only if the branch gives no indication. Don't pad with "should work" — if nothing was verified, say that plainly. A check that already ran in CI gets named by test type, not the literal command (`CONVENTIONS.md` → "Verification checklist"). Tests failing on purpose — a checkpoint commit with no fix yet — get stated plainly, never checklisted as passing (`CONVENTIONS.md` → "Don't checklist an intentionally-failing check as done").
 
-Keep all three sections short — one bullet per section is enough for a trivial PR, not padding to look thorough. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS.md`); skip a bullet with nothing critical enough to call out.
+Keep all three sections short — one bullet per section is enough for a trivial PR, not padding to look thorough. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS.md` → "Bold the critical claim"); skip a bullet with nothing critical enough to call out.
 
 **Resources** — one more section, only when there's actually something to put in it:
 
-- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is already in use, closing or non-closing — never normalize one to the other as a side effect of rewriting this section; whether the PR should close the issue on merge isn't a resync's call to make (`CONVENTIONS.md`).
+- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is already in use, closing or non-closing — never normalize one to the other as a side effect of rewriting this section; whether the PR should close the issue on merge isn't a resync's call to make (`CONVENTIONS.md` → "Non-closing issue references").
 - Any external context that actually informed the fix — an upstream issue, a design doc, a blog post — only if one genuinely exists.
 
 Don't go hunting for tangential links, and don't add a "Resources" section with nothing real in it. One line per link is plenty. Leave the section out entirely if neither an issue link nor external context exists.
 
 ## Step 6: Fit the update into the existing template — don't replace it
 
-Check the PR's current body and, if present, `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`). If the repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist — map Why/What/Verification/Resources onto whichever existing header is the closest match instead of inventing new ones. Verification almost always has a home already ("Testing", "Test plan", "QA steps") — ease it in there; only add a standalone "## Verification" if nothing fits. Leave every section you have no new information for untouched. No template to work from → default to:
+Check the PR's current body and the template headers from Step 4's profile; read `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`) itself only when there's no profile. If the repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist — map Why/What/Verification/Resources onto whichever existing header is the closest match instead of inventing new ones. Verification almost always has a home already ("Testing", "Test plan", "QA steps") — ease it in there; only add a standalone "## Verification" if nothing fits. Leave every section you have no new information for untouched. No template to work from → default to:
 
 ```markdown
 ## Why
@@ -104,7 +104,7 @@ The goal is a description that reads like it was written by the person who made 
 
 ## Step 7: Apply it
 
-First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body (`CONVENTIONS.md`). When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
+First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
 
 ```bash
 gh pr edit <number> --title "<new title>" --body "<new body>"

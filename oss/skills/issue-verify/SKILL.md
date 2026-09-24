@@ -24,7 +24,7 @@ Nothing found → read the issue:
 gh issue view <number> --json number,title,body,url,labels,state,comments
 ```
 
-Then find the repo's bug-report template. Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md`): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. Don't read every template.
+Then find the repo's bug-report template. Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. Don't read every template.
 
 Note the exact field the template uses for reproduction and its exact wording — you'll reuse it in Step 3 instead of asking generically.
 
@@ -59,22 +59,39 @@ Use the `profile` from Step 1, when there is one: the monorepo's package map, wh
 
 Find the package the repro actually exercises (in a monorepo, match its imports/API calls to the owning workspace — don't guess from the issue's labels alone).
 
-Write a test that mirrors the repro as closely as possible, asserting the **expected/correct** behavior, not the buggy one.
+Hand writing and running the test to one subagent, so the write/run/adjust loop doesn't run in this chat. Claude Code: the `general-purpose` agent. Cursor: a subagent. The prompt is only this, filled in — no transcript, no copy of this skill:
 
-Run just that test, with the runner's quiet or summary reporter, and read the failure. Confirm it fails for the reason the issue describes, not because of a typo or wrong setup in the test itself. If it doesn't fail the way the issue claims, that's a finding too — go back to the reporter (Step 3) with what you found instead of forcing a red test that proves the wrong thing.
+```text
+Repo <owner>/<repo> (checked out). Package: <package the repro exercises>.
+Tests live: <from the profile>; run one with: <command, or "find out">.
+Repro (from issue #<number>): <the repro, verbatim — code, steps or link>
+Expected: <expected behavior>. Actual: <what the issue reports>.
+
+Write a test that mirrors the repro as closely as possible, asserting the
+expected/correct behavior, not the buggy one. Run just that test with a quiet
+or summary reporter. Confirm it fails for the reason the issue describes, not
+because of a typo or wrong setup in the test itself. Don't skip it, don't
+commit, don't push.
+Return at most 5 lines: test path, the failure in one or two lines, and
+whether it matches the issue (yes/no, why).
+```
+
+No way to spawn a subagent → do the same here.
+
+It doesn't fail the way the issue claims → that's a finding too. Discard the test and go back to the reporter (Step 3) with what was found, instead of forcing a red test that proves the wrong thing.
 
 ## Step 5: Leave it failing, commit it as the checkpoint, open the PR
 
 - Leave the test failing — don't skip it, don't mark it pending. A skipped test goes invisible to CI; a failing one is the checkpoint this skill exists to produce. It's fine, expected even, for this PR's checks to be red.
-- Commit it on a new branch named `repro/<issue-number>` (paired with `issue-fix`'s `fix/<issue-number>` — see `CONVENTIONS.md` at the repo root), with the marker `eddeee888:oss:issue-verify` as the last line of the commit message — a plain trailer, not prose, so it's reliably grep-able later:
+- Commit it on a new branch named `repro/<issue-number>` (paired with `issue-fix`'s `fix/<issue-number>` — `CONVENTIONS.md` → "Checkpoint/fix branch naming"), with the marker `eddeee888:oss:issue-verify` as the last line of the commit message — a plain trailer, not prose, so it's reliably grep-able later:
 
   ```
   test: reproduce #123 — <short bug description>
 
   eddeee888:oss:issue-verify
   ```
-- Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword, per this marketplace's shared convention (see `CONVENTIONS.md`) — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`.
-- Title convention: `test: reproduce <short bug description> (failing) (#123)` — the issue reference goes at the end (`CONVENTIONS.md`). In a monorepo, apply the shared `[package-name]` prefix (`CONVENTIONS.md`), prefixed with the package the repro actually exercises (the one Step 4 identified) — e.g. `[package-name] test: reproduce <short bug description> (failing) (#123)`.
+- Push it, then open the PR as a **draft**, referencing the issue with a non-closing keyword, per this marketplace's shared convention (`CONVENTIONS.md` → "Non-closing issue references") — this PR doesn't fix anything yet, so don't use `Fixes`/`Closes`.
+- Title convention: `test: reproduce <short bug description> (failing) (#123)` — the issue reference goes at the end (`CONVENTIONS.md` → "Trailing issue reference"). In a monorepo, apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"), prefixed with the package the repro actually exercises (the one Step 4 identified) — e.g. `[package-name] test: reproduce <short bug description> (failing) (#123)`.
 - Body: state plainly that this is a checkpoint proving the bug exists, link the failing run/output you captured in Step 4, and note that `issue-fix` builds its work directly on top of this commit — this PR doesn't need to merge, or even go green, before that happens.
 
 ```bash
