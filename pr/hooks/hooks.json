@@ -20,6 +20,14 @@
           { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/memory-sync.sh\" push", "timeout": 30 }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/sidekick-gh-guard.sh\"", "timeout": 10 }
+        ]
+      }
     ]
   }
 }

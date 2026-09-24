@@ -116,3 +116,34 @@ These rules hold everywhere:
 Used by: `pr:pr-address` (classify + profile, check-diff), `pr:pr-sync`
 (profile, brief, check-description), `oss:issue-create` (profile),
 `oss:issue-verify` (profile), `oss:issue-fix` (profile, brief, check-diff).
+
+## GitHub access: `gh`, or the GitHub MCP tools
+
+Skills write their GitHub steps as `gh` commands. Not every host has `gh`: a Claude Code on the web session has no `gh` but has the GitHub MCP server (`mcp__github__*` tools).
+
+- **Pick the route once.** At the first GitHub step, run `gh auth status`. It succeeds → use `gh` for the rest of the skill. It fails (not installed, not logged in) → use the GitHub MCP tools for the rest of the skill; on a host that loads them on demand, load each one with `ToolSearch` before its first call. Neither works → treat it as the step's own "no PR"/"can't reach the repo" failure.
+- **Access errors.** On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token scope) → retry that one read with the MCP tool before treating it as a failure.
+- **Same effect, same gates.** The MCP call replaces the command one for one: a write still needs whatever confirmation the skill requires before the `gh` command.
+- **Owner/repo.** MCP tools take them explicitly. For the current checkout, read them from `git remote get-url origin`. For "the current branch's PR", find it with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`).
+- **Subagents.** A delegation prompt that has the subagent run `gh` names the route in use; on the MCP route, it names the MCP tool beside each command.
+
+| `gh` | GitHub MCP |
+|---|---|
+| `gh api user --jq .login` | `get_me` → `login` |
+| `gh pr view [<number>] --json …` | `pull_request_read` method `get` (no number → find the PR first, above) |
+| `gh pr create --draft --title … --body …` | `create_pull_request` with `draft: true`, `head`, `base` |
+| `gh pr edit <number> --title … --body-file …` | `update_pull_request` with `title`, `body` |
+| review threads (`gh api graphql` … `reviewThreads`) | `pull_request_read` method `get_review_comments`, following `after` while `pageInfo.hasNextPage`; drop threads with `is_resolved: true`. Comments have no `databaseId`: it's the digits after `#discussion_r` in `html_url`. An outdated comment has no `line`; use `original_line`. |
+| `gh api repos/<o>/<r>/pulls/comments/<id> --jq .body` | from `get_review_comments`, the comment whose `html_url` ends in `#discussion_r<id>` |
+| `gh api repos/<o>/<r>/pulls/<n>/comments/<id>/replies -f body=…` | `add_reply_to_pull_request_comment` with `commentId: <id>`, `pullNumber`, `body` |
+| `gh issue view <n> --json …,comments` | `issue_read` method `get`, then method `get_comments` |
+| `gh issue list --repo <o>/<r> --search … --state all` | `search_issues` with `owner`, `repo`, `query` |
+| `gh issue create --repo <o>/<r> --title … --body …` | `issue_write` method `create` |
+| `gh issue comment <n> --body …` | `add_issue_comment` |
+| `gh api repos/<o>/<r>/contents/<path>` (file or directory) | `get_file_contents` (`fields: ["name", "type"]` for a directory) |
+| `gh api repos/<o>/<r> --jq .default_branch` | `search_repositories` with query `repo:<o>/<r>` → `default_branch` |
+| `gh api repos/<o>/<r>/commits/<branch> --jq .sha` | `list_commits` with `sha: <branch>`, `perPage: 1`, `fields: ["sha"]` |
+
+Used by: `pr:pr-address`, `pr:pr-sync`, `oss:issue-analyze`,
+`oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`. `pr-sidekick`
+keeps its own copy of the read rows next to its tool allowlist.

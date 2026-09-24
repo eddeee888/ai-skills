@@ -16,7 +16,7 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   when sync is on) every sidekick file lives under `memory/`:
   `memory/users/<github-login>/` for that person's rules, profile cache,
   and drafts, and `memory/team/` for rules someone explicitly asked to
-  share. The GitHub login comes from `gh api user --jq .login`. It also keeps a cached `profile` of
+  share. The GitHub login comes from `gh api user --jq .login`, or the GitHub MCP `get_me` tool where `gh` isn't available (the sidekick falls back to read-only GitHub MCP tools for all its GitHub reads). It also keeps a cached `profile` of
   each repo you work in (test runner, monorepo layout, changesets, PR/issue
   templates, contribution rules), refreshed only when the files behind it
   change. The skills consult it at fixed points:
@@ -49,6 +49,14 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   `pr-pr-sidekick/MEMORY.md`, which is only a stub pointing at `memory/`.
 
   Memory sync across machines and cloud sessions is opt-in; see below.
+
+  The sidekick reads GitHub with `gh`, or with read-only GitHub MCP
+  tools where `gh` isn't available (Claude Code on the web). On Claude
+  Code, a `PreToolUse` hook ([`hooks/sidekick-gh-guard.sh`](hooks/sidekick-gh-guard.sh))
+  blocks `gh` writes while the sidekick runs as a skill's subagent;
+  the main chat, other agents, and a `claude --agent pr:pr-sidekick`
+  session aren't affected. The guard is Claude Code only: on Cursor,
+  the read-only rule rests on the agent's instructions.
 
   The `pr` plugin has to be installed for the agent to exist. Without it,
   the skills do each step themselves. See

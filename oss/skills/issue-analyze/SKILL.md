@@ -9,6 +9,8 @@ Size an issue before working on it, so a blast radius, root-cause shape, or comm
 
 This skill never reproduces a bug, writes a test, or pushes a commit — it reads code and reasons about it. Confirming a bug is real and reproducible is `issue-verify`'s job; picking and implementing a fix is `issue-fix`'s. This skill is a fast, read-only triage step that can run before either of those, or on its own for a quick gut-check.
 
+GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+
 ## Step 1: Read and classify the issue
 
 - Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'` — the body and the last 10 comments. Read earlier comments only when what you need isn't there and `total` says there are more.

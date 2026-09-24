@@ -7,6 +7,8 @@ description: Sync an open pull request with what's actually on its branch — re
 
 A PR description is a snapshot of intent taken when the PR opened. The branch keeps moving after that — new commits, scope changes, a base that's advanced out from under it. This skill catches the branch up to its base, then re-derives the title, description, and changeset from what's actually there, so a reviewer never reads a stale summary or reviews a diff cluttered with someone else's already-merged commits.
 
+GitHub steps are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+
 ## How this runs
 
 Only the short ends run here. Steps 2–6 — rebase, reading the branch, changeset, drafting — live in `draft.md` next to this file and run in one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"):
@@ -19,6 +21,8 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    base <baseRefName>. Current title: <title>.
    Follow Steps 2–6 in <this skill's directory>/draft.md.
    Sidekick profile and brief: <what it returned, or "none">
+   GitHub: <"gh" | "MCP — read the PR body with pull_request_read method get
+   instead of gh; load it with ToolSearch first if needed">
    Stop and return a question instead of guessing when the branch may be
    shared with someone else, a rebase conflict isn't obvious, or nothing
    states the motivation for Why.
@@ -41,7 +45,9 @@ No way to spawn a subagent → read `draft.md` and run Steps 2–6 here.
 gh pr view --json number,title,url,baseRefName,headRefName 2>&1
 ```
 
-Errors (no PR for the branch, or `gh` not installed/authenticated) → stop, tell the user there's no PR to sync, and don't create one — opening a PR is a different task with its own judgment calls (base branch, reviewers, draft-or-not).
+On the MCP route, find the branch's PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`), then `pull_request_read` method `get`.
+
+Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) → stop, tell the user there's no PR to sync, and don't create one — opening a PR is a different task with its own judgment calls (base branch, reviewers, draft-or-not).
 
 Succeeds → keep the PR number and `baseRefName`; everything downstream diffs against that base, not the last commit.
 
@@ -56,6 +62,8 @@ d="$(git rev-parse --git-dir)"
 gh pr edit <number> --title "$(cat "$d/pr-sync-title.txt")" --body-file "$d/pr-sync-body.md"
 rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 ```
+
+On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.
 
 Then tell the user, briefly: whether the title changed, and a one-line summary of what moved in the description/changeset. Don't paste the full new PR body back at them.
 
