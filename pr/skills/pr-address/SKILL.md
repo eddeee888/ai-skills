@@ -1,6 +1,6 @@
 ---
 name: pr-address
-description: Work through a pull request's unresolved review comment threads and act on the ones the user has already signaled they're ready for. On the user's own PR, a thread only gets auto-actioned once the user themselves has replied last in it — e.g. a reviewer said "we should do this" and the user replied "Ok", or asked "why this approach?" and the user replied "let me check" — the skill then infers what to do from the original reviewer comment's nature: an authoritative instruction/suggestion gets implemented, a why-question gets answered with concise, backed-up reasoning. A thread with no reviewer input at all — the user commenting on their own diff — needs no separate go-ahead: their own comment already carries the authority a reviewer's comment plus a reply would together, so it's classified and acted on the same way, straight away. Any thread still waiting on someone else's reply, any thread on a PR the user doesn't own, and any high-risk change are never auto-actioned — the user is asked what to do with all of them in one batch before anything is applied. Never resolves a review thread automatically. Use when asked to "address PR comments", "handle the review feedback", "go through the review threads", "respond to reviewers", or after the user has left short replies like "Ok"/"let's do it"/"let me check" on review comments and wants them followed through on.
+description: Work through a pull request's unresolved review threads and act on the ones the user has signaled they're ready for. On the user's own PR, a thread is acted on once the user replied last with a go-ahead ("Ok", "let me check"), or when the user commented on their own diff: an instruction or suggestion gets implemented, a why-question gets a backed-up answer. Threads awaiting someone else's reply, threads on someone else's PR, and high-risk changes go to the user in one batch first. Never resolves a thread. Use when asked to "address PR comments", "handle the review feedback", "respond to reviewers", or after leaving short replies like "Ok" on review comments.
 ---
 
 # Address PR review comments
@@ -34,16 +34,17 @@ gh api graphql -f query='
             id
             isResolved
             comments(first: 50) {
-              nodes { databaseId author { login } body path line diffHunk }
+              nodes { databaseId author { login } body path line }
             }
           }
         }
       }
     }
-  }' -f owner=<owner> -f repo=<repo> -F pr=<number>
+  }' -f owner=<owner> -f repo=<repo> -F pr=<number> \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
 ```
 
-Drop any resolved thread. Keep each thread's ordered comments — the last comment's author and content is what Step 3 classifies on.
+The `--jq` filter drops resolved threads, so only unresolved ones land in context; path and line are enough to place a thread, so the diff hunk isn't fetched. Keep each thread's ordered comments — the last comment's author and content is what Step 3 classifies on.
 
 ## Step 3: Classify every unresolved thread into two buckets
 
@@ -125,7 +126,7 @@ This stays in this chat — a lookup or two is cheap. When answering would take 
 
 ## Step 6: Wrap up
 
-Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent — even though its own description invites a run after new commits. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr-sync` will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
+Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr-sync` will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
 
 ## When to stop instead of proceeding
 

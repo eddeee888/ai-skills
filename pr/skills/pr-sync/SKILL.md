@@ -1,6 +1,6 @@
 ---
 name: pr-sync
-description: Sync an open pull request with whatever is actually on the branch right now — rebase it onto its current base, then re-derive the title, description, and changeset from what's left, including the issue-tracker link (GitHub, Jira, Linear, etc.) and any external context (resource URLs, blog posts, Miro links) when they genuinely exist. Use when the user asks to "update the PR description", "sync the PR with my changes", "rebase and update the PR", "the PR is stale", "make the changeset match my changes", or after pushing new commits to a branch that already has an open PR. Also trigger proactively right after a round of commits if a PR is already open on the branch — PR descriptions go stale the moment someone tacks on a "quick fix" commit, and this closes that gap before a reviewer sees it. Only applies to an existing PR; if there's no open PR on the branch, this skill's job is to skip, not to open one.
+description: Sync an open pull request with what's actually on its branch — rebase onto its current base, then re-derive the title, description, and changeset from what's left, including the issue-tracker link and any external context that genuinely exists. Use when the user asks to "update the PR description", "sync the PR with my changes", "rebase and update the PR", "the PR is stale", or "make the changeset match my changes". Run it only when asked — other skills suggest it rather than run it. Only applies to an existing PR; with no open PR on the branch, skip rather than open one.
 ---
 
 # Sync PR with branch changes
@@ -38,17 +38,16 @@ Conflicts → stop. Resolve only the obvious ones (same file, clearly compatible
 
 ```bash
 git diff origin/<baseRefName>...HEAD --stat
-git diff origin/<baseRefName>...HEAD
-git log origin/<baseRefName>..HEAD --oneline
+git log origin/<baseRefName>..HEAD --format='%h %s%n%b'
 ```
 
-Read enough of the diff to understand the behavior change, not just the file list. Commit messages often already state the *why* — use them rather than guessing from the diff alone.
+Start from the file list and the commit messages — they often already state the *why*; use them rather than guessing from the diff alone. Then read the diff of only the files you need to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR. The full diff can be tens of thousands of tokens and would stay in this chat; Step 7's `check-description` reads all of it anyway.
 
 Empty diff → the PR is already current; say so and stop.
 
 ## Step 4: Check for a changeset, but only if the repo actually uses one
 
-Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, first (`CONVENTIONS.md`). It answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. Not available → check each inline as written.
+Get a `profile` of the repo and a `brief` for "PR description" in one call (`profile` + `brief`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, first (`CONVENTIONS.md`). The profile answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. The brief is for Step 5. Not available → check each inline as written.
 
 Look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip this step entirely; don't introduce a changelog convention as a side effect of a sync task.
 
@@ -60,7 +59,7 @@ The changeset always gets its own commit, never squashed into an implementation 
 
 ## Step 5: Draft the title and description
 
-Before drafting, get a `brief` from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, for "PR description" in this repo (`CONVENTIONS.md`) — how the user likes descriptions written and what this repo's reviewers ask to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
+Step 4's `brief` says how the user likes descriptions written and what this repo's reviewers ask to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
 
 **Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` at the repo root). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md`); don't let a resync silently drop it.
 

@@ -82,7 +82,7 @@ the branch.
 
 ## Consulting the `pr-sidekick` agent
 
-`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences, and keeps a cached profile of each repo's working setup. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. The same agent file is the Claude Code agent and the Cursor subagent.
+`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences, and keeps a cached profile of each repo's working setup. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. A skill that needs both `profile` and `brief` at the same point asks for them in one call (`profile` + `brief`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
 
 **Call it by the name this host actually has:**
 

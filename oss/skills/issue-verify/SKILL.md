@@ -7,7 +7,7 @@ description: Verify a GitHub issue is real and reproducible before any fix work 
 
 Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's `issue-fix`'s job. For a lighter, unverified read-only guess at root cause and size before this, see `issue-analyze`. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, first.
 
-**Every step that pushes a commit ends by running `pr:pr-sync`.** Once the PR exists, it's the source of truth for title/description/changeset — never leave it stale after a push, even a small one.
+**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, so it starts current. After a further push to its branch, say in one line that the description may be stale and leave `/pr-sync` to the user (Step 6).
 
 ## Step 1: Check for an existing checkpoint, then read the issue
 
@@ -18,13 +18,13 @@ git log --all --oneline --grep="eddeee888:oss:issue-verify" | grep -F "#<number>
 
 Match found → stop. Tell the user a checkpoint already exists (name the commit and branch) and point them at `issue-fix` instead of re-verifying. Only proceed past this if the user explicitly wants to redo it (e.g. the original repro turned out wrong).
 
-Nothing found → read the issue and the repo's own template:
+Nothing found → read the issue:
 
 ```bash
 gh issue view <number> --json number,title,body,url,labels,state,comments
-ls .github/ISSUE_TEMPLATE/ 2>/dev/null
-cat .github/ISSUE_TEMPLATE/*.md .github/ISSUE_TEMPLATE/*.yml 2>/dev/null
 ```
+
+Then find the repo's bug-report template. Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md`): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. Don't read every template.
 
 Note the exact field the template uses for reproduction and its exact wording — you'll reuse it in Step 3 instead of asking generically.
 
@@ -55,13 +55,13 @@ Stop here — there's nothing to test yet. This skill doesn't poll for a reply; 
 
 ## Step 4: Usable repro → write a failing test
 
-Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md`): the monorepo's package map, where tests live, and how to run a single test — so the test lands where this repo keeps its tests and runs the way its contributors run them. Not available → work these out from the repo as usual.
+Use the `profile` from Step 1, when there is one: the monorepo's package map, where tests live, and how to run a single test — so the test lands where this repo keeps its tests and runs the way its contributors run them. Not available → work these out from the repo as usual.
 
 Find the package the repro actually exercises (in a monorepo, match its imports/API calls to the owning workspace — don't guess from the issue's labels alone).
 
 Write a test that mirrors the repro as closely as possible, asserting the **expected/correct** behavior, not the buggy one.
 
-Run it and read the failure. Confirm it fails for the reason the issue describes, not because of a typo or wrong setup in the test itself. If it doesn't fail the way the issue claims, that's a finding too — go back to the reporter (Step 3) with what you found instead of forcing a red test that proves the wrong thing.
+Run just that test, with the runner's quiet or summary reporter, and read the failure. Confirm it fails for the reason the issue describes, not because of a typo or wrong setup in the test itself. If it doesn't fail the way the issue claims, that's a finding too — go back to the reporter (Step 3) with what you found instead of forcing a red test that proves the wrong thing.
 
 ## Step 5: Leave it failing, commit it as the checkpoint, open the PR
 
@@ -81,9 +81,9 @@ Run it and read the failure. Confirm it fails for the reason the issue describes
 gh pr create --draft --title "test: reproduce <short bug description> (failing) (#123)" --body "<body>"
 ```
 
-## Step 6: Sync
+## Step 6: Suggest a sync after further pushes
 
-Run `pr:pr-sync` right after opening the PR, and again after any further push to the same branch — never leave the PR description behind the branch.
+Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, end the report with one line saying the description may now be stale and `/pr-sync` will update it.
 
 ## When to stop instead of proceeding
 
@@ -91,4 +91,3 @@ Run `pr:pr-sync` right after opening the PR, and again after any further push to
 - No repro and the reporter hasn't confirmed the ask yet → post the request (Step 3) and stop. Don't write a speculative test against an unconfirmed guess at the bug.
 - The test doesn't fail the way the issue describes → don't commit and push it; go back to the reporter with what you actually found.
 - Tempted to skip the test so the PR's checks come back green → don't. Leave it red.
-- No open PR yet when you'd otherwise sync → that's expected before Step 5; `pr:pr-sync` only applies once the checkpoint PR exists.

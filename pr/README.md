@@ -25,13 +25,14 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
     asks are implemented by a subagent, up to 10 threads per batch, that
     sees only those threads, not the parent chat, so the edit/test loop
     stays cheap in a long session.
-  - `pr-sync` — `profile` for changesets, the title prefix, and the PR
-    template; `brief` before drafting the description, and
+  - `pr-sync` — `profile` + `brief` in one call (changesets, the title
+    prefix, the PR template, and how to write the description), and
     `check-description` on the draft before applying it (flagging claims the
     diff doesn't back up, and learning from your edits to past drafts).
   - `oss:issue-create` / `oss:issue-verify` — `profile` for the issue
     template, and for where tests live and how to run them.
-  - `oss:issue-fix` — `profile`, then `brief` and `check-diff` around the fix.
+  - `oss:issue-fix` — `profile` + `brief` in one call, then `check-diff`
+    around the fix.
 
   It only advises: the skills still do every push, reply, and PR edit.
   Personal files stay in that person's `memory/users/<github-login>/` tree.
