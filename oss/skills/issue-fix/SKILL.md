@@ -7,7 +7,7 @@ description: Turn an `issue-verify` checkpoint commit into an actual fix. Locate
 
 Second half of the TDD loop `issue-verify` started: a failing test already exists, committed with an `eddeee888:oss:issue-verify` marker, proving the bug is real. This skill makes that test pass for real, and makes the fix decision *with* the user instead of for them — a bug rooted in a dependency wants a different response than one rooted in this repo's own code, and the user should choose the trade-off before code gets written.
 
-**This skill never runs `pr:pr-sync` itself.** A sync is a long rebase-and-redraft loop. When a push leaves a PR's description behind its branch, say so in one line and leave `/pr-sync` to the user (Step 7).
+**This skill never runs `pr:pr-sync` itself.** A sync is a long rebase-and-redraft loop. When a push leaves a PR's description behind its branch, say so in one line and leave `/pr:pr-sync` (`/pr-sync` on Cursor) to the user (Step 7).
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -51,7 +51,7 @@ For each option: what changes, blast radius, risk, rough effort. Ask which they 
 
 ## Step 5: Implement the chosen option
 
-Get a `profile` of the repo and a `brief` in one call (`profile` + `brief`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"), passing the files the chosen option touches and a one-line summary of it. The profile says how to run the affected package's tests and whether Step 6's title needs a package prefix; the brief brings the rules the user's reviewers have already asked for in this repo. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `check-diff` call below. It lives in the `pr` plugin; not installed → skip it.
+Get the repo's profile and a brief in one call (`scout-repo` + `brief-task`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"), passing the files the chosen option touches and a one-line summary of it. The profile says how to run the affected package's tests and whether Step 6's title needs a package prefix; the brief brings the rules the user's reviewers have already asked for that apply to this change. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `sweep-diff` call below. It lives in the `pr` plugin; not installed → skip it.
 
 Then hand the edit/test/commit loop to one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), with this prompt:
 
@@ -60,7 +60,7 @@ Repo <owner>/<repo>, branch <branch> (already checked out), on top of
 checkpoint commit <verify-commit-sha> (marked eddeee888:oss:issue-verify).
 Failing test: <path> — run it with: <command from the profile, or "find out">
 Fix to make: <the chosen option, in two or three lines>
-Rules that apply: <brief lines, or "none">
+Rules that apply: <the brief's lines, or "none">
 
 Make only this fix, nothing broader. The failing test is the acceptance
 criterion. Never rewrite, squash, or drop the checkpoint commit.
@@ -75,7 +75,7 @@ Return at most 5 lines: files changed, commit sha, tests run and result,
 or why you stopped.
 ```
 
-Then run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode against the checkpoint commit. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further.
+Then run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `sweep-diff` mode against the checkpoint commit. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further.
 
 A later `pr:pr-sync` rebase still replays the checkpoint's SHA but leaves its content and trailer untouched — that's not the kind of rewrite the prompt rules out.
 
@@ -98,7 +98,7 @@ Reference the issue with a non-closing keyword, per this marketplace's shared co
 
 ## Step 7: Suggest a sync
 
-Don't run `pr:pr-sync`. A separate fix PR was just written from the fix, so it's current. When the push continued the checkpoint's PR, or went to a PR that already existed, end the report with one line saying its title and description may now be stale and `/pr-sync` will update them.
+Don't run `pr:pr-sync`. A separate fix PR was just written from the fix, so it's current. When the push continued the checkpoint's PR, or went to a PR that already existed, end the report with one line saying its title and description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them.
 
 ## When to stop instead of proceeding
 

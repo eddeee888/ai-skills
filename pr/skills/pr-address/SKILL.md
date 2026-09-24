@@ -22,7 +22,7 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` + `profile` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below (or, on the MCP route, that it should use `get_review_comments`), and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `triage-threads` + `scout-repo` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below (or, on the MCP route, that it should use `get_review_comments`), and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
 
 Pull review threads via GraphQL, for resolution state and comment order. Conversation-tab comments are out of scope — they have no reply chain.
 
@@ -36,7 +36,7 @@ gh api graphql -f query='
             id
             isResolved
             comments(first: 50) {
-              nodes { databaseId author { login } body path line }
+              nodes { databaseId author { login } body path line originalLine }
             }
           }
         }
@@ -46,7 +46,7 @@ gh api graphql -f query='
   --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
 ```
 
-The `--jq` filter keeps resolved threads out of context. Step 3 classifies on each thread's last comment.
+The `--jq` filter keeps resolved threads out of context. Step 3 classifies on each thread's last comment. An outdated comment has `line: null`; use its `originalLine`.
 
 On the MCP route, use `pull_request_read` method `get_review_comments` instead, per the review-threads row in `CONVENTIONS.md` → "GitHub access" — it also says where each comment's `databaseId` comes from.
 
@@ -54,13 +54,14 @@ On the MCP route, use `pull_request_read` method `get_review_comments` instead, 
 
 **High risk** means hard to reverse, security/auth, data loss, production config/infra, a public API, or a wide blast radius. Judge it from the comment text and file path alone — don't open code to decide. Can't tell → high risk.
 
-- **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both the ask and the go-ahead. Not high risk → automatic; high risk → needs the user first.
+- **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both the ask and the go-ahead. Not high risk → automatic; high risk → needs the user first. More than one comment, all the user's → the later ones are replies already posted (this skill replies as the user), so it's already handled — unless the last one is a new ask rather than a reply, which then counts as the note.
 - **A reviewer commented** → automatic only when the last comment is the user's short go-ahead ("Ok", "let's do it", "let me check" — not a paragraph that already answers) and the ask isn't high risk. The last comment is the user's own full answer or instruction → already handled; note it, don't ask.
 
 Tag each automatic thread by the nature of the *original* comment, not the reply:
 
 - **Authoritative** — an instruction, correction, or ```suggestion``` block ("add a null check here", "use X instead").
 - **Why-question** — asks for reasoning or research ("why this approach?", "should this handle X too?").
+- **Both** — a question plus an instruction that depends on the answer ("does this work? find how others do it, then recommend") → a why-question. Answer it; the instruction waits for the user's go-ahead on the answer.
 
 **Needs the user first** — everything else:
 
@@ -76,7 +77,7 @@ Empty → skip straight to Step 5.
 
 ## Step 5: Handling comments
 
-Apply every settled thread — Step 3's automatic bucket plus whatever the user approved in Step 4 — by the nature of the original comment. New comment categories go here as 5c, 5d, …
+Apply every settled thread — Step 3's automatic bucket plus whatever the user approved in Step 4 — by the nature of the original comment.
 
 ### 5a. Authoritative
 
@@ -87,7 +88,7 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
 
    ```text
    Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
-   Rules that apply: <the threads' "remembered" lines from classify, or "none">
+   Rules that apply: <the threads' "remembered" lines from triage-threads, or "none">
    Tests: <the profile's tests line, or "find out">
    GitHub: <"gh" | "MCP — use the GitHub MCP tools named below instead of gh; load each with ToolSearch first if needed">
    Threads:
@@ -115,14 +116,14 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    yes/no) or skipped (why) — then one line for the final test run and push.
    ```
 
-3. **Check.** Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
+3. **Check.** Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `sweep-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
 4. **Merge the result.** Note the per-thread lines and move on — don't ask for a longer report. A skipped thread → bring it back to the user with the reason, as in Step 4. A batch that stopped before pushing leaves its commits local → don't start the next batch; bring the whole batch and its failing tests to the user. A thread marked done without a reply → post the reply yourself:
 
    ```bash
    gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
    ```
 
-A thread the user approved in Step 4 despite its risk flag gets its own single-thread subagent, same prompt shape, run only after any low-risk batches — never batched with other threads, since it's the one most likely to stop. Before moving on, show the user its result line and commit, and run `check-diff` on it as above. No way to spawn a subagent → do every thread here: implement and test → `check-diff` → commit and push → reply.
+A thread the user approved in Step 4 despite its risk flag gets its own single-thread subagent, same prompt shape, run only after any low-risk batches — never batched with other threads, since it's the one most likely to stop. Before moving on, show the user its result line and commit, and run `sweep-diff` on it as above. No way to spawn a subagent → do every thread here: implement and test → `sweep-diff` → commit and push → reply.
 
 Do **not** resolve the thread — that's for the reviewer or the user.
 
@@ -134,7 +135,7 @@ Answer here only from what this chat already knows. Anything that needs a web fe
 
 ## Step 6: Wrap up
 
-Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr-sync` will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
+Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
 
 ## When to stop instead of proceeding
 

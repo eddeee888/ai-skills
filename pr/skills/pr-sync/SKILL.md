@@ -51,11 +51,11 @@ Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) →
 
 Succeeds → keep the PR number and `baseRefName`; everything downstream diffs against that base, not the last commit.
 
-Get a `profile` of the repo and a `brief` for "PR description" in one call (`profile` + `brief`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"). Both go into the subagent's prompt: the profile answers the changeset, title-prefix and template questions in Steps 4–6, the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
+Get the repo's profile and a brief for "PR description" in one call (`scout-repo` + `brief-task`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"). Both go into the subagent's prompt: the profile answers the changeset, title-prefix and template questions in Steps 4–6, the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
 
 ## Step 7: Apply it
 
-First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body — pass the two draft file paths, not their text. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
+First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass the two draft file paths, not their text. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. When the user stated a description preference in this conversation ("keep the Why to one sentence"), pass it along in their words. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and remembers any preference you passed along. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
 
 ```bash
 d="$(git rev-parse --git-dir)"
