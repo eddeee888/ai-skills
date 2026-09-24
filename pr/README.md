@@ -15,7 +15,7 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
   when sync is on) every sidekick file lives under `memory/`:
   `memory/users/<github-login>/` for that person's rules, and
   `memory/team/` for rules someone explicitly asked to share. Memory holds
-  only rules that apply in every repo. The GitHub login comes from `gh api user --jq .login`, or the GitHub MCP `get_me` tool where `gh` isn't available (the sidekick falls back to read-only GitHub MCP tools for all its GitHub reads). Its
+  only rules that apply in every repo. The GitHub login is the one the calling skill passes, or the GitHub MCP `get_me` tool's. Its
   profile of a repo from `scout-repo` (test runner, monorepo layout, changesets, PR/issue
   templates, contribution rules) is read from the repo on each call. The skills consult it at fixed points:
   - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
