@@ -9,6 +9,8 @@ Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill tur
 
 **This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, so it starts current. After a further push to its branch, say in one line that the description may be stale and leave `/pr-sync` to the user (Step 6).
 
+GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+
 ## Step 1: Check for an existing checkpoint, then read the issue
 
 ```bash

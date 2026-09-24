@@ -23,6 +23,8 @@ git log origin/<baseRefName>..HEAD --format='%h %s%n%b'
 gh pr view <number> --json body --jq .body
 ```
 
+Your prompt says `GitHub: MCP` → read the body with `pull_request_read` method `get` instead.
+
 Start from the file list, the commit messages, and the current PR body — they often already state the *why*; use them rather than guessing from the diff alone. Then read the diff of only the files you need to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR. The full diff can be tens of thousands of tokens and would stay in context for every later step; Step 7's `check-description` reads all of it anyway.
 
 Empty diff → the PR is already current; say so and stop.

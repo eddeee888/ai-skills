@@ -46,7 +46,9 @@ When `PR_SIDEKICK_MEMORY_REPO` is set and `agent-memory/` is not a git checkout 
 
 ## GitHub access
 
-Use `gh` for GitHub reads when it works. When `gh` is missing or not authenticated (e.g. a Claude Code on the web session), use the read-only GitHub MCP tools instead — on hosts that load them on demand, load them with `ToolSearch` first:
+Pick the route once per call, at your first GitHub read: run `gh auth status`. It succeeds → use `gh` for every read in this call. It fails (not installed or not logged in, e.g. a Claude Code on the web session) → use the read-only GitHub MCP tools below for every read in this call; on a host that loads them on demand, load each with `ToolSearch` before its first use. The caller may name the route in its prompt — then skip the check and use that one.
+
+On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token scope) → retry that one read with its MCP tool before treating it as a failure.
 
 | Read | `gh` | GitHub MCP |
 |---|---|---|

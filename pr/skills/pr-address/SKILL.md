@@ -7,6 +7,8 @@ description: Work through a pull request's unresolved review threads and act on 
 
 A reviewer's ask isn't the user's decision until the user weighs in. This skill treats the user's own short reply in a thread — or the user's own comment on their own diff — as that go-ahead, then carries it out. Everything else goes to the user in one batch first.
 
+GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+
 ## Step 1: Identify the PR and whether it's the user's
 
 ```bash
@@ -20,7 +22,7 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` + `profile` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` + `profile` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below (or, on the MCP route, that it should use `get_review_comments`), and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
 
 Pull review threads via GraphQL, for resolution state and comment order. Conversation-tab comments are out of scope — they have no reply chain.
 
@@ -45,6 +47,8 @@ gh api graphql -f query='
 ```
 
 The `--jq` filter keeps resolved threads out of context. Step 3 classifies on each thread's last comment.
+
+On the MCP route, use `pull_request_read` method `get_review_comments` instead, per the review-threads row in `CONVENTIONS.md` → "GitHub access" — it also says where each comment's `databaseId` comes from.
 
 ## Step 3: Classify every unresolved thread into two buckets
 
@@ -85,12 +89,15 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
    Rules that apply: <the threads' "remembered" lines from classify, or "none">
    Tests: <the profile's tests line, or "find out">
+   GitHub: <"gh" | "MCP — use the GitHub MCP tools named below instead of gh; load each with ToolSearch first if needed">
    Threads:
    1. <path>:<line>, comment id <databaseId> — <one-line ask>
    2. ...
 
    For each thread in order: read its full comment with
      gh api repos/<owner>/<repo>/pulls/comments/<databaseId> --jq .body
+     (MCP: pull_request_read method get_review_comments; the comment whose
+     html_url ends in #discussion_r<databaseId>)
    implement it (apply a suggestion block literally), run the tests affected
    by it with a quiet reporter, and commit it on its own once they pass.
    Stay inside each ask. If a thread needs more than its ask (other files'
@@ -102,6 +109,7 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    Once they pass, push once, then reply on each committed thread with a
    one-line summary:
      gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
+     (MCP: add_reply_to_pull_request_comment with commentId <databaseId>)
    Do not resolve any thread. Do not run pr-sync.
    Return one line per thread: comment id, done (commit sha, reply posted
    yes/no) or skipped (why) — then one line for the final test run and push.

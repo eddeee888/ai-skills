@@ -7,6 +7,8 @@ description: Draft and file a well-formed bug-report issue on a GitHub repo, cov
 
 A bug report that's missing context, a clear problem statement, a reproduction, or the environment it happened in just bounces back with "can you provide more details" — costing a round trip before anyone can act on it. This skill front-loads that: it drafts a complete report against four sections before anything is posted, and never files anything the user hasn't seen first.
 
+GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+
 ## Step 1: Ask for the repo
 
 This skill isn't scoped to one repo — always ask which one the issue is for (`owner/repo` or a full GitHub URL) before doing anything else. Don't assume it's the repo the current session happens to be in; a bug found while working on one repo often belongs on a dependency's repo instead.

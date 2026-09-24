@@ -9,6 +9,8 @@ Second half of the TDD loop `issue-verify` started: a failing test already exist
 
 **This skill never runs `pr:pr-sync` itself.** A sync is a long rebase-and-redraft loop. When a push leaves a PR's description behind its branch, say so in one line and leave `/pr-sync` to the user (Step 7).
 
+GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+
 ## Step 1: Find the `issue-verify` checkpoint commit
 
 The failing test could be on the branch you're already on or a completely different one — don't assume, look:
