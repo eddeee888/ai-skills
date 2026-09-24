@@ -1,6 +1,6 @@
 ---
 name: issue-analyze
-description: Size an issue before committing to work on it — either a feature request, or a high-level, read-only root-cause take on a bug report, without reproducing it, writing a test, or pushing anything (that's `issue-verify`/`issue-fix`'s job). Reads the issue, maps what part of the codebase it would actually touch, and classifies it small (e.g. a fix confined to one function, or an additional config option, narrow blast radius), medium (a fix that touches shared logic/several call sites, or a change that spans multiple packages/files but stays additive), or large (potential breaking changes to one or many packages, big blast radius, needs an RFC and user-facing comms before implementation — or, for a bug, a root cause tangled in a core assumption where even a correct fix changes documented behavior). Use when asked to "analyze this issue", "size this issue", "size this request", "roughly what's causing this bug and how big is the fix", "how big is #123", "analyze this feature request", "what's the blast radius of this feature", "is this a feature or a bug", or before scoping/estimating any bug or feature issue. Takes either the URL/number of an issue in the same repo, or a plain-text bug/feature description with no issue filed yet. Read-only by default — it doesn't implement, reproduce, write tests, or post to GitHub unless the user asks it to share the analysis.
+description: Size an issue before working on it — a feature request, or a read-only root-cause take on a bug report (no reproducing, tests, or pushes; that's `issue-verify`/`issue-fix`). Maps what the change would touch and classifies it small (one function, or an additive config option), medium (shared logic or several packages, still non-breaking), or large (breaking changes, wide blast radius, needs an RFC and user comms). Takes an issue URL/number or a plain-text description. Use when asked to "analyze/size this issue", "how big is #123", "what's the blast radius", "is this a feature or a bug", or before scoping any issue. Read-only unless asked to share the analysis.
 ---
 
 # Analyze an issue: a bug report or a feature request
@@ -11,7 +11,7 @@ This skill never reproduces a bug, writes a test, or pushes a commit — it read
 
 ## Step 1: Read and classify the issue
 
-- Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments`
+- Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'` — the body and the last 10 comments. Read earlier comments only when what you need isn't there and `total` says there are more.
 - No issue — just a description in the conversation → treat the description itself as the issue. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Search existing issues for a duplicate first (`gh issue list --search "<keywords>"`). Found a match → point the user at it instead of continuing.
 
 Then classify which of the two this actually is, and jump to the matching path below:
@@ -28,6 +28,8 @@ Restate the observed behavior vs. the expected behavior. Unclear what's actually
 ### Step 3: Trace the likely root cause
 
 Read the code path the reported behavior would run through and form a hypothesis for where it goes wrong — by reading, not by running anything. Name the specific function/module/condition you suspect, and say plainly when the code alone doesn't pin it down to one spot — a tentative "likely X, possibly Y" beats a confident guess dressed as certainty. For a monorepo, note every package whose behavior the root cause implicates.
+
+Hand the reading to an exploring subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), so the files it reads stay out of this chat. Pass the observed vs. expected behavior and any entry point the issue names; ask for the suspect function(s)/files, the packages involved, and how sure it is, in a few lines. Size from its answer — don't re-read what it read.
 
 Signals:
 
@@ -66,6 +68,8 @@ Restate the new behavior/option/capability wanted and the use case behind it. Ge
 ### Step 3: Map the codebase surface it touches
 
 Search the repo for the area(s) involved: the existing API/config surface, the package(s) that own it, and any extension points that already generalize toward what's being asked. For a monorepo, list every workspace whose public API, exported types, or config schema would need to change — not just the one the issue happened to be filed under.
+
+Hand the search to an exploring subagent the same way as Path A's Step 3: pass the requested capability, and ask for the surface it touches, the owning packages, and any existing extension points, in a few lines.
 
 Signals:
 

@@ -2,7 +2,8 @@
 
 Formatting/process rules used by more than one skill in this marketplace.
 Skills point here instead of restating a rule — change it once, and every
-skill that points to it picks it up.
+skill that points to it picks it up. Each pointer names its section
+(`CONVENTIONS.md` → "<section>"); read only that section, not the whole file.
 
 This file sits at the repo root, alongside both plugins, so it's present on
 disk regardless of which individual plugin(s) a user installs.
@@ -80,9 +81,25 @@ that it doesn't, yet.
 Used by: `pr:pr-sync` (Verification), regardless of which skill produced
 the branch.
 
+## Hand long loops to a subagent
+
+An implement/test/commit loop, a write-and-run test loop, a code survey, research, or a rebase-and-draft is tens of steps. On a host that resends the whole conversation every step (Cursor does), each of those steps in the main chat pays for everything already in it — hundreds of thousands of tokens late in a long session. A subagent's conversation holds only its prompt, so the same loop costs a fraction. A skill that hands a loop off supplies the prompt template; these rules hold for all of them:
+
+- **Which agent.** Claude Code: the `general-purpose` agent for work that edits, runs, or pushes; the `Explore` agent for a read-only survey. Cursor: a subagent.
+- **The prompt is only the template, filled in** — no transcript, no PR diff, no copy of the skill, nothing the template doesn't ask for. The subagent fetches anything else it needs itself.
+- **It can't consult the sidekick.** Get what's needed from the sidekick in the main chat first and paste its output into the prompt.
+- **One at a time on a shared checkout.** Subagents that edit the same checkout never run in parallel.
+- **Short results.** It returns only the few lines the template asks for, and returns a question instead of guessing when a decision is the user's; the main chat asks the user and spawns it again with the answer.
+- **Every spawn and check is a main-chat step.** Keep them few — batch where the skill says to.
+- **No way to spawn a subagent** → do the same steps in the main chat.
+
+Used by: `pr:pr-address` (5a batches, 5b research), `pr:pr-sync` (Steps 2–6),
+`oss:issue-fix` (root cause, implementation), `oss:issue-verify` (the failing
+test), `oss:issue-analyze` (code survey).
+
 ## Consulting the `pr-sidekick` agent
 
-`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences, and keeps a cached profile of each repo's working setup. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. The same agent file is the Claude Code agent and the Cursor subagent.
+`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences, and keeps a cached profile of each repo's working setup. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. A skill that needs both `profile` and `brief` at the same point asks for them in one call (`profile` + `brief`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
 
 **Call it by the name this host actually has:**
 
@@ -96,6 +113,6 @@ These rules hold everywhere:
 - **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that settled belongs in the repo's `CLAUDE.md`, not only in private memory.
 - **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The sidekick appends it only to `memory/team/MEMORY.md` in the memory repo.
 
-Used by: `pr:pr-address` (classify, brief, check-diff), `pr:pr-sync`
+Used by: `pr:pr-address` (classify + profile, check-diff), `pr:pr-sync`
 (profile, brief, check-description), `oss:issue-create` (profile),
 `oss:issue-verify` (profile), `oss:issue-fix` (profile, brief, check-diff).

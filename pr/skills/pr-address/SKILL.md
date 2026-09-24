@@ -1,11 +1,11 @@
 ---
 name: pr-address
-description: Work through a pull request's unresolved review comment threads and act on the ones the user has already signaled they're ready for. On the user's own PR, a thread only gets auto-actioned once the user themselves has replied last in it — e.g. a reviewer said "we should do this" and the user replied "Ok", or asked "why this approach?" and the user replied "let me check" — the skill then infers what to do from the original reviewer comment's nature: an authoritative instruction/suggestion gets implemented, a why-question gets answered with concise, backed-up reasoning. A thread with no reviewer input at all — the user commenting on their own diff — needs no separate go-ahead: their own comment already carries the authority a reviewer's comment plus a reply would together, so it's classified and acted on the same way, straight away. Any thread still waiting on someone else's reply, any thread on a PR the user doesn't own, and any high-risk change are never auto-actioned — the user is asked what to do with all of them in one batch before anything is applied. Never resolves a review thread automatically. Use when asked to "address PR comments", "handle the review feedback", "go through the review threads", "respond to reviewers", or after the user has left short replies like "Ok"/"let's do it"/"let me check" on review comments and wants them followed through on.
+description: Work through a pull request's unresolved review threads and act on the ones the user has signaled they're ready for. On the user's own PR, a thread is acted on once the user replied last with a go-ahead ("Ok", "let me check"), or when the user commented on their own diff: an instruction or suggestion gets implemented, a why-question gets a backed-up answer. Threads awaiting someone else's reply, threads on someone else's PR, and high-risk changes go to the user in one batch first. Never resolves a thread. Use when asked to "address PR comments", "handle the review feedback", "respond to reviewers", or after leaving short replies like "Ok" on review comments.
 ---
 
 # Address PR review comments
 
-A reviewer's comment isn't actionable until the user has actually weighed in on it — a "do this" from a teammate isn't the user's decision to implement until the user has said so, even with a one-word "Ok". This skill treats the user's own reply in a thread as that authorization signal, then carries out what was authorized: an authoritative instruction gets implemented, a why-question gets answered with real backing. When there's no reviewer in a thread at all — the user commenting on their own diff — that comment is already the user telling the skill what to do, with no separate reply to wait for; it's carried out the same way. Everything the user hasn't yet weighed in on — including anything flagged risky even after a go-ahead — gets surfaced to them in one batch, before any action is taken.
+A reviewer's ask isn't the user's decision until the user weighs in. This skill treats the user's own short reply in a thread — or the user's own comment on their own diff — as that go-ahead, then carries it out. Everything else goes to the user in one batch first.
 
 ## Step 1: Identify the PR and whether it's the user's
 
@@ -20,9 +20,9 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` mode** when it's available (`CONVENTIONS.md`): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` (`CONVENTIONS.md`). It returns the buckets, notes where a thread matches something it remembers, and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` + `profile` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
 
-Pull review threads (not flat issue-level comments — the PR's general Conversation-tab comments, including anything you posted there yourself; those lack reply-chain semantics and are out of scope here) via GraphQL, so resolution state and comment order are available:
+Pull review threads via GraphQL, for resolution state and comment order. Conversation-tab comments are out of scope — they have no reply chain.
 
 ```bash
 gh api graphql -f query='
@@ -34,33 +34,35 @@ gh api graphql -f query='
             id
             isResolved
             comments(first: 50) {
-              nodes { databaseId author { login } body path line diffHunk }
+              nodes { databaseId author { login } body path line }
             }
           }
         }
       }
     }
-  }' -f owner=<owner> -f repo=<repo> -F pr=<number>
+  }' -f owner=<owner> -f repo=<repo> -F pr=<number> \
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
 ```
 
-Drop any resolved thread. Keep each thread's ordered comments — the last comment's author and content is what Step 3 classifies on.
+The `--jq` filter keeps resolved threads out of context. Step 3 classifies on each thread's last comment.
 
 ## Step 3: Classify every unresolved thread into two buckets
 
-For each thread, first check whether a reviewer — anyone other than the user — ever left a comment in it.
+**High risk** means hard to reverse, security/auth, data loss, production config/infra, a public API, or a wide blast radius. Judge it from the comment text and file path alone — don't open code to decide. Can't tell → high risk.
 
-- **No reviewer ever participated** (every comment, including the first, is the user's own — a note left on their own diff) → on the user's own PR, the user's own comment already carries the authority a reviewer's comment plus a go-ahead reply would together; there's no separate reply to wait for. Treat the comment's own content as both the ask and its authorization, and classify it the same way the reply-driven case below does — not critical/high risk → straight to the automatic bucket; critical/high risk → "needs the user first," same as an acknowledged-but-risky reviewer thread:
-  - **Authoritative** — reads like an instruction or actionable ask ("add a null check here", a `suggestion` block).
-  - **Why-question** — reads like an open question needing research ("should this handle X too?").
-- **A reviewer did participate** → look at who left the last comment and what it says:
-  - **Ready to act automatically** — the last comment is the user's own, a short go-ahead/acknowledgment (not already a full answer — e.g. "Ok", "let's do it", "let me check", not a paragraph that already answers the question), *and* the original reviewer comment isn't critical/high risk (risk framing lives in Step 5a). Tag it with the nature of the *original* comment, not the reply:
-    - **Authoritative** — an instruction, correction, or a ```suggestion``` code block ("do this", "use X instead").
-    - **Why-question** — asks for reasoning or justification ("why this approach?").
-  - **Needs the user first** — everything else:
-    - The PR isn't the user's at all.
-    - The last comment is from someone other than the user (no reply yet).
-    - The last comment is the user's own, but it's already a complete answer/instruction rather than a short go-ahead — nothing to do; note it as already-handled, don't ask about it.
-    - The user acknowledged it, but the underlying ask is critical/high risk and needs explicit confirmation.
+- **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both the ask and the go-ahead. Not high risk → automatic; high risk → needs the user first.
+- **A reviewer commented** → automatic only when the last comment is the user's short go-ahead ("Ok", "let's do it", "let me check" — not a paragraph that already answers) and the ask isn't high risk. The last comment is the user's own full answer or instruction → already handled; note it, don't ask.
+
+Tag each automatic thread by the nature of the *original* comment, not the reply:
+
+- **Authoritative** — an instruction, correction, or ```suggestion``` block ("add a null check here", "use X instead").
+- **Why-question** — asks for reasoning or research ("why this approach?", "should this handle X too?").
+
+**Needs the user first** — everything else:
+
+- The PR isn't the user's at all.
+- The last comment is from someone other than the user (no reply yet).
+- The user acknowledged it, but the ask is high risk and needs explicit confirmation.
 
 ## Step 4: Resolve the "needs the user first" bucket before applying anything
 
@@ -70,22 +72,49 @@ Empty → skip straight to Step 5.
 
 ## Step 5: Handling comments
 
-Apply every thread now settled — the automatic bucket from Step 3, plus whatever the user just approved in Step 4 — grouped by the nature of the original comment. This is the extension point for future comment categories: add new lettered sub-steps here (5c, 5d, ...) rather than new top-level steps.
+Apply every settled thread — Step 3's automatic bucket plus whatever the user approved in Step 4 — by the nature of the original comment. New comment categories go here as 5c, 5d, …
 
 ### 5a. Authoritative
 
-Implement the change, applying a `suggestion` block literally when present. Before implementing anything from this sub-step, assess risk the same way this project weighs any action: is it hard to reverse, does it touch security/auth, cause data loss, touch production config/infra, break a public API, or otherwise carry a wide blast radius? Genuinely low-risk → implement it:
+Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"). Don't grep, edit, or run tests for them here.
 
-1. Get a `brief` from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md`), passing the files about to change and the thread's ask, so remembered rules shape the change from the start.
-2. Implement it and run the affected tests.
-3. Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode on the result; fix anything it flags that's in scope for this thread.
-4. Commit and push.
+1. **Batch.** Up to 10 threads per subagent. More → batches of at most 10, same-file threads together. Don't spawn explorers to survey the repo first.
+2. **Spawn, one batch at a time.** Batches share this checkout and branch: start the next only after the previous one has returned. The prompt carries no comment bodies — the subagent fetches them:
 
-Reply on the thread summarizing what changed:
+   ```text
+   Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
+   Rules that apply: <the threads' "remembered" lines from classify, or "none">
+   Tests: <the profile's tests line, or "find out">
+   Threads:
+   1. <path>:<line>, comment id <databaseId> — <one-line ask>
+   2. ...
 
-```bash
-gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
-```
+   For each thread in order: read its full comment with
+     gh api repos/<owner>/<repo>/pulls/comments/<databaseId> --jq .body
+   implement it (apply a suggestion block literally), run the tests affected
+   by it with a quiet reporter, and commit it on its own once they pass.
+   Stay inside each ask. If a thread needs more than its ask (other files'
+   behavior, security/auth, a public API, config/infra), or its tests fail for
+   a reason you can't fix inside the ask, discard that thread's uncommitted
+   edits and go on to the next one.
+   After the last thread, run the affected tests for all committed threads
+   together. Fix a break only inside the asks; otherwise stop without pushing.
+   Once they pass, push once, then reply on each committed thread with a
+   one-line summary:
+     gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
+   Do not resolve any thread. Do not run pr-sync.
+   Return one line per thread: comment id, done (commit sha, reply posted
+   yes/no) or skipped (why) — then one line for the final test run and push.
+   ```
+
+3. **Check.** Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
+4. **Merge the result.** Note the per-thread lines and move on — don't ask for a longer report. A skipped thread → bring it back to the user with the reason, as in Step 4. A batch that stopped before pushing leaves its commits local → don't start the next batch; bring the whole batch and its failing tests to the user. A thread marked done without a reply → post the reply yourself:
+
+   ```bash
+   gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
+   ```
+
+A thread the user approved in Step 4 despite its risk flag gets its own single-thread subagent, same prompt shape, run only after any low-risk batches — never batched with other threads, since it's the one most likely to stop. Before moving on, show the user its result line and commit, and run `check-diff` on it as above. No way to spawn a subagent → do every thread here: implement and test → `check-diff` → commit and push → reply.
 
 Do **not** resolve the thread — that's for the reviewer or the user.
 
@@ -93,14 +122,15 @@ Do **not** resolve the thread — that's for the reviewer or the user.
 
 Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Before posting, drop any backing resource that's private or otherwise inaccessible to the PR's reviewers; surface it to the user directly in-session instead, never into the PR comment. Reply the same way as 5a. Do **not** resolve the thread.
 
+Answer here only from what this chat already knows. Anything that needs a web fetch or reading code — a docs page or a source file can be thousands of tokens — goes to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
+
 ## Step 6: Wrap up
 
-Implementation changes were pushed **and the PR is the user's own** (per Step 1) → run `pr:pr-sync` so the description matches the branch. Never on a PR the user doesn't own — pushing an approved fix from Step 4 is one thing, editing someone else's PR title or description as a side effect of it is not this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
+Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr-sync` will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
 
 ## When to stop instead of proceeding
 
 - No PR found for the current branch or given argument → stop, say so. This skill doesn't create PRs.
-- Can't determine risk confidently → treat it as risky and route it through Step 4.
 - A why-question's only backing is a private/inaccessible resource → still answer in the PR reply from your own understanding where possible, but never paste the private link into the PR; hand it to the user in-session instead.
 - The user hasn't replied in a thread yet → never auto-act on it, no matter how clearly authoritative or trivial the ask looks.
 - Never resolve a review thread automatically — replying is as far as this skill goes.
