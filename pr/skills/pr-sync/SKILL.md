@@ -48,7 +48,7 @@ Empty diff → the PR is already current; say so and stop.
 
 ## Step 4: Check for a changeset, but only if the repo actually uses one
 
-Get a `profile` of the repo from `pr:pr-sidekick` first (`CONVENTIONS.md`). It answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. Not available → check each inline as written.
+Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, first (`CONVENTIONS.md`). It answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. Not available → check each inline as written.
 
 Look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip this step entirely; don't introduce a changelog convention as a side effect of a sync task.
 
@@ -60,7 +60,7 @@ The changeset always gets its own commit, never squashed into an implementation 
 
 ## Step 5: Draft the title and description
 
-Before drafting, get a `brief` from `pr:pr-sidekick` for "PR description" in this repo (`CONVENTIONS.md`) — how the user likes descriptions written and what this repo's reviewers ask to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
+Before drafting, get a `brief` from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, for "PR description" in this repo (`CONVENTIONS.md`) — how the user likes descriptions written and what this repo's reviewers ask to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
 
 **Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` at the repo root). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md`); don't let a resync silently drop it.
 
@@ -105,7 +105,7 @@ The goal is a description that reads like it was written by the person who made 
 
 ## Step 7: Apply it
 
-First, run `pr:pr-sidekick` in `check-description` mode on the drafted title and body (`CONVENTIONS.md`). It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
+First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body (`CONVENTIONS.md`). It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
 
 ```bash
 gh pr edit <number> --title "<new title>" --body "<new body>"

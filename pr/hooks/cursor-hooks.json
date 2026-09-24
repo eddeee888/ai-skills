@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" pull \"${PR_SIDEKICK_MEMORY_REPO}\"",
+        "timeout": 30
+      }
+    ],
+    "stop": [
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" push \"${PR_SIDEKICK_MEMORY_REPO}\"",
+        "timeout": 30
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" push \"${PR_SIDEKICK_MEMORY_REPO}\"",
+        "timeout": 30
+      }
+    ]
+  }
+}

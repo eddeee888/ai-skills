@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Syncs Claude Code agent memory (~/.claude/agent-memory, where pr-sidekick
-# keeps what it learns) with a private git repo, so it survives machines and
-# short-lived cloud containers.
+# Syncs agent memory (~/.claude/agent-memory, where pr-sidekick keeps what
+# it learns — pr-pr-sidekick/ inside that directory) with a private git repo,
+# so it survives machines and short-lived cloud containers. Claude Code calls
+# this script directly; Cursor calls it through cursor-memory-sync.sh.
 #
 #   memory-sync.sh pull   # SessionStart: bring memory down
 #   memory-sync.sh push   # Stop / SessionEnd: send changes up

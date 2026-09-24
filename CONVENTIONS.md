@@ -80,26 +80,20 @@ that it doesn't, yet.
 Used by: `pr:pr-sync` (Verification), regardless of which skill produced
 the branch.
 
-## Consulting the `pr:pr-sidekick` agent
+## Consulting the `pr-sidekick` agent
 
-`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and
-preferences, and keeps a cached profile of each repo's working setup. Skills
-consult it at fixed points — `profile`, `classify`, `brief`,
-`check-diff`, `check-description` — and each skill names which mode it
-calls where. Three rules hold everywhere:
+`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences, and keeps a cached profile of each repo's working setup. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. The same agent file is the Claude Code agent and the Cursor subagent.
 
-- **Optional.** The agent isn't available (the `pr` plugin isn't installed,
-  or the tool doesn't run Claude Code agents, e.g. Cursor) → do that step
-  inline exactly as the skill describes, and carry on. Never stop because
-  the sidekick is missing.
-- **Advice, not authority.** A brief or check informs the step; the user's
-  current ask and the skill's own rules still win. When a remembered rule
-  conflicts with what's being asked right now, surface the conflict to the
-  user instead of silently picking one.
-- **The skill acts, the agent doesn't.** Pushing, replying on threads, and
-  editing the PR stay with the calling skill. When the agent's output
-  includes `promote:`, mention it to the user once — a rule that settled
-  belongs in the repo's `CLAUDE.md`, not only in private memory.
+**Call it by the name this host actually has:**
+
+- Claude Code — the `pr:pr-sidekick` agent.
+- Cursor — delegate to the `pr-sidekick` subagent and wait for it. It starts blank, so the delegation prompt carries the mode and every input that mode lists. Its reply is the mode's output; continue the skill from there.
+
+Three rules hold everywhere:
+
+- **Optional.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the sidekick is missing, and don't treat Cursor itself as missing.
+- **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
+- **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that settled belongs in the repo's `CLAUDE.md`, not only in private memory.
 
 Used by: `pr:pr-address` (classify, brief, check-diff), `pr:pr-sync`
 (profile, brief, check-description), `oss:issue-create` (profile),
