@@ -76,32 +76,38 @@ Apply every thread now settled — the automatic bucket from Step 3, plus whatev
 
 Before implementing anything from this sub-step, assess risk the same way this project weighs any action: is it hard to reverse, does it touch security/auth, cause data loss, touch production config/infra, break a public API, or otherwise carry a wide blast radius? Can't tell → it's risky and goes back through Step 4, same as always.
 
-**Genuinely low-risk → hand it to a small subagent; don't implement it here.** Fetching and classifying threads is cheap. The implement/test/commit loop is the expensive part: tens of steps, and on a host that resends the whole conversation every step (Cursor does), each of those steps pays for everything already in this chat — hundreds of thousands of tokens when `pr-address` runs late in a long session. A subagent starts a fresh conversation that holds only its task prompt, so the same loop runs at a fraction of the context. So in this chat, don't grep, edit, or run tests for these threads. Instead:
+**Genuinely low-risk → hand it to a batch subagent; don't implement it here.** Fetching and classifying threads is cheap. The implement/test/commit loop is the expensive part: tens of steps, and on a host that resends the whole conversation every step (Cursor does), each of those steps pays for everything already in this chat — hundreds of thousands of tokens when `pr-address` runs late in a long session. A subagent starts a fresh conversation that holds only its task prompt, so the same loop runs at a fraction of the context. Every spawn and check still costs a step here, at this chat's full size, so batch the threads to keep those steps few. In this chat, don't grep, edit, or run tests for these threads. Instead:
 
-1. **Group.** One subagent per ready thread; threads that touch the same file share one subagent, so two children never edit one file. Don't spawn explorers to survey the repo first — each child finds what it needs from its own path and line.
-2. **Brief.** Get one `brief` from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md`), passing the files about to change and each thread's ask. Keep only the rules it returns that apply — they go into the child's prompt, since the child can't consult the sidekick itself.
-3. **Spawn, one at a time.** Children share this checkout and branch, so only one runs at any moment: start the next only after the previous one has returned. Never run two in parallel. Claude Code: the `general-purpose` agent. Cursor: a subagent. The task prompt is only this, filled in — no transcript, no PR diff, no copy of this skill, no repo tour:
+1. **Batch.** Up to 10 ready threads go to one subagent. More than 10 → split into batches of at most 10, keeping threads on the same file in the same batch. Don't spawn explorers to survey the repo first — the subagent finds what it needs from each thread's path and line.
+2. **Brief.** Get one `brief` from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md`), passing the files about to change and each thread's ask. Keep only the rules it returns that apply — they go into the batch prompt, since the subagent can't consult the sidekick itself.
+3. **Spawn, one batch at a time.** Batches share this checkout and branch, so only one subagent runs at any moment: start the next batch only after the previous one has returned. Never run two in parallel. Claude Code: the `general-purpose` agent. Cursor: a subagent. The task prompt is only this, filled in — no transcript, no PR diff, no copy of this skill, no repo tour:
 
    ```text
    Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
-   Thread: <path>:<line>, comment id <databaseId>.
-   Ask: <the reviewer's comment, or its suggestion block verbatim>
    Rules that apply: <brief lines, or "none">
+   Threads:
+   1. <path>:<line>, comment id <databaseId>
+      Ask: <the reviewer's comment, or its suggestion block verbatim>
+   2. ...
 
-   Implement this — apply a suggestion block literally. Run the affected tests.
-   Commit, push, then reply on the thread with a one-line summary:
+   For each thread in order: implement it (apply a suggestion block literally),
+   run the tests affected by it, and commit it on its own once they pass.
+   Stay inside each ask. If a thread needs more than its ask (other files'
+   behavior, security/auth, a public API, config/infra), or its tests fail for
+   a reason you can't fix inside the ask, discard that thread's uncommitted
+   edits and go on to the next one.
+   After the last thread, run the affected tests for all committed threads
+   together. Fix a break only inside the asks; otherwise stop without pushing.
+   Once they pass, push once, then reply on each committed thread with a
+   one-line summary:
      gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
-   Do not resolve the thread. Stay inside the ask. If it needs more than the
-   ask (other files' behavior, security/auth, a public API, config/infra), or
-   tests fail for a reason you can't fix inside the ask, stop without pushing
-   and discard your uncommitted edits, so the next task starts clean.
-   Reply with at most 5 lines: files changed, commit sha, tests run,
-   reply posted (yes/no), or why you stopped.
+   Do not resolve any thread. Do not run pr-sync.
+   Return one line per thread: comment id, done (commit sha, reply posted
+   yes/no) or skipped (why) — then one line for the final test run and push.
    ```
 
-   For a grouped file, list each thread's path, line, comment id, and ask, and have the child reply on each.
-4. **Check.** Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode on the child's commit. Anything it flags that's in scope for the thread → one follow-up child with just the flags and the sha, same prompt shape.
-5. **Merge the result.** Note the child's short result and move on — don't ask it for a longer report. It stopped → bring that thread back to the user with its reason, as in Step 4. It pushed but didn't reply → post the reply yourself:
+4. **Check.** Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
+5. **Merge the result.** Note the per-thread lines and move on — don't ask for a longer report. A skipped thread → bring it back to the user with the reason, as in Step 4. A batch that stopped before pushing leaves its commits local → don't start the next batch; bring the whole batch and its failing tests to the user. A thread marked done without a reply → post the reply yourself:
 
    ```bash
    gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
@@ -115,7 +121,7 @@ Do **not** resolve the thread — that's for the reviewer or the user.
 
 Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Before posting, drop any backing resource that's private or otherwise inaccessible to the PR's reviewers; surface it to the user directly in-session instead, never into the PR comment. Reply the same way as 5a. Do **not** resolve the thread.
 
-This stays in this chat — a lookup or two is cheap. When answering would take a long research loop, hand it to one subagent the same way as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
+This stays in this chat — a lookup or two is cheap. When answering would take a long research loop, hand it to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
 
 ## Step 6: Wrap up
 
