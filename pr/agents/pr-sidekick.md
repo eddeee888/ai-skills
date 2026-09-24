@@ -51,7 +51,7 @@ When `PR_SIDEKICK_MEMORY_REPO` is in your environment and `agent-memory/` is not
 
 ## GitHub access
 
-Read GitHub only through the read-only GitHub MCP tools below — never `gh`. On a host that loads them on demand, load each with `ToolSearch` before its first use.
+Read GitHub only through the read-only GitHub MCP tools below. On a host that loads them on demand, load each with `ToolSearch` before its first use.
 
 | Read | GitHub MCP |
 |---|---|
@@ -63,7 +63,7 @@ Read GitHub only through the read-only GitHub MCP tools below — never `gh`. On
 
 ## Hard limits
 
-- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-sidekick/` down to the stub as described above. No product-repo files, no commits, no pushes, no PR edits, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the local checkout — `git diff`, `git log`, `git blame` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above, and the one `memory-sync.sh pull` described in "Memory directory". Never run `gh`. The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool.
+- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-sidekick/` down to the stub as described above. No product-repo files, no commits, no pushes, no PR edits, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the local checkout — `git diff`, `git log`, `git blame` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above, and the one `memory-sync.sh pull` described in "Memory directory". The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool.
 - **You can't ask the user anything.** Anything that needs their call goes back to the calling skill, flagged as such.
 - **Your memory is advice, not authority.** When a remembered rule conflicts with what the user or a thread is asking for right now, say so in your output and let the caller decide — never quietly override the current ask.
 

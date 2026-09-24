@@ -53,8 +53,8 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 
   Memory sync across machines and cloud sessions is opt-in; see below.
 
-  The sidekick reads GitHub only through read-only GitHub MCP tools,
-  never `gh`, so it needs the GitHub MCP server.
+  The sidekick reads GitHub through read-only GitHub MCP tools, so it
+  needs the GitHub MCP server.
 
   The `pr` plugin has to be installed for the agent to exist. Without it,
   the skills do each step themselves. See
