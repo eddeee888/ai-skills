@@ -8,6 +8,11 @@
 #   memory-sync.sh push   # Stop (every turn): send changes up
 #   memory-sync.sh end    # SessionEnd: push, retrying an unreachable repo
 #
+# Memory is pulled from main, but pushed to a branch of its own per session,
+# sidekick/<session id>, so what a session learned lands as a branch to review
+# and merge rather than straight on main. A session with nothing new pushes
+# no branch. The session id comes from the hook's JSON input on stdin.
+#
 # Stop fires after every turn, so push stays off the network unless there's
 # something to send: nothing new → no ls-remote, pull or push. A repo that
 # couldn't be cloned isn't retried on each turn either — only once the last
@@ -24,6 +29,7 @@ repo="${PR_SIDEKICK_MEMORY_REPO:-}"
 
 dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
 branch=main
+branch_prefix=sidekick/
 case "$repo" in
   *://* | git@*) url="$repo" ;;
   *) url="https://github.com/$repo.git" ;;
@@ -118,13 +124,29 @@ pull() {
     { g rebase --abort 2>/dev/null; warn "pull failed; keeping local memory as is"; }
 }
 
-# True when HEAD has commits origin doesn't — judged from the last fetch, no
-# network call. An empty clone (no commits yet) has nothing to send.
+# The branch this session pushes to: sidekick/<session id>, from the hook's
+# stdin JSON (Claude Code's session_id, Cursor's conversation_id). Without
+# one, fall back to a branch per machine.
+session_branch() {
+  local input="" id=""
+  [ -t 0 ] || input="$(cat)"
+  id="$(printf '%s' "$input" | sed -nE 's/.*"(session_id|conversation_id)"[[:space:]]*:[[:space:]]*"([^"]*)".*/\2/p' | head -n 1)"
+  [ -n "$id" ] || id="host-$(hostname)"
+  printf '%s%s' "$branch_prefix" "$(printf '%s' "$id" | tr -c 'A-Za-z0-9._-' '-')"
+}
+
+# True when HEAD has commits not yet on the session branch (or, before its
+# first push, on main) — judged from the last fetch, no network call. An
+# empty clone (no commits yet) has nothing to send.
 ahead() {
+  local base
   git -C "$dir" rev-parse -q --verify HEAD >/dev/null || return 1
-  if git -C "$dir" rev-parse -q --verify "refs/remotes/origin/$branch" >/dev/null; then
-    [ -n "$(git -C "$dir" log --oneline "origin/$branch..HEAD")" ]
-  fi
+  for base in "origin/$push_branch" "origin/$branch"; do
+    if git -C "$dir" rev-parse -q --verify "refs/remotes/$base" >/dev/null; then
+      [ -n "$(git -C "$dir" log --oneline "$base..HEAD")" ]
+      return
+    fi
+  done
 }
 
 push() {
@@ -143,17 +165,16 @@ push() {
     g commit -q -m "sync from $(hostname)" || return 0
   fi
   ahead || return 0
-  if remote_has_branch; then
-    g pull -q --rebase origin "$branch" 2>/dev/null ||
-      { g rebase --abort 2>/dev/null; warn "remote changed in a conflicting way; resolve in $dir"; return 0; }
-  fi
-  g push -q origin "HEAD:$branch" 2>/dev/null || warn "push to $repo failed; will retry next time"
+  # Only this session writes its branch, so there's nothing to pull first; the
+  # lease still refuses to overwrite a branch someone else pushed in between.
+  g push -q --force-with-lease="refs/heads/$push_branch" origin "HEAD:refs/heads/$push_branch" 2>/dev/null ||
+    warn "push to $push_branch on $repo failed; will retry next time"
 }
 
 mode="${1:-}"
 case "$mode" in
   pull) pull ;;
-  push | end) push ;;
+  push | end) push_branch="$(session_branch)"; push ;;
   *) warn "usage: memory-sync.sh pull|push|end" ;;
 esac
 exit 0
