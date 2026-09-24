@@ -99,7 +99,7 @@ test), `oss:issue-analyze` (code survey).
 
 ## Consulting the `pr-sidekick` agent
 
-`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences, and keeps a cached profile of each repo's working setup. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. A skill that needs both `profile` and `brief` at the same point asks for them in one call (`profile` + `brief`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
+`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences — only rules that apply in every repo, never anything about one repo — and profiles a repo's working setup fresh on each call. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. A skill that needs both `profile` and `brief` at the same point asks for them in one call (`profile` + `brief`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
 
 **Call it by the name this host actually has:**
 
@@ -110,7 +110,7 @@ These rules hold everywhere:
 
 - **Optional.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the sidekick is missing, and don't treat Cursor itself as missing.
 - **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
-- **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that settled belongs in the repo's `CLAUDE.md`, not only in private memory.
+- **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the sidekick doesn't remember it.
 - **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The sidekick appends it only to `memory/team/MEMORY.md` in the memory repo.
 
 Used by: `pr:pr-address` (classify + profile, check-diff), `pr:pr-sync`

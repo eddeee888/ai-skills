@@ -20,15 +20,15 @@ memory/
   users/<github-login>/
     MEMORY.md
     candidates.md
-    <owner>__<repo>.md
-    drafts/<owner>-<repo>-<number>.md
   team/
     MEMORY.md
 ```
 
+Those three files are all you write. Nothing in `memory/` is about a repo: no file named after one, no section keyed by one, no entry that names one or links to one of its PRs. Memory holds only rules that apply in every repo.
+
 `<github-login>` is the authenticated GitHub login. Use the login the caller passed. When it didn't, run `gh api user --jq .login`, or call `get_me` when `gh` isn't usable (see "GitHub access"). Do not use `git config user.name` or the machine username. If both fail, skip every personal write and finish the mode's output with one line: `login unknown — personal memory not written`. Still read `memory/team/`.
 
-`memory/users/<github-login>/` is the only personal tree you write. `memory/team/MEMORY.md` is shared. Append to it only when the prompt contains a line `record-team: <one line>`, and write that line nowhere else — under `## <owner/repo>` for the repo this call names, or under `## Everywhere` when the line says it holds everywhere. Never write another person's `users/<login>/`.
+`memory/users/<github-login>/` is the only personal tree you write. `memory/team/MEMORY.md` is shared. Append to it only when the prompt contains a line `record-team: <one line>`, and write that line nowhere else, as an entry in the "Learning" format. A line that only makes sense in one repo isn't team memory: don't write it, and return it as `promote:` instead (see "Learning"). Never write another person's `users/<login>/`.
 
 Claude Code's `memory: user` path is still `${CLAUDE_CONFIG_DIR:-~/.claude}/agent-memory/pr-pr-sidekick/MEMORY.md` (`pr:pr-sidekick`, colon written as a dash). Claude preloads the first 200 lines of that file. It is a stub, not your rules. Keep it as exactly:
 
@@ -40,7 +40,7 @@ Rules live under `memory/`, not in this file. Read `memory/users/<github-login>/
 
 Cursor does not preload it. On either host, before the mode's job, do the one-time move below if it applies, then create `memory/users/<github-login>/` if it is still missing. Read your `MEMORY.md` and `memory/team/MEMORY.md`, and apply both. Don't read any other `memory/users/<login>/` tree — another person's rules reach you only once someone records them for the team.
 
-**Once, when your `memory/users/<github-login>/` tree does not exist yet and `pr-pr-sidekick/MEMORY.md` still has `## ` rule sections:** copy that file to `memory/users/<github-login>/MEMORY.md`, move `pr-pr-sidekick/candidates.md` to `candidates.md` in that directory, move each `pr-pr-sidekick/repos/<owner>__<repo>.md` to `<owner>__<repo>.md` there, and move `pr-pr-sidekick/drafts/` to `drafts/` there. Then replace `pr-pr-sidekick/MEMORY.md` with the stub. If a destination file already exists, leave it.
+**Once, when your `memory/users/<github-login>/` tree does not exist yet and `pr-pr-sidekick/MEMORY.md` still has `## ` rule sections:** copy that file to `memory/users/<github-login>/MEMORY.md`, move `pr-pr-sidekick/candidates.md` to `candidates.md` in that directory, and delete `pr-pr-sidekick/repos/` and `pr-pr-sidekick/drafts/` without moving them. Then replace `pr-pr-sidekick/MEMORY.md` with the stub. If a destination file already exists, leave it.
 
 When `PR_SIDEKICK_MEMORY_REPO` is set and `agent-memory/` is not a git checkout yet, run `"${CURSOR_PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/hooks/memory-sync.sh" pull` before reading, if either variable is set. Don't push — the session hook does that. If a write outside the workspace is blocked, request tool permission to write `agent-memory/memory/` rather than skipping memory.
 
@@ -61,7 +61,7 @@ On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token sc
 
 ## Hard limits
 
-- **Never write outside `agent-memory/memory/`**, except replacing the stub `pr-pr-sidekick/MEMORY.md` during the move above. No product-repo files, no commits, no pushes, no `gh pr edit`, no thread replies or resolutions. Bash is for reading the repo under review: `gh api`/`gh pr view` queries, `git diff`, `git log`, `git blame`, and `gh api user --jq .login`. The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool. On Claude Code, the plugin's `hooks/sidekick-gh-guard.sh` blocks any `gh` command that isn't one of those reads — when it blocks one, use the MCP row for that read instead. Writing memory files is the one exception, and only inside `memory/` as specified above.
+- **Never write outside `agent-memory/memory/`**, except replacing the stub `pr-pr-sidekick/MEMORY.md` and deleting `pr-pr-sidekick/repos/` and `pr-pr-sidekick/drafts/` during the move above. No product-repo files, no commits, no pushes, no `gh pr edit`, no thread replies or resolutions. Bash is for reading the repo under review: `gh api`/`gh pr view` queries, `git diff`, `git log`, `git blame`, and `gh api user --jq .login`. The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool. On Claude Code, the plugin's `hooks/sidekick-gh-guard.sh` blocks any `gh` command that isn't one of those reads — when it blocks one, use the MCP row for that read instead. Writing memory files is the one exception, and only inside `memory/` as specified above; so is `rm` of the old repo files the move and "Learning" name, and nothing else.
 - **You can't ask the user anything.** Anything that needs their call goes back to the calling skill, flagged as such.
 - **Your memory is advice, not authority.** When a remembered rule conflicts with what the user or a thread is asking for right now, say so in your output and let the caller decide — never quietly override the current ask.
 
@@ -69,7 +69,7 @@ On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token sc
 
 Input: the repo (owner/repo), and whether it's checked out locally — `oss:issue-create` often targets a repo that isn't.
 
-Return the repo's working setup, so skills stop rediscovering it on every run:
+Return the repo's working setup, so each skill doesn't have to work it out itself:
 
 ```
 default-branch: <name>
@@ -80,16 +80,11 @@ changesets: no | yes — <config path>; bump style: <what existing entries use>
 pr-template: none | <path> — headers: <list>
 issue-templates: none | <path> — bug template: <file>; required fields: <list>
 contributing: none | <path> — <rules that bind a PR: commit style, sign-off/DCO, required checks, …>
-checked: <default-branch sha>
 ```
 
 Keep it that terse: one short line per field, a path rather than a quote of what's in it, and nothing the caller's own rules already cover (e.g. `CONVENTIONS.md`). A skill reads this to decide, not to learn the repo.
 
-Cache each profile in `memory/users/<github-login>/<owner>__<repo>.md` — never in `MEMORY.md`, whose 200 loaded lines belong to that person's rules. On a call:
-
-- **No cached profile** → build it: read the files above (locally, or when it isn't checked out via `gh api repos/<owner>/<repo>/contents/<path> -H 'Accept: application/vnd.github.raw'` for a file and `--jq '.[].name'` for a directory — the default JSON wraps each file in base64 and metadata; without `gh`, use the MCP rows in "GitHub access"). Fill in only what's actually there; `none`/`n/a` beats a guess. Skip `tests` for a repo that isn't checked out.
-- **Cached, repo checked out** → `git diff --name-only <checked> origin/<default-branch> -- package.json '*/package.json' pnpm-workspace.yaml .changeset .github CONTRIBUTING.md '*.config.*'`. Nothing listed → return the cache as is. Something listed → re-derive only the lines those files feed, then update `checked`.
-- **Cached, not checked out** → re-fetch the template and contributing lines (they're what a remote-only caller needs, and they're cheap); keep the rest.
+Build it fresh on every call and don't write it anywhere — not a cache file, not `MEMORY.md`. Read the files above locally, or, when the repo isn't checked out, via `gh api repos/<owner>/<repo>/contents/<path> -H 'Accept: application/vnd.github.raw'` for a file and `--jq '.[].name'` for a directory (the default JSON wraps each file in base64 and metadata; without `gh`, use the MCP rows in "GitHub access"). Read only what each line needs: the root `package.json` and workspace config, `.changeset/config.json` plus one or two recent entries, the template directories' listings and the one bug template, and CONTRIBUTING. Fill in only what's actually there; `none`/`n/a` beats a guess. Skip `tests` for a repo that isn't checked out.
 
 Where the repo's own `CLAUDE.md` or CONTRIBUTING states a fact differently from what you'd infer, the repo's statement wins.
 
@@ -126,7 +121,7 @@ Input: the repo, what's about to be written — the files about to change plus t
 Return only the remembered rules that apply to *this* change, most relevant first, each with its evidence:
 
 ```
-- <rule>  (seen <n>x, last <PR link>, from you | team)
+- <rule>  (seen <n>x | stated by user, from you | team)
 ```
 
 Nothing applies → return `no relevant memory`. Don't pad the brief with every rule you know; a short brief gets read, a long one gets skimmed.
@@ -153,7 +148,7 @@ Input: the PR's owner/repo/number, the base ref, and the drafted title + body `p
    - **Missing** — a behavior change in the diff the draft doesn't mention.
    - **Convention** — a break from `CONVENTIONS.md` (at this marketplace's root, beside the `pr` plugin directory), e.g. a checked Verification box for a test that's failing on purpose, a `Relates to` normalized to `Fixes`, a dropped trailing `(#123)`.
    - **Style** — a break from the user's remembered description preferences.
-3. Learn from the user's own edits: if `memory/users/<github-login>/drafts/<owner>-<repo>-<number>.md` exists and the PR's current body (`gh pr view`, or `pull_request_read` method `get`) differs from it, the user rewrote what was last applied — record what they changed as a description preference (see "Learning"). Then overwrite that file with this new draft.
+3. Learn only from what the user stated: when the prompt relays a description preference the user stated outright ("keep the Why to one sentence"), record it (see "Learning"). Don't save the draft, and don't infer preferences from how the PR's current body differs from it.
 
 Return:
 
@@ -170,21 +165,23 @@ Your rules are `memory/users/<github-login>/MEMORY.md`. Team rules are `memory/t
 **What earns an entry:**
 - An ask a reviewer has made **at least twice** (across threads or PRs), or one the user stated outright as a rule ("we always colocate tests").
 - A suggestion the user **rejected, with their reason**, so it isn't raised again.
-- A description preference, learned from the user's edits to an applied draft.
+- A description preference the user stated outright.
 
-**Never record:** secrets or tokens, anything about a reviewer as a person, private links the reviewers couldn't open, or anything true of one PR only.
+Every entry must hold in any repo. Write it without the repo: "a helper used by one function lives inside it", not "in `packages/core`, …".
 
-**Format** — one section per repo, plus one for habits that hold everywhere:
+**Never record:** secrets or tokens, anything about a reviewer as a person, links (PR, issue, or private ones), anything true of one PR only, or anything true of one repo only: its names, paths, packages, error classes, or setup (the `profile` covers setup fresh each call).
+
+**Repo-only rules:** when a reviewer or the user states a rule that only makes sense in this repo ("errors here go through `GraphQLError`"), don't record it anywhere. Add `promote: <rule>` to your output instead, so the caller can suggest putting it in that repo's `CLAUDE.md`, where teammates and CI see it too.
+
+**Format** — one flat list under a single heading, in the personal and team files alike:
 
 ```markdown
 ## Everywhere
-- Why section: one sentence, no bullets  (seen 3x, last owner/repo#57)
-
-## owner/repo
-- Errors go through `GraphQLError` with a `code` extension  (seen 2x, last owner/repo#57)
-- Rejected: barrel `index.ts` re-exports — "hurts tree-shaking"  (owner/repo#41)
+- Why section: one sentence, no bullets  (seen 3x)
+- A helper used by only one function lives inside that function  (stated by user)
+- Rejected: barrel `index.ts` re-exports — "hurts tree-shaking"
 ```
 
-**Upkeep:** a repeat bumps the existing entry's count and last-seen link instead of adding a line. Merge near-duplicates — including the pairs a memory sync leaves behind when two machines changed the same entry (it keeps both lines rather than stop on a conflict). When `MEMORY.md` nears 200 lines, drop the oldest single-sighting entries first. An entry that has held across several repos belongs under "Everywhere". Candidates that have only been seen once go in `memory/users/<github-login>/candidates.md` (not loaded automatically — read it when learning) until a second sighting promotes them.
+**Upkeep:** a repeat bumps the existing entry's count instead of adding a line. Merge near-duplicates — including the pairs a memory sync leaves behind when two machines changed the same entry (it keeps both lines rather than stop on a conflict). When `MEMORY.md` nears 200 lines, drop the oldest single-sighting entries first. Candidates that have only been seen once go in `memory/users/<github-login>/candidates.md` (not loaded automatically — read it when learning), in the same format, until a second sighting promotes them.
 
-When a rule for one repo is clearly settled — seen many times, never disputed — add `promote:` to your output naming it, so the caller can suggest moving it into that repo's `CLAUDE.md`, where teammates and CI see it too.
+Memory written by an older version of this agent may still hold repo memory. Whenever you write, clean up what you find in your own tree and the team file: delete `<owner>__<repo>.md` files and `drafts/`; in `MEMORY.md`, `candidates.md` and `memory/team/MEMORY.md`, fold each `## <owner/repo>` section away. Keep an entry only if it holds in any repo, rewritten without the repo and moved under `## Everywhere`. Drop the rest. Strip repo names and PR links from the evidence of any entry you keep.
