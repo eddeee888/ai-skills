@@ -16,23 +16,23 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
   `memory/users/<github-login>/` for that person's rules, and
   `memory/team/` for rules someone explicitly asked to share. Memory holds
   only rules that apply in every repo. The GitHub login comes from `gh api user --jq .login`, or the GitHub MCP `get_me` tool where `gh` isn't available (the sidekick falls back to read-only GitHub MCP tools for all its GitHub reads). Its
-  `profile` of a repo (test runner, monorepo layout, changesets, PR/issue
+  profile of a repo from `scout-repo` (test runner, monorepo layout, changesets, PR/issue
   templates, contribution rules) is read from the repo on each call. The skills consult it at fixed points:
-  - `pr-address` — `classify` + `profile` in one call (the unresolved
+  - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
     threads, the rules each matches, and how to run tests), then
-    `check-diff` on each batch. Low-risk
+    `sweep-diff` on each batch. Low-risk
     asks are implemented by a subagent, up to 10 threads per batch, that
     sees only those threads, not the parent chat, so the edit/test loop
     stays cheap in a long session.
-  - `pr-sync` — `profile` + `brief` in one call (changesets, the title
+  - `pr-sync` — `scout-repo` + `brief-task` in one call (changesets, the title
     prefix, the PR template, and how to write the description), handed to
     the subagent that rebases and drafts, and
-    `check-description` on the draft before applying it (flagging claims the
+    `grill-description` on the draft before applying it (flagging claims the
     diff doesn't back up, and learning any description preference you
     stated).
-  - `oss:issue-create` / `oss:issue-verify` — `profile` for the issue
+  - `oss:issue-create` / `oss:issue-verify` — `scout-repo` for the issue
     template, and for where tests live and how to run them.
-  - `oss:issue-fix` — `profile` + `brief` in one call, then `check-diff`
+  - `oss:issue-fix` — `scout-repo` + `brief-task` in one call, then `sweep-diff`
     on the fix a subagent commits.
 
   It only advises: the skills still do every push, reply, and PR edit.

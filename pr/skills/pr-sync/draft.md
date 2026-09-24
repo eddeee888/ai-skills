@@ -1,6 +1,6 @@
 # pr-sync: Steps 2–6
 
-Read by the subagent `SKILL.md` hands these steps to (or by the main chat when there's no subagent). The sidekick's `profile` and `brief` come in your prompt — don't call the sidekick yourself. Where a step says to ask the user or hand something to them, return it as your question instead.
+Read by the subagent `SKILL.md` hands these steps to (or by the main chat when there's no subagent). The sidekick's profile (`scout-repo`) and brief (`brief-task`) come in your prompt — don't call the sidekick yourself. Where a step says to ask the user or hand something to them, return it as your question instead.
 
 ## Step 2: Rebase onto the base branch
 
@@ -25,13 +25,13 @@ gh pr view <number> --json body --jq .body
 
 Your prompt says `GitHub: MCP` → read the body with `pull_request_read` method `get` instead.
 
-Start from the file list, the commit messages, and the current PR body — they often already state the *why*; use them rather than guessing from the diff alone. Then read the diff of only the files you need to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR. The full diff can be tens of thousands of tokens and would stay in context for every later step; Step 7's `check-description` reads all of it anyway.
+Start from the file list, the commit messages, and the current PR body — they often already state the *why*; use them rather than guessing from the diff alone. Then read the diff of only the files you need to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR. The full diff can be tens of thousands of tokens and would stay in context for every later step; Step 7's `grill-description` reads all of it anyway.
 
 Empty diff → the PR is already current; say so and stop.
 
 ## Step 4: Check for a changeset, but only if the repo actually uses one
 
-Use the `profile` you were given: its `changesets` line answers this step, its monorepo line answers Step 5's title prefix, and its template line answers Step 6's headers. No profile → check each inline as written.
+Use the profile you were given: its `changesets` line answers this step, its monorepo line answers Step 5's title prefix, and its template line answers Step 6's headers. No profile → check each inline as written.
 
 Without a profile, look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip the changeset part (but still push, below); don't introduce a changelog convention as a side effect of a sync task.
 
@@ -56,7 +56,7 @@ git push --force-with-lease
 
 ## Step 5: Draft the title and description
 
-The `brief` you were given says how the user likes descriptions written and what their reviewers keep asking to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
+The brief you were given says how the user likes descriptions written and what their reviewers keep asking to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
 
 **Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md` → "Trailing issue reference"); don't let a resync silently drop it.
 

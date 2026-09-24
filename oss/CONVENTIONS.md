@@ -102,7 +102,7 @@ test), `oss:issue-analyze` (code survey).
 
 ## Consulting the `pr-sidekick` agent
 
-`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `profile`, `classify`, `brief`, `check-diff`, `check-description` — and each skill names which mode it calls where. A skill that needs both `profile` and `brief` at the same point asks for them in one call (`profile` + `brief`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
+`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description` — and each skill names which mode it calls where. A skill that needs both `scout-repo` and `brief-task` at the same point asks for them in one call (`scout-repo` + `brief-task`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
 
 **Call it by the name this host actually has:**
 
@@ -116,9 +116,10 @@ These rules hold everywhere:
 - **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the sidekick doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
 - **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The sidekick appends it only to `memory/team/MEMORY.md` in the memory repo.
 
-Used by: `pr:pr-address` (classify + profile, check-diff), `pr:pr-sync`
-(profile, brief, check-description), `oss:issue-create` (profile),
-`oss:issue-verify` (profile), `oss:issue-fix` (profile, brief, check-diff).
+Used by: `pr:pr-address` (triage-threads + scout-repo, sweep-diff),
+`pr:pr-sync` (scout-repo, brief-task, grill-description), `oss:issue-create`
+(scout-repo), `oss:issue-verify` (scout-repo), `oss:issue-fix` (scout-repo,
+brief-task, sweep-diff).
 
 ## GitHub access: `gh`, or the GitHub MCP tools
 
