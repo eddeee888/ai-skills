@@ -21,7 +21,9 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   templates, contribution rules), refreshed only when the files behind it
   change. The skills consult it at fixed points:
   - `pr-address` — `classify` the unresolved threads, then `brief` before
-    implementing a thread's ask and `check-diff` before pushing it.
+    implementing a thread's ask and `check-diff` on the change. Low-risk
+    asks are implemented by small subagents that see only the thread, not
+    the parent chat, so the edit/test loop stays cheap in a long session.
   - `pr-sync` — `profile` for changesets, the title prefix, and the PR
     template; `brief` before drafting the description, and
     `check-description` on the draft before applying it (flagging claims the
