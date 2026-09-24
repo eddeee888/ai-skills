@@ -8,8 +8,15 @@
 #   memory-sync.sh push   # Stop (every turn): send changes up
 #   memory-sync.sh end    # SessionEnd: push, retrying an unreachable repo
 #
+# Memory is pushed to a branch per GitHub user, sidekick/<login>, never to
+# main: what someone's sessions learn collects there, for a PR to review and
+# merge. Pull brings in both main and that branch, merging rather than
+# rebasing so the branch only ever moves forward. The login comes from
+# `gh api user`, or the GitHub API directly (GH_TOKEN/GITHUB_TOKEN, or a
+# proxy that authenticates for us), once per session start.
+#
 # Stop fires after every turn, so push stays off the network unless there's
-# something to send: nothing new → no ls-remote, pull or push. A repo that
+# something to send: nothing new → no fetch or push. A repo that
 # couldn't be cloned isn't retried on each turn either — only once the last
 # failure is RETRY_MINUTES old, and always at session end.
 #
@@ -24,6 +31,9 @@ repo="${PR_SIDEKICK_MEMORY_REPO:-}"
 
 dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
 branch=main
+branch_prefix=sidekick/
+login_file="$dir/.git/pr-sidekick-login"
+login_failed="$dir/.git/pr-sidekick-login-failed"
 case "$repo" in
   *://* | git@*) url="$repo" ;;
   *) url="https://github.com/$repo.git" ;;
@@ -61,10 +71,6 @@ union_merge() {
   # the sidekick's upkeep merges the duplicates on its next write.
   mkdir -p "$dir/.git/info"
   grep -qs 'merge=union' "$dir/.git/info/attributes" || echo '* merge=union' >> "$dir/.git/info/attributes"
-}
-
-remote_has_branch() {
-  [ -n "$(git -C "$dir" ls-remote --heads origin "$branch" 2>/dev/null)" ]
 }
 
 clone() {
@@ -107,24 +113,73 @@ clone() {
   union_merge
 }
 
-pull() {
-  if [ ! -d "$dir/.git" ]; then
-    clone
-    return
-  fi
-  union_merge
-  remote_has_branch || return 0
-  g pull -q --rebase --autostash origin "$branch" 2>/dev/null ||
-    { g rebase --abort 2>/dev/null; warn "pull failed; keeping local memory as is"; }
+commit_changes() {
+  g add -A
+  g diff --cached --quiet || g commit -q -m "sync from $(hostname)"
 }
 
-# True when HEAD has commits origin doesn't — judged from the last fetch, no
-# network call. An empty clone (no commits yet) has nothing to send.
-ahead() {
-  git -C "$dir" rev-parse -q --verify HEAD >/dev/null || return 1
-  if git -C "$dir" rev-parse -q --verify "refs/remotes/origin/$branch" >/dev/null; then
-    [ -n "$(git -C "$dir" log --oneline "origin/$branch..HEAD")" ]
+# sidekick/<login>, from the first of these that gives a login, else empty:
+#   login cached at the last pull: alice               → sidekick/alice
+#   `gh api user`, else api.github.com/user: alice     → sidekick/alice (cached)
+#   both fail, one tree memory/users/alice/            → sidekick/alice
+#   both fail, trees memory/users/alice/ and bob/      → (empty)
+# Like an unreachable repo, a failed lookup is only retried once it's
+# RETRY_MINUTES old, and at session end; until then it goes straight to the
+# memory/users/ fallback.
+user_branch() {
+  local login="" users token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+  login="$(cat "$login_file" 2>/dev/null)"
+  if [ -z "$login" ] && { [ "$mode" = end ] || [ -z "$(find "$login_failed" -mmin -"$RETRY_MINUTES" 2>/dev/null)" ]; }; then
+    command -v gh >/dev/null 2>&1 && login="$(gh api user --jq .login 2>/dev/null)"
+    [ -n "$login" ] || login="$(curl -fsS -m 10 ${token:+-H "Authorization: Bearer $token"} https://api.github.com/user 2>/dev/null |
+      sed -nE 's/^[[:space:]]*"login"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n 1)"
+    if [ -n "$login" ]; then
+      printf '%s\n' "$login" > "$login_file"
+      rm -f "$login_failed"
+    else
+      touch "$login_failed"
+    fi
   fi
+  if [ -z "$login" ]; then
+    users="$(ls "$dir/memory/users" 2>/dev/null)"
+    [ "$(printf '%s\n' "$users" | grep -c .)" = 1 ] && login="$users"
+  fi
+  [ -n "$login" ] && printf '%s%s' "$branch_prefix" "$login"
+}
+
+# Fetch a remote branch and merge it in; false when it isn't on the remote.
+merge_remote() {
+  g fetch -q origin "+refs/heads/$1:refs/remotes/origin/$1" 2>/dev/null || return 1
+  g merge -q --no-edit "origin/$1" >/dev/null 2>&1 ||
+    { g merge --abort 2>/dev/null; warn "couldn't merge $1; resolve in $dir"; return 2; }
+}
+
+pull() {
+  if [ ! -d "$dir/.git" ]; then
+    clone || return 0
+  fi
+  union_merge
+  rm -f "$login_file" "$login_failed"
+  local ub
+  ub="$(user_branch)"
+  commit_changes
+  merge_remote "$branch"
+  [ -n "$ub" ] && merge_remote "$ub"
+  return 0
+}
+
+# True when HEAD has commits of its own that neither main nor the given
+# branch (if any) has — judged from the last fetch, no network call. Merges
+# don't count, so bringing in a newer main alone pushes nothing. An empty
+# clone (no commits yet) has nothing to send.
+ahead() {
+  local ref bases=""
+  git -C "$dir" rev-parse -q --verify HEAD >/dev/null || return 1
+  for ref in ${1:+"origin/$1"} "origin/$branch"; do
+    git -C "$dir" rev-parse -q --verify "refs/remotes/$ref" >/dev/null && bases="$bases $ref"
+  done
+  # shellcheck disable=SC2086
+  [ "$(git -C "$dir" rev-list --no-merges --count HEAD --not $bases)" != 0 ]
 }
 
 push() {
@@ -138,16 +193,17 @@ push() {
     clone || return 0
   fi
   union_merge
-  g add -A
-  if ! g diff --cached --quiet; then
-    g commit -q -m "sync from $(hostname)" || return 0
-  fi
-  ahead || return 0
-  if remote_has_branch; then
-    g pull -q --rebase origin "$branch" 2>/dev/null ||
-      { g rebase --abort 2>/dev/null; warn "remote changed in a conflicting way; resolve in $dir"; return 0; }
-  fi
-  g push -q origin "HEAD:$branch" 2>/dev/null || warn "push to $repo failed; will retry next time"
+  commit_changes || return 0
+  # Nothing beyond main → nothing to send, without looking up the login.
+  ahead "" || return 0
+  local ub
+  ub="$(user_branch)"
+  [ -n "$ub" ] || { warn "can't tell your GitHub login; memory kept locally, not pushed"; return 0; }
+  ahead "$ub" || return 0
+  # Another machine of the same user may have pushed since: take that first.
+  merge_remote "$ub"
+  [ $? = 2 ] && return 0
+  g push -q origin "HEAD:refs/heads/$ub" 2>/dev/null || warn "push to $ub on $repo failed; will retry next time"
 }
 
 mode="${1:-}"
