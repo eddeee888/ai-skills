@@ -62,7 +62,7 @@ Use the `profile` from Step 1, when there is one: the monorepo's package map, wh
 
 Find the package the repro actually exercises (in a monorepo, match its imports/API calls to the owning workspace — don't guess from the issue's labels alone).
 
-Hand writing and running the test to one subagent, so the write/run/adjust loop doesn't run in this chat. Claude Code: the `general-purpose` agent. Cursor: a subagent. The prompt is only this, filled in — no transcript, no copy of this skill:
+Hand writing and running the test to one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), with this prompt:
 
 ```text
 Repo <owner>/<repo> (checked out). Package: <package the repro exercises>.
@@ -78,8 +78,6 @@ commit, don't push.
 Return at most 5 lines: test path, the failure in one or two lines, and
 whether it matches the issue (yes/no, why).
 ```
-
-No way to spawn a subagent → do the same here.
 
 It doesn't fail the way the issue claims → that's a finding too. Discard the test and go back to the reporter (Step 3) with what was found, instead of forcing a red test that proves the wrong thing.
 

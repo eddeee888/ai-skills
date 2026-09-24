@@ -20,7 +20,7 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches (5a passes them on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `classify` + `profile` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), the query below, and Step 3's rules verbatim. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
 
 Pull review threads via GraphQL, for resolution state and comment order. Conversation-tab comments are out of scope — they have no reply chain.
 
@@ -76,14 +76,15 @@ Apply every settled thread — Step 3's automatic bucket plus whatever the user 
 
 ### 5a. Authoritative
 
-Low-risk threads go to a batch subagent. Don't grep, edit, or run tests for them here: the implement/test/commit loop is tens of steps, and on a host that resends the whole conversation every step (Cursor does), each step would pay for this whole chat. A subagent's conversation holds only its prompt. Every spawn and check still costs a step here, so batch to keep those few.
+Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"). Don't grep, edit, or run tests for them here.
 
 1. **Batch.** Up to 10 threads per subagent. More → batches of at most 10, same-file threads together. Don't spawn explorers to survey the repo first.
-2. **Spawn, one batch at a time.** Batches share this checkout and branch: start the next only after the previous one has returned, never two in parallel. Claude Code: the `general-purpose` agent. Cursor: a subagent. The prompt is only this, filled in — no transcript, no PR diff, no comment bodies, no copy of this skill:
+2. **Spawn, one batch at a time.** Batches share this checkout and branch: start the next only after the previous one has returned. The prompt carries no comment bodies — the subagent fetches them:
 
    ```text
    Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
    Rules that apply: <the threads' "remembered" lines from classify, or "none">
+   Tests: <the profile's tests line, or "find out">
    Threads:
    1. <path>:<line>, comment id <databaseId> — <one-line ask>
    2. ...

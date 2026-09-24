@@ -29,7 +29,7 @@ Restate the observed behavior vs. the expected behavior. Unclear what's actually
 
 Read the code path the reported behavior would run through and form a hypothesis for where it goes wrong — by reading, not by running anything. Name the specific function/module/condition you suspect, and say plainly when the code alone doesn't pin it down to one spot — a tentative "likely X, possibly Y" beats a confident guess dressed as certainty. For a monorepo, note every package whose behavior the root cause implicates.
 
-Hand the reading to an exploring subagent when the host has one (Claude Code: the `Explore` agent; Cursor: a subagent), so the files it reads stay out of this chat. Pass the observed vs. expected behavior and any entry point the issue names; ask for the suspect function(s)/files, the packages involved, and how sure it is, in a few lines. Size from its answer — don't re-read what it read. No subagent → read it here.
+Hand the reading to an exploring subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), so the files it reads stay out of this chat. Pass the observed vs. expected behavior and any entry point the issue names; ask for the suspect function(s)/files, the packages involved, and how sure it is, in a few lines. Size from its answer — don't re-read what it read.
 
 Signals:
 

@@ -20,8 +20,9 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   each repo you work in (test runner, monorepo layout, changesets, PR/issue
   templates, contribution rules), refreshed only when the files behind it
   change. The skills consult it at fixed points:
-  - `pr-address` — `classify` the unresolved threads (with the remembered
-    rules each one matches), then `check-diff` on each batch. Low-risk
+  - `pr-address` — `classify` + `profile` in one call (the unresolved
+    threads, the rules each matches, and how to run tests), then
+    `check-diff` on each batch. Low-risk
     asks are implemented by a subagent, up to 10 threads per batch, that
     sees only those threads, not the parent chat, so the edit/test loop
     stays cheap in a long session.

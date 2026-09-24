@@ -36,7 +36,7 @@ Run just the failing test locally, with the runner's quiet or summary reporter s
 
 This decides what options make sense next — don't skip to "how do we fix it" before knowing which side of the boundary the bug is on.
 
-Hand the tracing to an exploring subagent when the host has one (Claude Code: the `Explore` agent; Cursor: a subagent), so the files it reads — including a dependency's source — stay out of this chat. Pass the failing test's path and the failure summary; ask for ours or a dependency's, the exact function/file, and the evidence (for a dependency: which one, which version, any upstream issue or changelog entry), then 2–3 fix options shaped as in Step 4 with what each changes, blast radius, risk, and rough effort — a line or two each. Present the options from its answer; don't open code here to size them. No subagent → trace it here.
+Hand the tracing to an exploring subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), so the files it reads — including a dependency's source — stay out of this chat. Pass the failing test's path and the failure summary; ask for ours or a dependency's, the exact function/file, and the evidence (for a dependency: which one, which version, any upstream issue or changelog entry), then 2–3 fix options shaped as in Step 4 with what each changes, blast radius, risk, and rough effort — a line or two each. Present the options from its answer; don't open code here to size them.
 
 ## Step 4: Present 2-3 options, and ask
 
@@ -51,7 +51,7 @@ For each option: what changes, blast radius, risk, rough effort. Ask which they 
 
 Get a `profile` of the repo and a `brief` in one call (`profile` + `brief`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"), passing the files the chosen option touches and a one-line summary of it. The profile says how to run the affected package's tests and whether Step 6's title needs a package prefix; the brief brings the rules the user's reviewers have already asked for in this repo. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `check-diff` call below. It lives in the `pr` plugin; not installed → skip it.
 
-Then hand the edit/test/commit loop to one subagent, so it doesn't run in this chat. Claude Code: the `general-purpose` agent. Cursor: a subagent. The prompt is only this, filled in — no transcript, no issue thread, no copy of this skill:
+Then hand the edit/test/commit loop to one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), with this prompt:
 
 ```text
 Repo <owner>/<repo>, branch <branch> (already checked out), on top of
@@ -73,7 +73,7 @@ Return at most 5 lines: files changed, commit sha, tests run and result,
 or why you stopped.
 ```
 
-Then run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode against the checkpoint commit. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further. No way to spawn a subagent → do the same loop here.
+Then run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-diff` mode against the checkpoint commit. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further.
 
 A later `pr:pr-sync` rebase still replays the checkpoint's SHA but leaves its content and trailer untouched — that's not the kind of rewrite the prompt rules out.
 
