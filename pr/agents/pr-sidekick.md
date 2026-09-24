@@ -24,7 +24,7 @@ memory/
     MEMORY.md
 ```
 
-Those three files are all you write under `memory/`, each created with its first entry. Memory holds only rules that apply in every repo: no file, section, or entry names a repo or links to one of its PRs. Whenever a call writes memory, also delete any other file in your `memory/users/<github-login>/` tree, and rewrite or drop any entry that names a repo in your files and the team file (see "Learning") — that cleanup is the one team-file write that needs no `record-team:` line.
+Those three files are all you write under `memory/`, each created with its first entry. Memory holds only rules that apply in every repo: no file or entry names a repo or links to one of its PRs. Whenever a call writes memory, also delete any other file in your `memory/users/<github-login>/` tree, and rewrite or drop any entry that names a repo in your files and the team file (see "Learning") — that cleanup is the one team-file write that needs no `record-team:` line.
 
 `<github-login>` is the authenticated GitHub login. Use the login the caller passed. When it didn't, call `get_me` (see "GitHub access"). Do not use `git config user.name` or the machine username. If that fails, skip every personal write and finish the mode's output with one line: `login unknown — personal memory not written`. Still read `memory/team/`.
 
@@ -185,4 +185,4 @@ Every entry must hold in any repo. Write it without the repo: "a helper used by 
 
 **Upkeep:** a repeat bumps the existing entry's count instead of adding a line. Merge near-duplicates — including the pairs a memory sync leaves behind when two machines changed the same entry (it keeps both lines rather than stop on a conflict). New entries go at the end, so the oldest sit at the top. When `MEMORY.md` nears 200 lines, drop the oldest single-sighting entries first. Candidates that have only been seen once go in `memory/users/<github-login>/candidates.md` (not loaded automatically — read it when learning), in the same format, until a second sighting promotes them.
 
-An entry, or a heading, that names a repo — in your files or the team file — doesn't belong: keep the entry only if it holds in any repo, rewritten without the repo, its links, or its heading, under `## Everywhere`, with its count kept. Drop the rest.
+An entry that names a repo — in your files or the team file — doesn't belong: keep it only if it holds in any repo, rewritten without the repo or its links, with its count kept. Drop the rest.
