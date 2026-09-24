@@ -118,24 +118,21 @@ commit_changes() {
   g diff --cached --quiet || g commit -q -m "sync from $(hostname)"
 }
 
-# The authenticated GitHub login, looked up over the network.
-lookup_login() {
-  local login="" token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
-  command -v gh >/dev/null 2>&1 && login="$(gh api user --jq .login 2>/dev/null)"
-  [ -n "$login" ] || login="$(curl -fsS -m 10 ${token:+-H "Authorization: Bearer $token"} https://api.github.com/user 2>/dev/null |
-    sed -nE 's/^[[:space:]]*"login"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n 1)"
-  printf '%s' "$login"
-}
-
-# sidekick/<login>, from the login cached at the last pull; looked up if
-# there's none, but like an unreachable repo, a failed lookup is only retried
-# once it's RETRY_MINUTES old, and at session end. Last resort: the one
-# person with a memory/users/ tree here. Empty when the login can't be told.
+# sidekick/<login>, from the first of these that gives a login, else empty:
+#   login cached at the last pull: alice               → sidekick/alice
+#   `gh api user`, else api.github.com/user: alice     → sidekick/alice (cached)
+#   both fail, one tree memory/users/alice/            → sidekick/alice
+#   both fail, trees memory/users/alice/ and bob/      → (empty)
+# Like an unreachable repo, a failed lookup is only retried once it's
+# RETRY_MINUTES old, and at session end; until then it goes straight to the
+# memory/users/ fallback.
 user_branch() {
-  local login users
+  local login="" users token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
   login="$(cat "$login_file" 2>/dev/null)"
   if [ -z "$login" ] && { [ "$mode" = end ] || [ -z "$(find "$login_failed" -mmin -"$RETRY_MINUTES" 2>/dev/null)" ]; }; then
-    login="$(lookup_login)"
+    command -v gh >/dev/null 2>&1 && login="$(gh api user --jq .login 2>/dev/null)"
+    [ -n "$login" ] || login="$(curl -fsS -m 10 ${token:+-H "Authorization: Bearer $token"} https://api.github.com/user 2>/dev/null |
+      sed -nE 's/^[[:space:]]*"login"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n 1)"
     if [ -n "$login" ]; then
       printf '%s\n' "$login" > "$login_file"
       rm -f "$login_failed"
@@ -172,9 +169,9 @@ pull() {
 }
 
 # True when HEAD has commits of its own that neither main nor the given
-# branch (if any) has — judged from the last fetch, no network call. Merges don't count,
-# so bringing in a newer main alone pushes nothing. An empty clone (no
-# commits yet) has nothing to send.
+# branch (if any) has — judged from the last fetch, no network call. Merges
+# don't count, so bringing in a newer main alone pushes nothing. An empty
+# clone (no commits yet) has nothing to send.
 ahead() {
   local ref bases=""
   git -C "$dir" rev-parse -q --verify HEAD >/dev/null || return 1
