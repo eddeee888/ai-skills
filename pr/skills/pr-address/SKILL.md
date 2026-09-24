@@ -36,7 +36,7 @@ gh api graphql -f query='
             id
             isResolved
             comments(first: 50) {
-              nodes { databaseId author { login } body path line }
+              nodes { databaseId author { login } body path line originalLine }
             }
           }
         }
@@ -46,7 +46,7 @@ gh api graphql -f query='
   --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
 ```
 
-The `--jq` filter keeps resolved threads out of context. Step 3 classifies on each thread's last comment.
+The `--jq` filter keeps resolved threads out of context. Step 3 classifies on each thread's last comment. An outdated comment has `line: null`; use its `originalLine`.
 
 On the MCP route, use `pull_request_read` method `get_review_comments` instead, per the review-threads row in `CONVENTIONS.md` → "GitHub access" — it also says where each comment's `databaseId` comes from.
 
@@ -54,13 +54,14 @@ On the MCP route, use `pull_request_read` method `get_review_comments` instead, 
 
 **High risk** means hard to reverse, security/auth, data loss, production config/infra, a public API, or a wide blast radius. Judge it from the comment text and file path alone — don't open code to decide. Can't tell → high risk.
 
-- **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both the ask and the go-ahead. Not high risk → automatic; high risk → needs the user first.
+- **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both the ask and the go-ahead. Not high risk → automatic; high risk → needs the user first. More than one comment, all the user's → the later ones are replies already posted (this skill replies as the user), so it's already handled — unless the last one is a new ask rather than a reply, which then counts as the note.
 - **A reviewer commented** → automatic only when the last comment is the user's short go-ahead ("Ok", "let's do it", "let me check" — not a paragraph that already answers) and the ask isn't high risk. The last comment is the user's own full answer or instruction → already handled; note it, don't ask.
 
 Tag each automatic thread by the nature of the *original* comment, not the reply:
 
 - **Authoritative** — an instruction, correction, or ```suggestion``` block ("add a null check here", "use X instead").
 - **Why-question** — asks for reasoning or research ("why this approach?", "should this handle X too?").
+- **Both** — a question plus an instruction that depends on the answer ("does this work? find how others do it, then recommend") → a why-question. Answer it; the instruction waits for the user's go-ahead on the answer.
 
 **Needs the user first** — everything else:
 
@@ -76,7 +77,7 @@ Empty → skip straight to Step 5.
 
 ## Step 5: Handling comments
 
-Apply every settled thread — Step 3's automatic bucket plus whatever the user approved in Step 4 — by the nature of the original comment. New comment categories go here as 5c, 5d, …
+Apply every settled thread — Step 3's automatic bucket plus whatever the user approved in Step 4 — by the nature of the original comment.
 
 ### 5a. Authoritative
 
@@ -134,7 +135,7 @@ Answer here only from what this chat already knows. Anything that needs a web fe
 
 ## Step 6: Wrap up
 
-Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr-sync` will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
+Don't run `pr:pr-sync` from this skill — not in this chat, not in a subagent. It's a long rebase-and-redraft loop, the cost this skill avoids. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → end the report with one line saying the description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update it. Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't this skill's call. Report back concisely: how many threads were replied to or implemented, and how many are still open for manual resolution.
 
 ## When to stop instead of proceeding
 

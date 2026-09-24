@@ -3,9 +3,8 @@
 Plugin for Claude Code and Cursor — skills for working with pull requests: reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.
 
 Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
-`/pr:<skill-name>` once this plugin is installed, e.g. `/pr:pr-sync`.
-
-Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
+`/pr:<skill-name>` once this plugin is installed, e.g. `/pr:pr-sync`
+(`/pr-sync` in Cursor).
 
 ## Agents
 
@@ -16,11 +15,9 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   when sync is on) every sidekick file lives under `memory/`:
   `memory/users/<github-login>/` for that person's rules, and
   `memory/team/` for rules someone explicitly asked to share. Memory holds
-  only rules that apply in every repo: nothing in it is named after, keyed
-  by, or about a repo. The GitHub login comes from `gh api user --jq .login`, or the GitHub MCP `get_me` tool where `gh` isn't available (the sidekick falls back to read-only GitHub MCP tools for all its GitHub reads). Its
+  only rules that apply in every repo. The GitHub login comes from `gh api user --jq .login`, or the GitHub MCP `get_me` tool where `gh` isn't available (the sidekick falls back to read-only GitHub MCP tools for all its GitHub reads). Its
   `profile` of a repo (test runner, monorepo layout, changesets, PR/issue
-  templates, contribution rules) is built fresh from the repo on each call
-  and never saved. The skills consult it at fixed points:
+  templates, contribution rules) is read from the repo on each call. The skills consult it at fixed points:
   - `pr-address` — `classify` + `profile` in one call (the unresolved
     threads, the rules each matches, and how to run tests), then
     `check-diff` on each batch. Low-risk
@@ -63,7 +60,7 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
 
   The `pr` plugin has to be installed for the agent to exist. Without it,
   the skills do each step themselves. See
-  [`CONVENTIONS.md`](../CONVENTIONS.md#consulting-the-pr-sidekick-agent).
+  [`CONVENTIONS.md`](CONVENTIONS.md#consulting-the-pr-sidekick-agent).
 
 ### Syncing the sidekick's memory
 

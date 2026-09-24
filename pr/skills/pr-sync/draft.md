@@ -56,7 +56,7 @@ git push --force-with-lease
 
 ## Step 5: Draft the title and description
 
-The `brief` you were given says how the user likes descriptions written and what this repo's reviewers ask to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
+The `brief` you were given says how the user likes descriptions written and what their reviewers keep asking to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win.
 
 **Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md` → "Trailing issue reference"); don't let a resync silently drop it.
 

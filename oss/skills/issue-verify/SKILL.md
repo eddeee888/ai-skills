@@ -7,7 +7,7 @@ description: Verify a GitHub issue is real and reproducible before any fix work 
 
 Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's `issue-fix`'s job. For a lighter, unverified read-only guess at root cause and size before this, see `issue-analyze`. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, first.
 
-**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, so it starts current. After a further push to its branch, say in one line that the description may be stale and leave `/pr-sync` to the user (Step 6).
+**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, so it starts current. After a further push to its branch, say in one line that the description may be stale and leave `/pr:pr-sync` (`/pr-sync` on Cursor) to the user (Step 6).
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -29,7 +29,7 @@ gh issue view <number> --json number,title,body,url,labels,state,comments \
 
 That's the body and the last 10 comments. The repro isn't in them and `total` says there are more → read the earlier comments too.
 
-Then find the repo's bug-report template. Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. Don't read every template.
+Then find the repo's bug-report template. Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. No such directory → check for a single `.github/ISSUE_TEMPLATE.md`. Don't read every template.
 
 Note the exact field the template uses for reproduction and its exact wording — you'll reuse it in Step 3 instead of asking generically.
 
@@ -103,7 +103,7 @@ gh pr create --draft --title "test: reproduce <short bug description> (failing) 
 
 ## Step 6: Suggest a sync after further pushes
 
-Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, end the report with one line saying the description may now be stale and `/pr-sync` will update it.
+Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, end the report with one line saying the description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update it.
 
 ## When to stop instead of proceeding
 
