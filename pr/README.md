@@ -10,9 +10,13 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
 ## Agents
 
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your PR sidekick, with
-  persistent memory (`memory: user`, stored under
-  `~/.claude/agent-memory/`) of the review themes and
-  preferences you keep coming back to. It also keeps a cached `profile` of
+  persistent memory (`memory: user`) of the review themes and
+  preferences you keep coming back to. In the memory checkout
+  (`~/.claude/agent-memory/`, the repo `PR_SIDEKICK_MEMORY_REPO` points at
+  when sync is on) every sidekick file lives under `memory/`:
+  `memory/users/<github-login>/` for that person's rules, profile cache,
+  and drafts, and `memory/team/` for rules someone explicitly asked to
+  share. The GitHub login comes from `gh api user --jq .login`. It also keeps a cached `profile` of
   each repo you work in (test runner, monorepo layout, changesets, PR/issue
   templates, contribution rules), refreshed only when the files behind it
   change. The skills consult it at fixed points:
@@ -27,13 +31,16 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   - `oss:issue-fix` — `profile`, then `brief` and `check-diff` around the fix.
 
   It only advises: the skills still do every push, reply, and PR edit.
-  Memory lives on your machine only; when a rule has clearly settled, the
-  sidekick suggests moving it into the repo's `CLAUDE.md` so teammates get
-  it too. To code with its memory loaded for a whole session, run
+  Personal files stay in that person's `memory/users/<github-login>/` tree.
+  `memory/team/MEMORY.md` grows only when a skill passes `record-team:`
+  because the user explicitly asked to share a rule (`CONVENTIONS.md`).
+  When a rule has clearly settled, the sidekick suggests moving it into
+  the product repo's `CLAUDE.md` so teammates and CI see it too. To code
+  with its memory loaded for a whole session, run
   `claude --agent pr:pr-sidekick`. In Cursor the same file is the
   `pr-sidekick` subagent — the skills delegate to it, and it reads and
-  writes `~/.claude/agent-memory/pr-pr-sidekick/` itself (Claude Code
-  preloads that directory; Cursor does not).
+  writes `memory/` itself. Claude Code preloads
+  `pr-pr-sidekick/MEMORY.md`, which is only a stub pointing at `memory/`.
 
   Memory sync across machines and cloud sessions is opt-in; see below.
 
@@ -43,9 +50,9 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
 
 ### Syncing the sidekick's memory
 
-Agent memory lives in `~/.claude/agent-memory/` (this agent's files are in `pr-pr-sidekick/`), so by default it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a private git repo: pull when a session starts, commit and push when it stops.
+The checkout is `~/.claude/agent-memory/`. Sidekick rules, profiles, and drafts are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull when a session starts, commit and push when it stops.
 
-1. Create an empty **private** repo, e.g. `<you>/agent-memory`.
+1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Sidekick files committed there live under `memory/`.
 2. Set `PR_SIDEKICK_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
    or a full git URL):
    - **Locally, Claude Code** — in `~/.claude/settings.json`:

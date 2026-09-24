@@ -105,7 +105,7 @@ The goal is a description that reads like it was written by the person who made 
 
 ## Step 7: Apply it
 
-First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body (`CONVENTIONS.md`). It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
+First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body (`CONVENTIONS.md`). When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
 
 ```bash
 gh pr edit <number> --title "<new title>" --body "<new body>"
