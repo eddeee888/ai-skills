@@ -55,7 +55,7 @@ Stop here — there's nothing to test yet. This skill doesn't poll for a reply; 
 
 ## Step 4: Usable repro → write a failing test
 
-Get a `profile` of the repo from `pr-sidekick` when it's available (`CONVENTIONS.md`): the monorepo's package map, where tests live, and how to run a single test — so the test lands where this repo keeps its tests and runs the way its contributors run them. Not available → work these out from the repo as usual.
+Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md`): the monorepo's package map, where tests live, and how to run a single test — so the test lands where this repo keeps its tests and runs the way its contributors run them. Not available → work these out from the repo as usual.
 
 Find the package the repro actually exercises (in a monorepo, match its imports/API calls to the owning workspace — don't guess from the issue's labels alone).
 
