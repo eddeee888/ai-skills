@@ -33,6 +33,7 @@ dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
 branch=main
 branch_prefix=sidekick/
 login_file="$dir/.git/pr-sidekick-login"
+login_failed="$dir/.git/pr-sidekick-login-failed"
 case "$repo" in
   *://* | git@*) url="$repo" ;;
   *) url="https://github.com/$repo.git" ;;
@@ -127,14 +128,20 @@ lookup_login() {
 }
 
 # sidekick/<login>, from the login cached at the last pull; looked up if
-# there's none. Last resort: the one person with a memory/users/ tree here.
-# Empty when the login can't be told.
+# there's none, but like an unreachable repo, a failed lookup is only retried
+# once it's RETRY_MINUTES old, and at session end. Last resort: the one
+# person with a memory/users/ tree here. Empty when the login can't be told.
 user_branch() {
   local login users
   login="$(cat "$login_file" 2>/dev/null)"
-  if [ -z "$login" ]; then
+  if [ -z "$login" ] && { [ "$mode" = end ] || [ -z "$(find "$login_failed" -mmin -"$RETRY_MINUTES" 2>/dev/null)" ]; }; then
     login="$(lookup_login)"
-    [ -n "$login" ] && printf '%s\n' "$login" > "$login_file"
+    if [ -n "$login" ]; then
+      printf '%s\n' "$login" > "$login_file"
+      rm -f "$login_failed"
+    else
+      touch "$login_failed"
+    fi
   fi
   if [ -z "$login" ]; then
     users="$(ls "$dir/memory/users" 2>/dev/null)"
@@ -155,7 +162,7 @@ pull() {
     clone || return 0
   fi
   union_merge
-  rm -f "$login_file"
+  rm -f "$login_file" "$login_failed"
   local ub
   ub="$(user_branch)"
   commit_changes
@@ -164,14 +171,14 @@ pull() {
   return 0
 }
 
-# True when HEAD has commits of its own that neither the user's branch nor
-# main has — judged from the last fetch, no network call. Merges don't count,
+# True when HEAD has commits of its own that neither main nor the given
+# branch (if any) has — judged from the last fetch, no network call. Merges don't count,
 # so bringing in a newer main alone pushes nothing. An empty clone (no
 # commits yet) has nothing to send.
 ahead() {
   local ref bases=""
   git -C "$dir" rev-parse -q --verify HEAD >/dev/null || return 1
-  for ref in "origin/$1" "origin/$branch"; do
+  for ref in ${1:+"origin/$1"} "origin/$branch"; do
     git -C "$dir" rev-parse -q --verify "refs/remotes/$ref" >/dev/null && bases="$bases $ref"
   done
   # shellcheck disable=SC2086
@@ -190,6 +197,8 @@ push() {
   fi
   union_merge
   commit_changes || return 0
+  # Nothing beyond main → nothing to send, without looking up the login.
+  ahead "" || return 0
   local ub
   ub="$(user_branch)"
   [ -n "$ub" ] || { warn "can't tell your GitHub login; memory kept locally, not pushed"; return 0; }
