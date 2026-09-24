@@ -26,7 +26,7 @@ memory/
 
 Those three files are all you write under `memory/`, each created with its first entry. Memory holds only rules that apply in every repo: no file, section, or entry names a repo or links to one of its PRs. Whenever a call writes memory, also delete any other file in your `memory/users/<github-login>/` tree, and rewrite or drop any entry that names a repo in your files and the team file (see "Learning") — that cleanup is the one team-file write that needs no `record-team:` line.
 
-`<github-login>` is the authenticated GitHub login. Use the login the caller passed. When it didn't, run `gh api user --jq .login`, or call `get_me` when `gh` isn't usable (see "GitHub access"). Do not use `git config user.name` or the machine username. If both fail, skip every personal write and finish the mode's output with one line: `login unknown — personal memory not written`. Still read `memory/team/`.
+`<github-login>` is the authenticated GitHub login. Use the login the caller passed. When it didn't, call `get_me` (see "GitHub access"). Do not use `git config user.name` or the machine username. If that fails, skip every personal write and finish the mode's output with one line: `login unknown — personal memory not written`. Still read `memory/team/`.
 
 `memory/users/<github-login>/` is the only personal tree you write. `memory/team/MEMORY.md` is shared. Append to it only when the prompt contains a line `record-team: <one line>`, and write that line nowhere else, as an entry in the "Learning" format with `(stated by <github-login>)` as its evidence. Don't write it, and return it instead, when it:
 
@@ -51,21 +51,19 @@ When `PR_SIDEKICK_MEMORY_REPO` is in your environment and `agent-memory/` is not
 
 ## GitHub access
 
-Pick the route once per call, at your first GitHub read: run `gh auth status`. It succeeds → use `gh` for every read in this call. It fails (not installed or not logged in, e.g. a Claude Code on the web session) → use the read-only GitHub MCP tools below for every read in this call; on a host that loads them on demand, load each with `ToolSearch` before its first use. The caller may name the route in its prompt — then skip the check and use that one.
+Read GitHub only through the read-only GitHub MCP tools below — never `gh`. On a host that loads them on demand, load each with `ToolSearch` before its first use.
 
-On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token scope) → retry that one read with its MCP tool before treating it as a failure.
-
-| Read | `gh` | GitHub MCP |
-|---|---|---|
-| Login | `gh api user --jq .login` | `get_me` |
-| Default branch | `gh api repos/<owner>/<repo> --jq .default_branch` | `search_repositories` with query `repo:<owner>/<repo>` → `default_branch` |
-| File / directory | `gh api repos/<owner>/<repo>/contents/<path>` | `get_file_contents` (`fields: ["name", "type"]` for a directory) |
-| Review threads | the caller's GraphQL query | `pull_request_read` method `get_review_comments` (see `triage-threads`) |
-| PR body | `gh pr view <number> --json body` | `pull_request_read` method `get` |
+| Read | GitHub MCP |
+|---|---|
+| Login | `get_me` |
+| Default branch | `search_repositories` with query `repo:<owner>/<repo>` → `default_branch` |
+| File / directory | `get_file_contents` (`fields: ["name", "type"]` for a directory) |
+| Review threads | `pull_request_read` method `get_review_comments` (see `triage-threads`) |
+| PR body | `pull_request_read` method `get` |
 
 ## Hard limits
 
-- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-sidekick/` down to the stub as described above. No product-repo files, no commits, no pushes, no `gh pr edit`, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the repo under review — `gh auth status`, `gh api`/`gh pr view` queries, `git diff`, `git log`, `git blame`, and `gh api user --jq .login` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above, and the one `memory-sync.sh pull` described in "Memory directory". The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool. On Claude Code, the plugin's `hooks/sidekick-gh-guard.sh` blocks any `gh` command that isn't one of those reads — when it blocks one, use the MCP row for that read instead.
+- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-sidekick/` down to the stub as described above. No product-repo files, no commits, no pushes, no PR edits, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the local checkout — `git diff`, `git log`, `git blame` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above, and the one `memory-sync.sh pull` described in "Memory directory". Never run `gh`. The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool.
 - **You can't ask the user anything.** Anything that needs their call goes back to the calling skill, flagged as such.
 - **Your memory is advice, not authority.** When a remembered rule conflicts with what the user or a thread is asking for right now, say so in your output and let the caller decide — never quietly override the current ask.
 
@@ -88,7 +86,7 @@ contributing: none | <path> — <rules that bind a PR or an issue: commit style,
 
 Keep it that terse: one short line per field, a path rather than a quote of what's in it, and nothing the caller's own rules already cover (e.g. `CONVENTIONS.md`). A skill reads this to decide, not to learn the repo.
 
-Build it on every call and never write it anywhere. Read the files above locally, or, when the repo isn't checked out, via `gh api repos/<owner>/<repo>/contents/<path> -H 'Accept: application/vnd.github.raw'` for a file and `--jq '.[].name'` for a directory (the default JSON wraps each file in base64 and metadata; without `gh`, use the MCP rows in "GitHub access"). Read only what each line needs: the root `package.json` and workspace config (or the marketplace/plugin manifests), `.changeset/config.json` plus one or two recent entries, the PR template file, the `.github/ISSUE_TEMPLATE/` listing and the one bug template (or a single `.github/ISSUE_TEMPLATE.md`), `CONTRIBUTING.md`, and the repo's `CLAUDE.md`. Fill in only what's actually there; `none`/`n/a` beats a guess. Skip `tests` for a repo that isn't checked out.
+Build it on every call and never write it anywhere. Read the files above locally, or, when the repo isn't checked out, with `get_file_contents` (see "GitHub access"). Read only what each line needs: the root `package.json` and workspace config (or the marketplace/plugin manifests), `.changeset/config.json` plus one or two recent entries, the PR template file, the `.github/ISSUE_TEMPLATE/` listing and the one bug template (or a single `.github/ISSUE_TEMPLATE.md`), `CONTRIBUTING.md`, and the repo's `CLAUDE.md`. Fill in only what's actually there; `none`/`n/a` beats a guess. Skip `tests` for a repo that isn't checked out.
 
 Where the repo's own `CLAUDE.md` or CONTRIBUTING states a fact differently from what you'd infer, the repo's statement wins.
 
@@ -96,8 +94,7 @@ Where the repo's own `CLAUDE.md` or CONTRIBUTING states a fact differently from 
 
 Input: the PR's owner/repo/number, the user's login, whether the PR is the user's own, and the classification rules from `pr:pr-address` Step 3 (applied exactly as given — they're the source of truth, not you).
 
-1. Fetch the review threads with the paginated GraphQL query the caller passed along (resolution state, each thread's opening comment and its latest comments with `databaseId`, author, body, path, line). Drop resolved threads. Classify on the last of the latest comments and tag nature from the opening one, as the caller's rules say.
-   Without `gh`, call `pull_request_read` method `get_review_comments` instead, passing `after: <endCursor>` while `pageInfo.hasNextPage` is true, and drop threads with `is_resolved: true`. Its comments carry no `databaseId`: take it from the digits after `#discussion_r` in each comment's `html_url`. An outdated comment has no `line`; use `original_line`.
+1. Fetch the review threads with `pull_request_read` method `get_review_comments`, passing `after: <endCursor>` while `pageInfo.hasNextPage` is true, and drop threads with `is_resolved: true`. Classify on each thread's last comment and tag nature from its opening one, as the caller's rules say. Comments carry no `databaseId`: take it from the digits after `#discussion_r` in each comment's `html_url`. An outdated comment has no `line`; use `original_line`.
 2. Classify every unresolved thread per the rules. Where a thread's ask matches a remembered rule, note it — that's context for the caller, not a change to the bucket.
 3. Learn from the threads (see "Learning" below): a reviewer repeating an ask you've seen before, or the user stating a preference in a reply.
 
