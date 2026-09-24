@@ -14,7 +14,9 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 ## Step 1: Read and classify the issue
 
 - Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'` — the body and the last 10 comments. Read earlier comments only when what you need isn't there and `total` says there are more.
-- No issue — just a description in the conversation → treat the description itself as the issue. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Search existing issues for a duplicate first (`gh issue list --search "<keywords>"`). Found a match → point the user at it instead of continuing.
+- No issue — just a description in the conversation → treat the description itself as the issue. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Search existing issues for a duplicate first (`gh issue list --repo <owner>/<repo> --search "<keywords>" --state all` — closed ones count too). Found a match → point the user at it instead of continuing.
+
+In a monorepo, get the repo's profile (`scout-repo`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"), and pass its package map to Step 3's subagent, so the survey doesn't rediscover the workspace layout. Not available → the subagent works it out.
 
 Then classify which of the two this actually is, and jump to the matching path below:
 
@@ -31,7 +33,7 @@ Restate the observed behavior vs. the expected behavior. Unclear what's actually
 
 Read the code path the reported behavior would run through and form a hypothesis for where it goes wrong — by reading, not by running anything. Name the specific function/module/condition you suspect, and say plainly when the code alone doesn't pin it down to one spot — a tentative "likely X, possibly Y" beats a confident guess dressed as certainty. For a monorepo, note every package whose behavior the root cause implicates.
 
-Hand the reading to an exploring subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), so the files it reads stay out of this chat. Pass the observed vs. expected behavior and any entry point the issue names; ask for the suspect function(s)/files, the packages involved, and how sure it is, in a few lines. Size from its answer — don't re-read what it read.
+Hand the reading to an exploring subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), so the files it reads stay out of this chat. Pass the observed vs. expected behavior, any entry point the issue names, and the profile's package map if you have one; ask for the suspect function(s)/files, the packages involved, and how sure it is, in a few lines. Size from its answer — don't re-read what it read.
 
 Signals:
 
@@ -101,9 +103,9 @@ Continue to Step 6.
 
 Show the user: what's being reported or asked, the size classification with its reasons, the root-cause hypothesis (or the affected packages/files, for a feature), and the matching recommendation from Step 5. This skill's job ends here — no implementation, no reproduction, no test, and nothing posted to GitHub unless the user asks to share it.
 
-- Sized from an existing issue → if asked to share it, draft the comment, show it, and only post after confirmation: `gh issue comment <number> --body "<confirmed analysis>"`
+- Sized from an existing issue → if asked to share it, draft the comment, show it, and only post after confirmation, from a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"): `gh issue comment <number> --body-file <file>`
 - Sized from a plain-text bug description with nothing filed → if the user wants it filed, hand off to `issue-create` with the root-cause hypothesis as context rather than drafting the issue here.
-- Sized from a plain-text feature description with nothing filed → `issue-create` only drafts bug reports, not feature requests. If the user wants it filed, draft a title/body from the analysis (matching the repo's feature-request template if it has one), confirm with the user, then `gh issue create`.
+- Sized from a plain-text feature description with nothing filed → `issue-create` only drafts bug reports, not feature requests. If the user wants it filed, draft a title/body from the analysis (matching the repo's feature-request template if it has one), confirm with the user, then `gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>` (`CONVENTIONS.md` → "Passing drafted text to `gh`").
 
 ## Also stop instead of proceeding
 

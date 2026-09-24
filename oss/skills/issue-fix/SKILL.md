@@ -1,6 +1,6 @@
 ---
 name: issue-fix
-description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — committing it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushing it. By default, builds on top of the checkpoint's own PR; pass `--new-pr` to open a separate fix PR instead. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. It never runs `pr:pr-sync` itself; it suggests it after pushing.
+description: Turn an `issue-verify` checkpoint commit into an actual fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or a different one), root-causes it, works out whether the bug lives in this library or in a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements whichever they pick — building directly on top of the checkpoint commit — committing it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushing it. By default, builds on top of the checkpoint's own branch and PR, checking that branch out if needed; pass `--new-pr` to open a separate fix PR instead. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction itself, `issue-verify` does, and does not require that checkpoint's PR to be merged — only for the commit to exist. It never runs `pr:pr-sync` itself; it suggests it after pushing.
 ---
 
 # Fix a verified issue
@@ -13,23 +13,35 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 ## Step 1: Find the `issue-verify` checkpoint commit
 
-The failing test could be on the branch you're already on or a completely different one — don't assume, look:
+The failing test could be on the branch you're already on or a completely different one — don't assume, look. Cheap, exact checks first — the current branch's history, and a checkpoint branch by its conventional name:
+
+```bash
+git log --oneline --grep="eddeee888:oss:issue-verify" HEAD | grep -E "#<issue-number>([^0-9]|$)"
+git ls-remote --heads origin "repro/<issue-number>"
+```
+
+Both empty → one wider sweep, since a checkpoint can sit on a differently named branch:
 
 ```bash
 git fetch origin --quiet
-git log --all --oneline --grep="eddeee888:oss:issue-verify"
+git log --all --oneline --grep="eddeee888:oss:issue-verify" | grep -E "#<issue-number>([^0-9]|$)"
 ```
 
-Nothing found → stop, ask the user where it lives rather than guessing a starting point. More than one match → disambiguate using the issue number in the commit message.
+No issue number given → run the same commands without the `grep -E` filter (and skip the `ls-remote`), then ask the user which issue if more than one checkpoint turns up. The `([^0-9]|$)` keeps `#12` from matching `#123`.
+
+Nothing found → stop, ask the user where it lives rather than guessing a starting point.
 
 This commit is your base for everything that follows. By default, building the fix on top of the checkpoint's own PR is fine — that's one PR going from red to green, the simpler reviewer experience. Pass `--new-pr` when invoking this skill to force a separate fix PR instead (e.g. the checkpoint PR isn't yours to push more commits to, or the fix genuinely warrants its own review):
 
 - Already in the current branch's history, and `--new-pr` wasn't passed → keep working right here, no new branch needed; the checkpoint's PR becomes the fix PR.
-- Otherwise (a different branch, or `--new-pr` was passed) → branch from the checkpoint commit directly, not from the base branch's tip: `git checkout -b fix/<issue-number> <verify-commit-sha>` — paired with `issue-verify`'s `repro/<issue-number>` naming (`CONVENTIONS.md` → "Checkpoint/fix branch naming"). The checkpoint's PR doesn't need to be merged for this.
+- On another branch (e.g. `repro/<issue-number>`), and `--new-pr` wasn't passed → check that branch out (`git switch <branch>`, or `git switch -c <branch> --track origin/<branch>` if it's only on the remote) and keep working there; its PR becomes the fix PR. Can't push to that branch (someone else's fork or branch) → say so and fall through to the next case.
+- `--new-pr` was passed, or the checkpoint branch isn't one you can push to → branch from the checkpoint commit directly, not from the base branch's tip: `git checkout -b fix/<issue-number> <verify-commit-sha>` — paired with `issue-verify`'s `repro/<issue-number>` naming (`CONVENTIONS.md` → "Checkpoint/fix branch naming"). The checkpoint's PR doesn't need to be merged for this.
 
 ## Step 2: Re-root-cause it
 
-Run just the failing test locally, with the runner's quiet or summary reporter so only the failure lands in context, and read the actual failure (stack trace, assertion diff, error type) — the checkpoint commit may have surfaced something more specific than the issue. Read the issue thread again only when the failure doesn't match what the checkpoint commit message says.
+First get the repo's profile (`scout-repo`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): it says how to run one test in the affected package, where tests live, and whether Step 6's title needs a package prefix. Not available → work those out from the repo.
+
+Then run just the failing test locally, with the runner's quiet or summary reporter so only the failure lands in context, and read the actual failure (stack trace, assertion diff, error type) — the checkpoint commit may have surfaced something more specific than the issue. Read the issue thread again only when the failure doesn't match what the checkpoint commit message says.
 
 ## Step 3: Is the bug ours, or a dependency's?
 
@@ -51,7 +63,7 @@ For each option: what changes, blast radius, risk, rough effort. Ask which they 
 
 ## Step 5: Implement the chosen option
 
-Get the repo's profile and a brief in one call (`scout-repo` + `brief-task`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"), passing the files the chosen option touches and a one-line summary of it. The profile says how to run the affected package's tests and whether Step 6's title needs a package prefix; the brief brings the rules the user's reviewers have already asked for that apply to this change. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `sweep-diff` call below. It lives in the `pr` plugin; not installed → skip it.
+Get a brief (`brief-task`) from the sidekick, passing the files the chosen option touches and a one-line summary of it — the profile from Step 2 already covers how to run tests. The brief brings the rules the user's reviewers have already asked for that apply to this change. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `sweep-diff` call below. Not available → pass "none" as the rules, and do the `sweep-diff` step below as a quick read of your own diff instead.
 
 Then hand the edit/test/commit loop to one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), with this prompt:
 
@@ -66,7 +78,9 @@ Make only this fix, nothing broader. The failing test is the acceptance
 criterion. Never rewrite, squash, or drop the checkpoint commit.
 Run the affected package's tests with a quiet or summary reporter, reading
 only failures, until the failing test passes for the right reason and
-nothing else regressed. Then commit, with this message ending in the marker:
+nothing else regressed — at most 3 attempts. Still failing after the third
+→ stop without committing and say what you tried and what's still failing.
+Then commit, with this message ending in the marker:
   fix: <short description> (#<issue number>)
 
   eddeee888:oss:issue-fix
@@ -79,19 +93,19 @@ Then run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Curso
 
 A later `pr:pr-sync` rebase still replays the checkpoint's SHA but leaves its content and trailer untouched — that's not the kind of rewrite the prompt rules out.
 
-## Step 6: Push — open a new PR only when Step 1 branched off (or `--new-pr` was passed)
+## Step 6: Push — open a new PR only when the branch has none
 
-Push the Step 1 branch. Check first whether it already has an open PR:
+Check whether the Step 1 branch already has an open PR — its answer, not a guess from Step 1, decides what happens:
 
 ```bash
 gh pr view --json number 2>&1
 ```
 
-- **Continuing the checkpoint's PR** (Step 1's default case — same branch, `--new-pr` not passed) → just `git push`. Never run `gh pr create` here — it either errors on a branch that already has an open PR, or opens a second PR for what should stay one. Its title and description still describe the checkpoint — Step 7 covers that.
-- **A separate fix PR** (Step 1's `--new-pr` case, or a checkpoint on a different branch) → push and open one as a draft. In a monorepo, apply this marketplace's shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"), prefixed with the package Step 3's root-cause tracing pointed at, not whichever package the issue was filed under — e.g. `[package-name] fix: <short description of the fix> (#<issue number>)`.
+- **It has one** (normally the checkpoint's PR, continued in Step 1) → just `git push`. Never run `gh pr create` here — it either errors on a branch that already has an open PR, or opens a second PR for what should stay one. Its title and description still describe the checkpoint — Step 7 covers that.
+- **It has none** (the `fix/<issue-number>` branch from Step 1) → `git push -u origin <branch>` and open a draft PR. In a monorepo, apply this marketplace's shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"), prefixed with the package Step 3's root-cause tracing pointed at, not whichever package the issue was filed under — e.g. `[package-name] fix: <short description of the fix> (#<issue number>)`. Write the title and body to files first (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
   ```bash
-  gh pr create --draft --title "fix: <short description of the fix> (#<issue number>)" --body "<body>"
+  gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
   ```
 
 Reference the issue with a non-closing keyword, per this marketplace's shared convention (`CONVENTIONS.md` → "Non-closing issue references") — never `Fixes #123`/`Closes #123`, even though this PR resolves it. State which option was chosen and why in a sentence or two — the options were already discussed with the user, no need to re-litigate them.

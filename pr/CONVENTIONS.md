@@ -94,6 +94,8 @@ An implement/test/commit loop, a write-and-run test loop, a code survey, researc
 - **One at a time on a shared checkout.** Subagents that edit the same checkout never run in parallel.
 - **Short results.** It returns only the few lines the template asks for, and returns a question instead of guessing when a decision is the user's; the main chat asks the user and spawns it again with the answer.
 - **Every spawn and check is a main-chat step.** Keep them few — batch where the skill says to.
+- **Bounded retries.** A template that says to keep going "until" a test passes or fails the right way allows at most 3 attempts. Still not there after the third → stop, leave the work uncommitted, and return what was tried and what's still failing. The main chat takes that to the user; it doesn't respawn the same loop unasked.
+- **Resume, don't restart.** When a subagent returned a question and the main chat spawns it again with the answer, the new prompt carries the question and the answer, and the subagent picks up at the step that asked — it checks what's already done (rebased, committed, pushed) rather than redoing it.
 - **No way to spawn a subagent** → do the same steps in the main chat.
 
 Used by: `pr:pr-address` (5a batches, 5b research), `pr:pr-sync` (Steps 2–6),
@@ -114,12 +116,13 @@ These rules hold everywhere:
 - **Optional.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the sidekick is missing, and don't treat Cursor itself as missing.
 - **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
 - **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the sidekick doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
+- **Pass what you already have.** Once the skill has picked its GitHub route ("GitHub access" below), every sidekick call names it (`GitHub: gh` or `GitHub: MCP`), and passes `login: <github-login>` when the skill has already looked it up — so the sidekick doesn't rerun `gh auth status` and `gh api user` on each call.
 - **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The sidekick appends it only to `memory/team/MEMORY.md` in the memory repo.
 
 Used by: `pr:pr-address` (triage-threads + scout-repo, sweep-diff),
-`pr:pr-sync` (scout-repo, brief-task, grill-description), `oss:issue-create`
-(scout-repo), `oss:issue-verify` (scout-repo), `oss:issue-fix` (scout-repo,
-brief-task, sweep-diff).
+`pr:pr-sync` (scout-repo, brief-task, grill-description), `oss:issue-analyze`
+(scout-repo), `oss:issue-create` (scout-repo), `oss:issue-verify`
+(scout-repo), `oss:issue-fix` (scout-repo, brief-task, sweep-diff).
 
 ## GitHub access: `gh`, or the GitHub MCP tools
 
@@ -135,18 +138,30 @@ Skills write their GitHub steps as `gh` commands. Not every host has `gh`: a Cla
 |---|---|
 | `gh api user --jq .login` | `get_me` → `login` |
 | `gh pr view [<number>] --json …` | `pull_request_read` method `get` (no number → find the PR first, above) |
-| `gh pr create --draft --title … --body …` | `create_pull_request` with `draft: true`, `head`, `base` |
+| `gh pr create --draft --title … --body-file …` | `create_pull_request` with `draft: true`, `head`, `base` |
 | `gh pr edit <number> --title … --body-file …` | `update_pull_request` with `title`, `body` |
-| review threads (`gh api graphql` … `reviewThreads`) | `pull_request_read` method `get_review_comments`, following `after` while `pageInfo.hasNextPage`; drop threads with `is_resolved: true`. Comments have no `databaseId`: it's the digits after `#discussion_r` in `html_url`. An outdated comment has no `line`; use `original_line`. |
-| `gh api repos/<o>/<r>/pulls/comments/<id> --jq .body` | from `get_review_comments`, the comment whose `html_url` ends in `#discussion_r<id>` |
+| review threads (`gh api graphql --paginate` … `reviewThreads`) | `pull_request_read` method `get_review_comments`, following `after` while `pageInfo.hasNextPage`; drop threads with `is_resolved: true`. Comments have no `databaseId`: it's the digits after `#discussion_r` in `html_url`. An outdated comment has no `line`; use `original_line`. |
+| `gh api repos/<o>/<r>/pulls/comments/<id> --jq .body` | from one `get_review_comments` pass, the comment whose `html_url` ends in `#discussion_r<id>` — fetch the list once and look up every comment you need in it, never once per comment |
 | `gh api repos/<o>/<r>/pulls/<n>/comments/<id>/replies -f body=…` | `add_reply_to_pull_request_comment` with `commentId: <id>`, `pullNumber`, `body` |
 | `gh issue view <n> --json …,comments` | `issue_read` method `get`, then method `get_comments` |
 | `gh issue list --repo <o>/<r> --search … --state all` | `search_issues` with `owner`, `repo`, `query` |
-| `gh issue create --repo <o>/<r> --title … --body …` | `issue_write` method `create` |
-| `gh issue comment <n> --body …` | `add_issue_comment` |
+| `gh issue create --repo <o>/<r> --title … --body-file …` | `issue_write` method `create` |
+| `gh issue comment <n> --body-file …` | `add_issue_comment` |
 | `gh api repos/<o>/<r>/contents/<path>` (file or directory) | `get_file_contents` (`fields: ["name", "type"]` for a directory) |
 | `gh api repos/<o>/<r> --jq .default_branch` | `search_repositories` with query `repo:<o>/<r>` → `default_branch` |
 
 Used by: `pr:pr-address`, `pr:pr-sync`, `oss:issue-analyze`,
 `oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`. `pr-sidekick`
 keeps its own copy of the read rows next to its tool allowlist.
+
+## Passing drafted text to `gh`
+
+Never put drafted text — a title, a body, a reply — inside a double-quoted shell argument. Issue and PR text is full of backticked code and `$`, and inside `"..."` the shell runs `` `cmd` `` and expands `$VAR`: the posted text comes out mangled, or a command runs.
+
+- **Multi-line text** (an issue, PR, or comment body) → write it to a file with the file-writing tool, never `echo` or an unquoted heredoc, and pass the file: `--body-file <file>` for `gh issue create|comment` and `gh pr create|edit`; `-F body=@<file>` for `gh api`. Put the file in `$(git rev-parse --git-dir)/` inside a checkout (outside the working tree), else in a `mktemp -d` directory; remove it after the command.
+- **One line** (a title, a one-line thread reply) → single quotes, with any `'` in it written as `'\''`, or read it back from a file: `--title "$(cat <file>)"` (command output isn't expanded again).
+- **MCP route** → pass the text as the tool's parameter; no quoting concerns.
+
+Used by: `pr:pr-address` (thread replies), `pr:pr-sync` (title and body),
+`oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`
+(issue, comment, and PR text).

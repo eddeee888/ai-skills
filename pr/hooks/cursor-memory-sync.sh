@@ -7,6 +7,7 @@
 #
 #   cursor-memory-sync.sh pull [repo]
 #   cursor-memory-sync.sh push [repo]
+#   cursor-memory-sync.sh end [repo]
 #
 # The optional repo argument is the plugin variable PR_SIDEKICK_MEMORY_REPO,
 # used only when that variable is not already in the environment. An
