@@ -16,7 +16,7 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
   when sync is on) every sidekick file lives under `memory/`:
   `memory/users/<github-login>/` for that person's rules, profile cache,
   and drafts, and `memory/team/` for rules someone explicitly asked to
-  share. The GitHub login comes from `gh api user --jq .login`. It also keeps a cached `profile` of
+  share. The GitHub login comes from `gh api user --jq .login`, or the GitHub MCP `get_me` tool where `gh` isn't available (the sidekick falls back to read-only GitHub MCP tools for all its GitHub reads). It also keeps a cached `profile` of
   each repo you work in (test runner, monorepo layout, changesets, PR/issue
   templates, contribution rules), refreshed only when the files behind it
   change. The skills consult it at fixed points:
