@@ -8,13 +8,15 @@
 #   memory-sync.sh push   # Stop (every turn): send changes up
 #   memory-sync.sh end    # SessionEnd: push, retrying an unreachable repo
 #
-# Memory is pulled from main, but pushed to a branch of its own per session,
-# sidekick/<session id>, so what a session learned lands as a branch to review
-# and merge rather than straight on main. A session with nothing new pushes
-# no branch. The session id comes from the hook's JSON input on stdin.
+# Memory is pushed to a branch per GitHub user, sidekick/<login>, never to
+# main: what someone's sessions learn collects there, for a PR to review and
+# merge. Pull brings in both main and that branch, merging rather than
+# rebasing so the branch only ever moves forward. The login comes from
+# `gh api user`, or the GitHub API directly (GH_TOKEN/GITHUB_TOKEN, or a
+# proxy that authenticates for us), once per session start.
 #
 # Stop fires after every turn, so push stays off the network unless there's
-# something to send: nothing new → no ls-remote, pull or push. A repo that
+# something to send: nothing new → no fetch or push. A repo that
 # couldn't be cloned isn't retried on each turn either — only once the last
 # failure is RETRY_MINUTES old, and always at session end.
 #
@@ -30,6 +32,7 @@ repo="${PR_SIDEKICK_MEMORY_REPO:-}"
 dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
 branch=main
 branch_prefix=sidekick/
+login_file="$dir/.git/pr-sidekick-login"
 case "$repo" in
   *://* | git@*) url="$repo" ;;
   *) url="https://github.com/$repo.git" ;;
@@ -67,10 +70,6 @@ union_merge() {
   # the sidekick's upkeep merges the duplicates on its next write.
   mkdir -p "$dir/.git/info"
   grep -qs 'merge=union' "$dir/.git/info/attributes" || echo '* merge=union' >> "$dir/.git/info/attributes"
-}
-
-remote_has_branch() {
-  [ -n "$(git -C "$dir" ls-remote --heads origin "$branch" 2>/dev/null)" ]
 }
 
 clone() {
@@ -113,40 +112,70 @@ clone() {
   union_merge
 }
 
+commit_changes() {
+  g add -A
+  g diff --cached --quiet || g commit -q -m "sync from $(hostname)"
+}
+
+# The authenticated GitHub login, looked up over the network.
+lookup_login() {
+  local login="" token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+  command -v gh >/dev/null 2>&1 && login="$(gh api user --jq .login 2>/dev/null)"
+  [ -n "$login" ] || login="$(curl -fsS -m 10 ${token:+-H "Authorization: Bearer $token"} https://api.github.com/user 2>/dev/null |
+    sed -nE 's/^[[:space:]]*"login"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n 1)"
+  printf '%s' "$login"
+}
+
+# sidekick/<login>, from the login cached at the last pull; looked up if
+# there's none. Last resort: the one person with a memory/users/ tree here.
+# Empty when the login can't be told.
+user_branch() {
+  local login users
+  login="$(cat "$login_file" 2>/dev/null)"
+  if [ -z "$login" ]; then
+    login="$(lookup_login)"
+    [ -n "$login" ] && printf '%s\n' "$login" > "$login_file"
+  fi
+  if [ -z "$login" ]; then
+    users="$(ls "$dir/memory/users" 2>/dev/null)"
+    [ "$(printf '%s\n' "$users" | grep -c .)" = 1 ] && login="$users"
+  fi
+  [ -n "$login" ] && printf '%s%s' "$branch_prefix" "$login"
+}
+
+# Fetch a remote branch and merge it in; false when it isn't on the remote.
+merge_remote() {
+  g fetch -q origin "+refs/heads/$1:refs/remotes/origin/$1" 2>/dev/null || return 1
+  g merge -q --no-edit "origin/$1" >/dev/null 2>&1 ||
+    { g merge --abort 2>/dev/null; warn "couldn't merge $1; resolve in $dir"; return 2; }
+}
+
 pull() {
   if [ ! -d "$dir/.git" ]; then
-    clone
-    return
+    clone || return 0
   fi
   union_merge
-  remote_has_branch || return 0
-  g pull -q --rebase --autostash origin "$branch" 2>/dev/null ||
-    { g rebase --abort 2>/dev/null; warn "pull failed; keeping local memory as is"; }
+  rm -f "$login_file"
+  local ub
+  ub="$(user_branch)"
+  commit_changes
+  merge_remote "$branch"
+  [ -n "$ub" ] && merge_remote "$ub"
+  return 0
 }
 
-# The branch this session pushes to: sidekick/<session id>, from the hook's
-# stdin JSON (Claude Code's session_id, Cursor's conversation_id). Without
-# one, fall back to a branch per machine.
-session_branch() {
-  local input="" id=""
-  [ -t 0 ] || input="$(cat)"
-  id="$(printf '%s' "$input" | sed -nE 's/.*"(session_id|conversation_id)"[[:space:]]*:[[:space:]]*"([^"]*)".*/\2/p' | head -n 1)"
-  [ -n "$id" ] || id="host-$(hostname)"
-  printf '%s%s' "$branch_prefix" "$(printf '%s' "$id" | tr -c 'A-Za-z0-9._-' '-')"
-}
-
-# True when HEAD has commits not yet on the session branch (or, before its
-# first push, on main) — judged from the last fetch, no network call. An
-# empty clone (no commits yet) has nothing to send.
+# True when HEAD has commits of its own that neither the user's branch nor
+# main has — judged from the last fetch, no network call. Merges don't count,
+# so bringing in a newer main alone pushes nothing. An empty clone (no
+# commits yet) has nothing to send.
 ahead() {
-  local base
+  local ref bases=""
   git -C "$dir" rev-parse -q --verify HEAD >/dev/null || return 1
-  for base in "origin/$push_branch" "origin/$branch"; do
-    if git -C "$dir" rev-parse -q --verify "refs/remotes/$base" >/dev/null; then
-      [ -n "$(git -C "$dir" log --oneline "$base..HEAD")" ]
-      return
-    fi
+  for ref in "origin/$1" "origin/$branch"; do
+    git -C "$dir" rev-parse -q --verify "refs/remotes/$ref" >/dev/null && bases="$bases $ref"
   done
+  # shellcheck disable=SC2086
+  [ "$(git -C "$dir" rev-list --no-merges --count HEAD --not $bases)" != 0 ]
 }
 
 push() {
@@ -160,21 +189,21 @@ push() {
     clone || return 0
   fi
   union_merge
-  g add -A
-  if ! g diff --cached --quiet; then
-    g commit -q -m "sync from $(hostname)" || return 0
-  fi
-  ahead || return 0
-  # Only this session writes its branch, so there's nothing to pull first; the
-  # lease still refuses to overwrite a branch someone else pushed in between.
-  g push -q --force-with-lease="refs/heads/$push_branch" origin "HEAD:refs/heads/$push_branch" 2>/dev/null ||
-    warn "push to $push_branch on $repo failed; will retry next time"
+  commit_changes || return 0
+  local ub
+  ub="$(user_branch)"
+  [ -n "$ub" ] || { warn "can't tell your GitHub login; memory kept locally, not pushed"; return 0; }
+  ahead "$ub" || return 0
+  # Another machine of the same user may have pushed since: take that first.
+  merge_remote "$ub"
+  [ $? = 2 ] && return 0
+  g push -q origin "HEAD:refs/heads/$ub" 2>/dev/null || warn "push to $ub on $repo failed; will retry next time"
 }
 
 mode="${1:-}"
 case "$mode" in
   pull) pull ;;
-  push | end) push_branch="$(session_branch)"; push ;;
+  push | end) push ;;
   *) warn "usage: memory-sync.sh pull|push|end" ;;
 esac
 exit 0

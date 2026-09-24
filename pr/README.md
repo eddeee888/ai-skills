@@ -62,7 +62,7 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 
 ### Syncing the sidekick's memory
 
-The checkout is `~/.claude/agent-memory/`. Sidekick rules are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull `main` when a session starts, commit and push when a turn ends and when the session ends. A turn that learned nothing makes no network call.
+The checkout is `~/.claude/agent-memory/`. Sidekick rules are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull `main` and your own branch when a session starts, commit and push when a turn ends and when the session ends. A turn that learned nothing makes no network call.
 
 1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Sidekick files committed there live under `memory/`.
 2. Set `PR_SIDEKICK_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
@@ -90,13 +90,17 @@ How it behaves:
   failed push is reported on stderr and retried on the next push. A repo
   that can't be cloned is retried at most every 10 minutes, and once more
   when the session ends — not on every turn. Neither ever stops the session.
-- **A branch per session, merged by you.** A session that learned
-  something pushes it to `sidekick/<session id>` (Claude Code's
-  `session_id`, Cursor's `conversation_id`; `sidekick/host-<hostname>` if
-  the hook gets neither), never to `main`. A session with nothing new pushes
-  no branch. Sessions pull `main`, so what one session learned reaches the
-  others once you merge its branch. Until then it stays in the local
-  checkout, and that machine's next session branch carries it too.
+- **A branch per person, merged by you.** What someone's sessions learn is
+  pushed to `sidekick/<github-login>`, never to `main`, so it can be
+  reviewed and merged as a PR. Sessions pull both `main` and their own
+  branch, so a person's unmerged memory follows them across machines, and
+  reaches everyone else once merged. The branch is only ever merged into,
+  never rewritten. A turn with nothing new pushes nothing, and neither does
+  bringing in a newer `main`. The login comes from `gh api user`, else the
+  GitHub API with `GH_TOKEN`/`GITHUB_TOKEN` (or a proxy that
+  authenticates, as in Claude Code on the web), else the one person with a
+  `memory/users/` tree in the checkout. If none of those works, memory
+  stays local and a warning says so.
 - **Existing memory is kept.** The first sync on a machine carries local
   memory into the repo — new files as is, and lines missing from the repo's
   copy of a shared file appended to it — and backs up the old directory to
