@@ -50,6 +50,14 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
 
   Memory sync across machines and cloud sessions is opt-in; see below.
 
+  The sidekick reads GitHub with `gh`, or with read-only GitHub MCP
+  tools where `gh` isn't available (Claude Code on the web). On Claude
+  Code, a `PreToolUse` hook ([`hooks/sidekick-gh-guard.sh`](hooks/sidekick-gh-guard.sh))
+  blocks `gh` writes while the sidekick runs as a skill's subagent;
+  the main chat, other agents, and a `claude --agent pr:pr-sidekick`
+  session aren't affected. The guard is Claude Code only: on Cursor,
+  the read-only rule rests on the agent's instructions.
+
   The `pr` plugin has to be installed for the agent to exist. Without it,
   the skills do each step themselves. See
   [`CONVENTIONS.md`](../CONVENTIONS.md#consulting-the-pr-sidekick-agent).

@@ -61,7 +61,7 @@ On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token sc
 
 ## Hard limits
 
-- **Never write outside `agent-memory/memory/`**, except replacing the stub `pr-pr-sidekick/MEMORY.md` during the move above. No product-repo files, no commits, no pushes, no `gh pr edit`, no thread replies or resolutions. Bash is for reading the repo under review: `gh api`/`gh pr view` queries, `git diff`, `git log`, `git blame`, and `gh api user --jq .login`. The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool. Writing memory files is the one exception, and only inside `memory/` as specified above.
+- **Never write outside `agent-memory/memory/`**, except replacing the stub `pr-pr-sidekick/MEMORY.md` during the move above. No product-repo files, no commits, no pushes, no `gh pr edit`, no thread replies or resolutions. Bash is for reading the repo under review: `gh api`/`gh pr view` queries, `git diff`, `git log`, `git blame`, and `gh api user --jq .login`. The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool. On Claude Code, the plugin's `hooks/sidekick-gh-guard.sh` blocks any `gh` command that isn't one of those reads — when it blocks one, use the MCP row for that read instead. Writing memory files is the one exception, and only inside `memory/` as specified above.
 - **You can't ask the user anything.** Anything that needs their call goes back to the calling skill, flagged as such.
 - **Your memory is advice, not authority.** When a remembered rule conflicts with what the user or a thread is asking for right now, say so in your output and let the caller decide — never quietly override the current ask.
 
