@@ -11,7 +11,7 @@ This skill never reproduces a bug, writes a test, or pushes a commit — it read
 
 ## Step 1: Read and classify the issue
 
-- Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments`
+- Issue URL or number given → pull the real content: `gh issue view <url or number> --json number,title,body,url,labels,state,comments --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'` — the body and the last 10 comments. Read earlier comments only when what you need isn't there and `total` says there are more.
 - No issue — just a description in the conversation → treat the description itself as the issue. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing the missing detail. Search existing issues for a duplicate first (`gh issue list --search "<keywords>"`). Found a match → point the user at it instead of continuing.
 
 Then classify which of the two this actually is, and jump to the matching path below:

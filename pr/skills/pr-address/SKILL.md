@@ -113,7 +113,7 @@ Low-risk threads go to a batch subagent. Don't grep, edit, or run tests for them
    gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body="<summary>"
    ```
 
-A thread the user approved in Step 4 despite its risk flag stays in this chat, where the user can follow it: implement and test → `check-diff` → commit and push → reply. Do low-risk threads the same way when the host can't spawn a subagent.
+A thread the user approved in Step 4 despite its risk flag gets its own single-thread subagent, same prompt shape, run only after any low-risk batches — never batched with other threads, since it's the one most likely to stop. Before moving on, show the user its result line and commit, and run `check-diff` on it as above. No way to spawn a subagent → do every thread here: implement and test → `check-diff` → commit and push → reply.
 
 Do **not** resolve the thread — that's for the reviewer or the user.
 
@@ -121,7 +121,7 @@ Do **not** resolve the thread — that's for the reviewer or the user.
 
 Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Before posting, drop any backing resource that's private or otherwise inaccessible to the PR's reviewers; surface it to the user directly in-session instead, never into the PR comment. Reply the same way as 5a. Do **not** resolve the thread.
 
-This stays in this chat — a lookup or two is cheap. When answering would take a long research loop, hand it to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
+Answer here only from what this chat already knows. Anything that needs a web fetch or reading code — a docs page or a source file can be thousands of tokens — goes to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
 
 ## Step 6: Wrap up
 

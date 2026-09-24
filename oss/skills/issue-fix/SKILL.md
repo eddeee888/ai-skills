@@ -36,7 +36,7 @@ Run just the failing test locally, with the runner's quiet or summary reporter s
 
 This decides what options make sense next — don't skip to "how do we fix it" before knowing which side of the boundary the bug is on.
 
-Hand the tracing to an exploring subagent when the host has one (Claude Code: the `Explore` agent; Cursor: a subagent), so the files it reads — including a dependency's source — stay out of this chat. Pass the failing test's path and the failure summary; ask for ours or a dependency's, the exact function/file, and the evidence (for a dependency: which one, which version, any upstream issue or changelog entry), in a few lines. Build the options from its answer. No subagent → trace it here.
+Hand the tracing to an exploring subagent when the host has one (Claude Code: the `Explore` agent; Cursor: a subagent), so the files it reads — including a dependency's source — stay out of this chat. Pass the failing test's path and the failure summary; ask for ours or a dependency's, the exact function/file, and the evidence (for a dependency: which one, which version, any upstream issue or changelog entry), then 2–3 fix options shaped as in Step 4 with what each changes, blast radius, risk, and rough effort — a line or two each. Present the options from its answer; don't open code here to size them. No subagent → trace it here.
 
 ## Step 4: Present 2-3 options, and ask
 

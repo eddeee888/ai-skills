@@ -72,7 +72,7 @@ Keep it that terse: one short line per field, a path rather than a quote of what
 
 Cache each profile in `memory/users/<github-login>/<owner>__<repo>.md` — never in `MEMORY.md`, whose 200 loaded lines belong to that person's rules. On a call:
 
-- **No cached profile** → build it: read the files above (locally, or via `gh api repos/<owner>/<repo>/contents/<path>` when it isn't checked out). Fill in only what's actually there; `none`/`n/a` beats a guess. Skip `tests` for a repo that isn't checked out.
+- **No cached profile** → build it: read the files above (locally, or when it isn't checked out via `gh api repos/<owner>/<repo>/contents/<path> -H 'Accept: application/vnd.github.raw'` for a file and `--jq '.[].name'` for a directory — the default JSON wraps each file in base64 and metadata). Fill in only what's actually there; `none`/`n/a` beats a guess. Skip `tests` for a repo that isn't checked out.
 - **Cached, repo checked out** → `git diff --name-only <checked> origin/<default-branch> -- package.json '*/package.json' pnpm-workspace.yaml .changeset .github CONTRIBUTING.md '*.config.*'`. Nothing listed → return the cache as is. Something listed → re-derive only the lines those files feed, then update `checked`.
 - **Cached, not checked out** → re-fetch the template and contributing lines (they're what a remote-only caller needs, and they're cheap); keep the rest.
 
@@ -129,7 +129,7 @@ or `clean`. Flag only matches with a remembered rule behind them — general cod
 
 ## Mode: `check-description`
 
-Input: the PR's owner/repo/number, the base ref, and the drafted title + body `pr:pr-sync` is about to apply.
+Input: the PR's owner/repo/number, the base ref, and the drafted title + body `pr:pr-sync` is about to apply — inline, or as file paths to read.
 
 1. Read the diff and commit log against the base.
 2. Flag:

@@ -21,8 +21,11 @@ Match found → stop. Tell the user a checkpoint already exists (name the commit
 Nothing found → read the issue:
 
 ```bash
-gh issue view <number> --json number,title,body,url,labels,state,comments
+gh issue view <number> --json number,title,body,url,labels,state,comments \
+  --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'
 ```
+
+That's the body and the last 10 comments. The repro isn't in them and `total` says there are more → read the earlier comments too.
 
 Then find the repo's bug-report template. Get a `profile` of the repo from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. Don't read every template.
 

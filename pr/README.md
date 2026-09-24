@@ -26,7 +26,8 @@ Add each skill as its own directory here, e.g. `skills/<skill-name>/SKILL.md`.
     sees only those threads, not the parent chat, so the edit/test loop
     stays cheap in a long session.
   - `pr-sync` — `profile` + `brief` in one call (changesets, the title
-    prefix, the PR template, and how to write the description), and
+    prefix, the PR template, and how to write the description), handed to
+    the subagent that rebases and drafts, and
     `check-description` on the draft before applying it (flagging claims the
     diff doesn't back up, and learning from your edits to past drafts).
   - `oss:issue-create` / `oss:issue-verify` — `profile` for the issue

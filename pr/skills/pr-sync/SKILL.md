@@ -7,10 +7,38 @@ description: Sync an open pull request with what's actually on its branch — re
 
 A PR description is a snapshot of intent taken when the PR opened. The branch keeps moving after that — new commits, scope changes, a base that's advanced out from under it. This skill catches the branch up to its base, then re-derives the title, description, and changeset from what's actually there, so a reviewer never reads a stale summary or reviews a diff cluttered with someone else's already-merged commits.
 
+## How this runs
+
+Most of a sync — rebase, reading the branch, drafting — is many steps, and on a host that resends the whole conversation every step (Cursor does), each would pay for everything already in this chat. So only the short ends run here; Steps 2–6 run in one subagent whose conversation holds only its prompt:
+
+1. **Here:** Step 1, then the sidekick call at the top of Step 4.
+2. **Subagent:** Steps 2–6. Claude Code: the `general-purpose` agent. Cursor: a subagent. It can't call the sidekick, so pass what it returned. The prompt is only this, filled in — no transcript, no diff:
+
+   ```text
+   Repo <owner>/<repo>, PR #<number>, branch <headRefName> (checked out),
+   base <baseRefName>. Current title: <title>.
+   Follow Steps 2–6 of <this file's path>, skipping its sidekick calls.
+   Sidekick profile and brief: <what it returned, or "none">
+   Stop and return a question instead of guessing when the branch may be
+   shared with someone else, a rebase conflict isn't obvious, or nothing
+   states the motivation for Why.
+   Write the drafted title to $(git rev-parse --git-dir)/pr-sync-title.txt
+   and the body to $(git rev-parse --git-dir)/pr-sync-body.md, outside the
+   working tree. Don't edit the PR.
+   Return at most 5 lines: pushed (sha, or "nothing to push"), changeset
+   (created | updated | none), title changed (yes/no), one line on what
+   moved — or the question, or "already current".
+   ```
+
+   A question → ask the user, then spawn it again with their answer added. "Already current" → say so and stop.
+3. **Here:** Step 7, on the draft files.
+
+No way to spawn a subagent → run every step here.
+
 ## Step 1: Check whether a PR even exists
 
 ```bash
-gh pr view --json number,title,body,url,baseRefName,headRefName 2>&1
+gh pr view --json number,title,url,baseRefName,headRefName 2>&1
 ```
 
 Errors (no PR for the branch, or `gh` not installed/authenticated) → stop, tell the user there's no PR to sync, and don't create one — opening a PR is a different task with its own judgment calls (base branch, reviewers, draft-or-not).
@@ -26,11 +54,7 @@ git rebase origin/<baseRefName>
 
 Only on a branch that's yours alone — ask first if you're not sure, since rebasing out from under a collaborator loses their work on their next pull.
 
-Clean → push:
-
-```bash
-git push --force-with-lease
-```
+Clean → continue without pushing; Step 4 pushes once, after any changeset commit, so CI runs once.
 
 Conflicts → stop. Resolve only the obvious ones (same file, clearly compatible changes on both sides); otherwise hand them to the user with what's conflicting and why. Never force it through with `--skip` or a guessed resolution.
 
@@ -39,9 +63,10 @@ Conflicts → stop. Resolve only the obvious ones (same file, clearly compatible
 ```bash
 git diff origin/<baseRefName>...HEAD --stat
 git log origin/<baseRefName>..HEAD --format='%h %s%n%b'
+gh pr view <number> --json body --jq .body
 ```
 
-Start from the file list and the commit messages — they often already state the *why*; use them rather than guessing from the diff alone. Then read the diff of only the files you need to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR. The full diff can be tens of thousands of tokens and would stay in this chat; Step 7's `check-description` reads all of it anyway.
+Start from the file list, the commit messages, and the current PR body — they often already state the *why*; use them rather than guessing from the diff alone. Then read the diff of only the files you need to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR. The full diff can be tens of thousands of tokens and would stay in context for every later step; Step 7's `check-description` reads all of it anyway.
 
 Empty diff → the PR is already current; say so and stop.
 
@@ -49,13 +74,26 @@ Empty diff → the PR is already current; say so and stop.
 
 Get a `profile` of the repo and a `brief` for "PR description" in one call (`profile` + `brief`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, first (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"). The profile answers this step (changesets, and the bump style existing entries use), Step 5's monorepo question for the title prefix, and Step 6's PR template headers — use it instead of rediscovering each. The brief is for Step 5. Not available → check each inline as written.
 
-With a profile, its `changesets` line answers this. Without one, look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip this step entirely; don't introduce a changelog convention as a side effect of a sync task.
+With a profile, its `changesets` line answers this. Without one, look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip the changeset part (but still push, below); don't introduce a changelog convention as a side effect of a sync task.
 
 If present:
 - A changeset file already exists for this branch → update its summary to match the current diff.
 - None exists → create one, matching the bump style the profile reports. No profile → read one or two recent entries in `.changeset/`, not all of them.
 
-The changeset always gets its own commit, never squashed into an implementation commit (Step 7 covers exactly where it lands).
+The changeset always gets its own commit, never squashed into an implementation commit:
+
+```bash
+git add .changeset/*.md
+git commit -m "chore: update changeset"
+```
+
+If other commits already sit after the implementation commit (this sync is catching up on a few rounds of pushes), the changeset commit still only needs to exist once — don't reorder existing history to force it earlier.
+
+Then push once, changeset or not — the rebase and any changeset commit together:
+
+```bash
+git push --force-with-lease
+```
 
 ## Step 5: Draft the title and description
 
@@ -80,7 +118,7 @@ Don't go hunting for tangential links, and don't add a "Resources" section with 
 
 ## Step 6: Fit the update into the existing template — don't replace it
 
-Check the PR's current body and the template headers from Step 4's profile; read `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`) itself only when there's no profile. If the repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist — map Why/What/Verification/Resources onto whichever existing header is the closest match instead of inventing new ones. Verification almost always has a home already ("Testing", "Test plan", "QA steps") — ease it in there; only add a standalone "## Verification" if nothing fits. Leave every section you have no new information for untouched. No template to work from → default to:
+Check the PR's current body (from Step 3) and the template headers from Step 4's profile; read `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`) itself only when there's no profile. If the repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist — map Why/What/Verification/Resources onto whichever existing header is the closest match instead of inventing new ones. Verification almost always has a home already ("Testing", "Test plan", "QA steps") — ease it in there; only add a standalone "## Verification" if nothing fits. Leave every section you have no new information for untouched. No template to work from → default to:
 
 ```markdown
 ## Why
@@ -104,21 +142,13 @@ The goal is a description that reads like it was written by the person who made 
 
 ## Step 7: Apply it
 
-First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
+First, run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `check-description` mode on the drafted title and body — pass the two draft file paths, not their text. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and learns from any edits the user made to the last description it saw applied. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
 
 ```bash
-gh pr edit <number> --title "<new title>" --body "<new body>"
+d="$(git rev-parse --git-dir)"
+gh pr edit <number> --title "$(cat "$d/pr-sync-title.txt")" --body-file "$d/pr-sync-body.md"
+rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 ```
-
-A changeset file created or edited here is part of the PR, but never bundled into the same commit as the implementation change. Commit it separately, immediately after the commit it documents:
-
-```bash
-git add .changeset/*.md
-git commit -m "chore: update changeset"
-git push
-```
-
-If the implementation commit already has other commits stacked after it (this sync is catching up on a few rounds of pushes), the changeset commit still only needs to exist once, right after the fix — don't reorder existing history to force it earlier.
 
 Then tell the user, briefly: whether the title changed, and a one-line summary of what moved in the description/changeset. Don't paste the full new PR body back at them.
 
