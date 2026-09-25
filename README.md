@@ -14,7 +14,7 @@ Each plugin is its own namespace of skills:
 - [`oss/`](oss/) — the `oss` plugin, skills for maintaining and contributing to open source projects. Skills invoke as `/oss:<skill-name>` in Claude Code, e.g. `/oss:issue-verify`, `/oss:issue-fix`. In Cursor, invoke the skill name (e.g. `/issue-verify`).
 - [`pr/`](pr/) — the `pr` plugin, skills for working with pull requests. Skills invoke as `/pr:<skill-name>` in Claude Code, e.g. `/pr:pr-sync`. In Cursor, invoke `/pr-sync`.
 
-The `pr` plugin also ships an agent, [`pr-sidekick`](pr/agents/pr-sidekick.md): a sidekick with persistent memory of your recurring review themes, which the `pr` skills and `oss:issue-analyze`, `issue-create`, `issue-verify` and `issue-fix` consult for a repo's working setup, and when classifying threads, coding, and writing PR descriptions. Claude Code runs it as `pr:pr-sidekick`; Cursor runs the same file as the `pr-sidekick` subagent.
+The `pr` plugin also ships two agents. [`pr-oracle`](pr/agents/pr-oracle.md) holds persistent memory of your recurring review themes, which the `pr` skills and `oss:issue-analyze`, `issue-create`, `issue-verify` and `issue-fix` consult for a repo's working setup, and when classifying threads, coding, and writing PR descriptions. [`pr-sidekick`](pr/agents/pr-sidekick.md) carries out the coding loops those skills hand off — implement, test, commit — applying the same remembered preferences, on a model the calling skill picks per job. Claude Code runs them as `pr:pr-oracle` and `pr:pr-sidekick`; Cursor runs the same files as subagents.
 
 Each plugin has `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests. Each skill lives in its own directory within a plugin, e.g. `oss/skills/<skill-name>/SKILL.md`.
 

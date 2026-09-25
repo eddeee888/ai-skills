@@ -9,7 +9,7 @@
 #   cursor-memory-sync.sh push [repo]
 #   cursor-memory-sync.sh end [repo]
 #
-# The optional repo argument is the plugin variable PR_SIDEKICK_MEMORY_REPO,
+# The optional repo argument is the plugin variable PR_MEMORY_REPO,
 # used only when that variable is not already in the environment. An
 # unsubstituted placeholder is ignored.
 
@@ -17,8 +17,8 @@ set -u
 
 mode="${1:-}"
 repo_arg="${2:-}"
-if [ -z "${PR_SIDEKICK_MEMORY_REPO:-}" ] && [ -n "$repo_arg" ] && [ "$repo_arg" != '${PR_SIDEKICK_MEMORY_REPO}' ]; then
-  export PR_SIDEKICK_MEMORY_REPO="$repo_arg"
+if [ -z "${PR_MEMORY_REPO:-}" ] && [ -n "$repo_arg" ] && [ "$repo_arg" != '${PR_MEMORY_REPO}' ]; then
+  export PR_MEMORY_REPO="$repo_arg"
 fi
 
 json_escape() {

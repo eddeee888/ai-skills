@@ -22,7 +22,7 @@ Compare the PR's `author.login` to the authenticated user's login. This gates ev
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `triage-threads` + `scout-repo` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), and Step 3's rules verbatim — not the query below; it fetches the threads with the GitHub MCP tools. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
+**Hand Steps 2–3 to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `triage-threads` + `scout-repo` mode** when it's available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), and Step 3's rules verbatim — not the query below; it fetches the threads with the GitHub MCP tools. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, the repo profile (5a passes the rules and the profile's `tests` line on), and learns from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline as written.
 
 Pull review threads via GraphQL, for resolution state and comment order. Conversation-tab comments are out of scope — they have no reply chain.
 
@@ -124,7 +124,7 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    yes/no) or skipped (why) — then one line for the final test run and push.
    ```
 
-3. **Check.** Run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `sweep-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
+3. **Check.** Run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
 4. **Merge the result.** Note the per-thread lines and move on — don't ask for a longer report. A skipped thread → bring it back to the user with the reason, as in Step 4. A batch that stopped before pushing leaves its commits local → don't start the next batch; bring the whole batch and its failing tests to the user. A thread marked done without a reply → post the reply yourself (text quoted per `CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
    ```bash

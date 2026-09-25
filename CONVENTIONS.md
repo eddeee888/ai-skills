@@ -1,7 +1,7 @@
 # Shared conventions
 
 Formatting/process rules shared across this marketplace's skills, or
-between a skill and the `pr-sidekick` checks that enforce it. Skills point
+between a skill and the `pr-oracle` checks that enforce it. Skills point
 here instead of restating a rule — change it once, and every skill that
 points to it picks it up. Each pointer names its section
 (`CONVENTIONS.md` → "<section>"); read only that section, not the whole file.
@@ -88,9 +88,10 @@ the branch.
 
 An implement/test/commit loop, a write-and-run test loop, a code survey, research, or a rebase-and-draft is tens of steps. On a host that resends the whole conversation every step (Cursor does), each of those steps in the main chat pays for everything already in it — hundreds of thousands of tokens late in a long session. A subagent's conversation holds only its prompt, so the same loop costs a fraction. A skill that hands a loop off supplies the prompt template; these rules hold for all of them:
 
-- **Which agent.** Claude Code: the `general-purpose` agent for work that edits, runs, or pushes; the `Explore` agent for a read-only survey. Cursor: a subagent.
+- **Which agent.** Work that edits, runs, or pushes → the `pr-sidekick` agent (`pr/agents/pr-sidekick.md`): `pr:pr-sidekick` on Claude Code, the `pr-sidekick` subagent on Cursor. It applies the user's remembered preferences and follows the template's limits on its own; pass it `login: <github-login>` when the skill has it. The `pr` plugin isn't installed → the `general-purpose` agent on Claude Code, a subagent on Cursor. A read-only survey or research → the `Explore` agent on Claude Code, a subagent on Cursor.
+- **The caller picks the model.** The subagent can't change the model it runs on, and only the main chat knows how hard the job is. On a host that takes a model per call (Claude Code's `model`), pass `haiku` for a mechanical job (a literal rename, move, or suggestion block — say "mechanical" in the prompt too), `sonnet` for a scoped change or a survey, and leave it unset (the main chat's model) for work that needs judgment across files. A job that's mostly design isn't a loop to hand off — do it in the main chat.
 - **The prompt is only the template, filled in** — no transcript, no PR diff, no copy of the skill, nothing the template doesn't ask for. The subagent fetches anything else it needs itself.
-- **It can't consult the sidekick.** Get what's needed from the sidekick in the main chat first and paste its output into the prompt.
+- **It can't consult the oracle.** Get what's needed from the `pr-oracle` agent in the main chat first and paste its output into the prompt.
 - **One at a time on a shared checkout.** Subagents that edit the same checkout never run in parallel.
 - **Short results.** It returns only the few lines the template asks for, and returns a question instead of guessing when a decision is the user's; the main chat asks the user and spawns it again with the answer.
 - **Every spawn and check is a main-chat step.** Keep them few — batch where the skill says to.
@@ -102,22 +103,22 @@ Used by: `pr:pr-address` (5a batches, 5b research), `pr:pr-sync` (Steps 2–6),
 `oss:issue-fix` (root cause, implementation), `oss:issue-verify` (the failing
 test), `oss:issue-analyze` (code survey).
 
-## Consulting the `pr-sidekick` agent
+## Consulting the `pr-oracle` agent
 
-`pr/agents/pr-sidekick.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description` — and each skill names which mode it calls where. A skill that needs both `scout-repo` and `brief-task` at the same point asks for them in one call (`scout-repo` + `brief-task`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
+`pr/agents/pr-oracle.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description` — and each skill names which mode it calls where. A skill that needs both `scout-repo` and `brief-task` at the same point asks for them in one call (`scout-repo` + `brief-task`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
 
 **Call it by the name this host actually has:**
 
-- Claude Code — the `pr:pr-sidekick` agent.
-- Cursor — delegate to the `pr-sidekick` subagent and wait for it. It starts blank, so the delegation prompt carries the mode and every input that mode lists. Its reply is the mode's output; continue the skill from there.
+- Claude Code — the `pr:pr-oracle` agent.
+- Cursor — delegate to the `pr-oracle` subagent and wait for it. It starts blank, so the delegation prompt carries the mode and every input that mode lists. Its reply is the mode's output; continue the skill from there.
 
 These rules hold everywhere:
 
-- **Optional.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the sidekick is missing, and don't treat Cursor itself as missing.
+- **Optional.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the oracle is missing, and don't treat Cursor itself as missing.
 - **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
-- **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the sidekick doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
-- **Pass what you already have.** Every sidekick call passes `login: <github-login>` when the skill has already looked it up, so the sidekick doesn't look it up again on each call. The sidekick reads GitHub only through the GitHub MCP tools, never `gh`, so don't name a route or hand it `gh` commands.
-- **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The sidekick appends it only to `memory/team/MEMORY.md` in the memory repo.
+- **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the oracle doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
+- **Pass what you already have.** Every oracle call passes `login: <github-login>` when the skill has already looked it up, so the oracle doesn't look it up again on each call. The oracle reads GitHub only through the GitHub MCP tools, never `gh`, so don't name a route or hand it `gh` commands.
+- **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The oracle appends it only to `memory/team/MEMORY.md` in the memory repo.
 
 Used by: `pr:pr-address` (triage-threads + scout-repo, sweep-diff),
 `pr:pr-sync` (scout-repo, brief-task, grill-description), `oss:issue-analyze`
@@ -151,7 +152,7 @@ Skills write their GitHub steps as `gh` commands. Not every host has `gh`: a Cla
 | `gh api repos/<o>/<r> --jq .default_branch` | `search_repositories` with query `repo:<o>/<r>` → `default_branch` |
 
 Used by: `pr:pr-address`, `pr:pr-sync`, `oss:issue-analyze`,
-`oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`. `pr-sidekick`
+`oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`. `pr-oracle`
 keeps its own copy of the read rows next to its tool allowlist.
 
 ## Passing drafted text to `gh`

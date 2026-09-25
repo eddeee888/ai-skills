@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Syncs agent memory (~/.claude/agent-memory, where pr-sidekick keeps what
+# Syncs agent memory (~/.claude/agent-memory, where pr-oracle keeps what
 # it learns — memory/ inside that directory) with a private git repo,
 # so it survives machines and short-lived cloud containers. Claude Code calls
 # this script directly; Cursor calls it through cursor-memory-sync.sh.
@@ -8,7 +8,7 @@
 #   memory-sync.sh push   # Stop (every turn): send changes up
 #   memory-sync.sh end    # SessionEnd: push, retrying an unreachable repo
 #
-# Memory is pushed to a branch per GitHub user, sidekick/<login>, never to
+# Memory is pushed to a branch per GitHub user, memory/<login>, never to
 # main: what someone's sessions learn collects there, for a PR to review and
 # merge. Pull brings in both main and that branch, merging rather than
 # rebasing so the branch only ever moves forward. The login comes from
@@ -20,20 +20,30 @@
 # couldn't be cloned isn't retried on each turn either — only once the last
 # failure is RETRY_MINUTES old, and always at session end.
 #
-# Opt-in: does nothing unless PR_SIDEKICK_MEMORY_REPO is set, to `owner/repo`
+# Opt-in: does nothing unless PR_MEMORY_REPO is set, to `owner/repo`
 # (GitHub over HTTPS) or a full git URL. Never fails the session: every
 # problem is reported on stderr and the script exits 0.
 
 set -u
 
-repo="${PR_SIDEKICK_MEMORY_REPO:-}"
+repo="${PR_MEMORY_REPO:-}"
+# Pre-rename name, still read so a machine that hasn't renamed it keeps
+# syncing. Remove once every environment sets PR_MEMORY_REPO.
+if [ -z "$repo" ] && [ -n "${PR_SIDEKICK_MEMORY_REPO:-}" ]; then
+  repo="$PR_SIDEKICK_MEMORY_REPO"
+  echo "pr-oracle memory sync: PR_SIDEKICK_MEMORY_REPO is renamed to PR_MEMORY_REPO; please rename it" >&2
+fi
 [ -n "$repo" ] || exit 0
 
 dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
 branch=main
-branch_prefix=sidekick/
-login_file="$dir/.git/pr-sidekick-login"
-login_failed="$dir/.git/pr-sidekick-login-failed"
+branch_prefix=memory/
+# Pre-rename branch prefix: pull still merges <legacy_prefix><login> so memory
+# pushed there before the rename carries over to memory/<login>. Remove once
+# those branches are merged or deleted.
+legacy_prefix=sidekick/
+login_file="$dir/.git/pr-oracle-login"
+login_failed="$dir/.git/pr-oracle-login-failed"
 case "$repo" in
   *://* | git@*) url="$repo" ;;
   *) url="https://github.com/$repo.git" ;;
@@ -43,15 +53,15 @@ self="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 unreachable="$dir.unreachable"
 RETRY_MINUTES=10
 
-warn() { echo "pr-sidekick memory sync: $*" >&2; }
+warn() { echo "pr-oracle memory sync: $*" >&2; }
 
 # SessionStart stdout goes into Claude's context: when the memory repo can't
 # be reached, ask Claude to attach it (a cloud session only reaches repos
 # attached to it) and pull again, instead of leaving the user to notice.
 ask_claude_to_attach() {
   cat <<MSG
-pr-sidekick memory sync: couldn't reach the memory repo \`$repo\` (PR_SIDEKICK_MEMORY_REPO), so the sidekick's memory from earlier sessions isn't loaded.
-- In a Claude Code on the web session with an \`add_repo\` tool: attach \`$repo\` with push access (no need to clone it yourself), then run \`"$self" pull\` so memory is in place before the pr-sidekick agent is used. Mention it to the user in one line.
+pr-oracle memory sync: couldn't reach the memory repo \`$repo\` (PR_MEMORY_REPO), so the oracle's memory from earlier sessions isn't loaded.
+- In a Claude Code on the web session with an \`add_repo\` tool: attach \`$repo\` with push access (no need to clone it yourself), then run \`"$self" pull\` so memory is in place before the pr-oracle agent is used. Mention it to the user in one line.
 - Otherwise, or if attaching fails: tell the user in one line that memory sync couldn't reach \`$repo\` and why, and carry on — the skills work without memory.
 MSG
 }
@@ -61,14 +71,14 @@ g() {
   if [ -n "$(git -C "$dir" config user.email 2>/dev/null)" ]; then
     git -C "$dir" "$@"
   else
-    git -C "$dir" -c user.name="pr-sidekick memory sync" -c user.email="pr-sidekick@localhost" "$@"
+    git -C "$dir" -c user.name="pr-oracle memory sync" -c user.email="pr-oracle@localhost" "$@"
   fi
 }
 
 union_merge() {
   # Memory files are line-oriented markdown: when two machines changed the
   # same spot, keep both sides' lines rather than stopping on a conflict —
-  # the sidekick's upkeep merges the duplicates on its next write.
+  # the oracle's upkeep merges the duplicates on its next write.
   mkdir -p "$dir/.git/info"
   grep -qs 'merge=union' "$dir/.git/info/attributes" || echo '* merge=union' >> "$dir/.git/info/attributes"
 }
@@ -118,10 +128,10 @@ commit_changes() {
   g diff --cached --quiet || g commit -q -m "sync from $(hostname)"
 }
 
-# sidekick/<login>, from the first of these that gives a login, else empty:
-#   login cached at the last pull: alice               → sidekick/alice
-#   `gh api user`, else api.github.com/user: alice     → sidekick/alice (cached)
-#   both fail, one tree memory/users/alice/            → sidekick/alice
+# memory/<login>, from the first of these that gives a login, else empty:
+#   login cached at the last pull: alice               → memory/alice
+#   `gh api user`, else api.github.com/user: alice     → memory/alice (cached)
+#   both fail, one tree memory/users/alice/            → memory/alice
 #   both fail, trees memory/users/alice/ and bob/      → (empty)
 # Like an unreachable repo, a failed lookup is only retried once it's
 # RETRY_MINUTES old, and at session end; until then it goes straight to the
@@ -164,7 +174,10 @@ pull() {
   ub="$(user_branch)"
   commit_changes
   merge_remote "$branch"
-  [ -n "$ub" ] && merge_remote "$ub"
+  if [ -n "$ub" ]; then
+    merge_remote "$ub"
+    merge_remote "$legacy_prefix${ub#"$branch_prefix"}"
+  fi
   return 0
 }
 

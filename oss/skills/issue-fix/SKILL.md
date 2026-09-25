@@ -39,7 +39,7 @@ This commit is your base for everything that follows. By default, building the f
 
 ## Step 2: Re-root-cause it
 
-First get the repo's profile (`scout-repo`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): it says how to run one test in the affected package, where tests live, and whether Step 6's title needs a package prefix. Not available → work those out from the repo.
+First get the repo's profile (`scout-repo`) from `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): it says how to run one test in the affected package, where tests live, and whether Step 6's title needs a package prefix. Not available → work those out from the repo.
 
 Then run just the failing test locally, with the runner's quiet or summary reporter so only the failure lands in context, and read the actual failure (stack trace, assertion diff, error type) — the checkpoint commit may have surfaced something more specific than the issue. Read the issue thread again only when the failure doesn't match what the checkpoint commit message says.
 
@@ -63,7 +63,7 @@ For each option: what changes, blast radius, risk, rough effort. Ask which they 
 
 ## Step 5: Implement the chosen option
 
-Get a brief (`brief-task`) from the sidekick, passing the files the chosen option touches and a one-line summary of it — the profile from Step 2 already covers how to run tests. The brief brings the rules the user's reviewers have already asked for that apply to this change. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `sweep-diff` call below. Not available → pass "none" as the rules, and do the `sweep-diff` step below as a quick read of your own diff instead.
+Get a brief (`brief-task`) from the oracle, passing the files the chosen option touches and a one-line summary of it — the profile from Step 2 already covers how to run tests. The brief brings the rules the user's reviewers have already asked for that apply to this change. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `sweep-diff` call below. Not available → pass "none" as the rules, and do the `sweep-diff` step below as a quick read of your own diff instead.
 
 Then hand the edit/test/commit loop to one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), with this prompt:
 
@@ -89,7 +89,7 @@ Return at most 5 lines: files changed, commit sha, tests run and result,
 or why you stopped.
 ```
 
-Then run `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, in `sweep-diff` mode against the checkpoint commit. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further.
+Then run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode against the checkpoint commit. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further.
 
 A later `pr:pr-sync` rebase still replays the checkpoint's SHA but leaves its content and trailer untouched — that's not the kind of rewrite the prompt rules out.
 

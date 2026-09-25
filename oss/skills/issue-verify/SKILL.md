@@ -40,7 +40,7 @@ gh issue view <number> --json number,title,body,url,labels,state,comments \
 
 That's the body and the last 10 comments. The repro isn't in them and `total` says there are more → read the earlier comments too.
 
-Then find the repo's bug-report template. Get the repo's profile (`scout-repo`) from `pr:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor, when it's available (`CONVENTIONS.md` → "Consulting the `pr-sidekick` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. No such directory → check for a single `.github/ISSUE_TEMPLATE.md`. Don't read every template.
+Then find the repo's bug-report template. Get the repo's profile (`scout-repo`) from `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, when it's available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that one template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which one that is. No such directory → check for a single `.github/ISSUE_TEMPLATE.md`. Don't read every template.
 
 Note the exact field the template uses for reproduction and its exact wording — you'll reuse it in Step 3 instead of asking generically.
 
