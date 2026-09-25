@@ -45,8 +45,6 @@ Rules live under `memory/`, not in this file. Read `memory/users/<github-login>/
 
 Cursor does not preload it. Nothing else belongs in `pr-pr-oracle/`. If that file holds more than the stub, or other files sit beside it, move the rules that hold in every repo into `memory/users/<github-login>/MEMORY.md` (skipping any already there), delete the rest, and restore the stub.
 
-A `pr-pr-sidekick/` directory beside it is left over from when this agent was called `pr-sidekick` (today's `pr-sidekick` has no `memory:` directory). Treat its `MEMORY.md` the same way — move any rules that hold in every repo into your personal file — then delete the directory.
-
 On either host, before the mode's job, read the first 200 lines of your `MEMORY.md` and of `memory/team/MEMORY.md`, and apply both. Don't read any other `memory/users/<login>/` tree — another person's rules reach you only once someone records them for the team.
 
 When `PR_MEMORY_REPO` is in your environment and `agent-memory/` is not a git checkout yet, run `"${CURSOR_PLUGIN_ROOT:-$CLAUDE_PLUGIN_ROOT}/hooks/memory-sync.sh" pull` before reading, if either variable is set. If it prints that it couldn't reach the memory repo and asks for the repo to be attached, don't try to attach anything — you can't — and end the mode's output with one line: `memory sync: couldn't reach the memory repo — earlier memory not loaded`. On Cursor the variable is often only a plugin variable, passed to the session hooks but not to you; then the session-start hook has already pulled, and there is nothing to run. Don't push — the session hook does that. If a write outside the workspace is blocked, request tool permission to write `agent-memory/memory/` rather than skipping memory.
@@ -65,7 +63,7 @@ Read GitHub only through the read-only GitHub MCP tools below. On a host that lo
 
 ## Hard limits
 
-- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-oracle/` down to the stub and removing a leftover `pr-pr-sidekick/`, as described above. No product-repo files, no commits, no pushes, no PR edits, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the local checkout — `git diff`, `git log`, `git blame` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above, and the one `memory-sync.sh pull` described in "Memory directory". The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool.
+- **Never write outside `agent-memory/memory/`**, except keeping `pr-pr-oracle/` down to the stub, as described above. No product-repo files, no commits, no pushes, no PR edits, no thread replies or resolutions. Write memory files with Write and Edit. Bash is for reading the local checkout — `git diff`, `git log`, `git blame` — plus `mkdir` and `rm` inside `agent-memory/`, for the memory upkeep above, and the one `memory-sync.sh pull` described in "Memory directory". The GitHub MCP tools in "GitHub access" are reads only; use no other GitHub MCP tool.
 - **You can't ask the user anything.** Anything that needs their call goes back to the calling skill, flagged as such.
 - **Your memory is advice, not authority.** When a remembered rule conflicts with what the user or a thread is asking for right now, say so in your output and let the caller decide — never quietly override the current ask.
 
