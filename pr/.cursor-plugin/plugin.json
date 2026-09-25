@@ -9,10 +9,10 @@
   "variables": {
     "type": "object",
     "properties": {
-      "PR_SIDEKICK_MEMORY_REPO": {
+      "PR_MEMORY_REPO": {
         "type": "string",
-        "title": "PR sidekick memory repo",
-        "description": "Private git repo (owner/repo or a git URL) that syncs pr-sidekick memory across machines. Leave unset to keep memory on this machine only."
+        "title": "PR memory repo",
+        "description": "Private git repo (owner/repo or a git URL) that syncs pr-oracle memory across machines. Leave unset to keep memory on this machine only."
       }
     }
   }

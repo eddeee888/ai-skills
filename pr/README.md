@@ -8,11 +8,11 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 
 ## Agents
 
-- [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your PR sidekick, with
+- [`agents/pr-oracle.md`](agents/pr-oracle.md) — your PR oracle, with
   persistent memory (`memory: user`) of the review themes and
   preferences you keep coming back to. In the memory checkout
-  (`~/.claude/agent-memory/`, the repo `PR_SIDEKICK_MEMORY_REPO` points at
-  when sync is on) every sidekick file lives under `memory/`:
+  (`~/.claude/agent-memory/`, the repo `PR_MEMORY_REPO` points at
+  when sync is on) every oracle file lives under `memory/`:
   `memory/users/<github-login>/` for that person's rules, and
   `memory/team/` for rules someone explicitly asked to share. Memory holds
   only rules that apply in every repo. The GitHub login is the one the calling skill passes, or the GitHub MCP `get_me` tool's. Its
@@ -42,33 +42,43 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
   Personal files stay in that person's `memory/users/<github-login>/` tree.
   `memory/team/MEMORY.md` grows only when a skill passes `record-team:`
   because the user explicitly asked to share a rule (`CONVENTIONS.md`).
-  A rule that only makes sense in one repo isn't remembered; the sidekick
+  A rule that only makes sense in one repo isn't remembered; the oracle
   suggests putting it in that repo's `CLAUDE.md` instead, so teammates and
   CI see it too. To code
   with its memory loaded for a whole session, run
-  `claude --agent pr:pr-sidekick`. In Cursor the same file is the
-  `pr-sidekick` subagent — the skills delegate to it, and it reads and
+  `claude --agent pr:pr-oracle`. In Cursor the same file is the
+  `pr-oracle` subagent — the skills delegate to it, and it reads and
   writes `memory/` itself. Claude Code preloads
-  `pr-pr-sidekick/MEMORY.md`, which is only a stub pointing at `memory/`.
+  `pr-pr-oracle/MEMORY.md`, which is only a stub pointing at `memory/`.
 
   Memory sync across machines and cloud sessions is opt-in; see below.
 
-  The sidekick reads GitHub through read-only GitHub MCP tools, so it
+  The oracle reads GitHub through read-only GitHub MCP tools, so it
   needs the GitHub MCP server.
 
   The `pr` plugin has to be installed for the agent to exist. Without it,
   the skills do each step themselves. See
-  [`CONVENTIONS.md`](CONVENTIONS.md#consulting-the-pr-sidekick-agent).
+  [`CONVENTIONS.md`](CONVENTIONS.md#consulting-the-pr-oracle-agent).
 
-### Syncing the sidekick's memory
+- [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your sidekick in the
+  field. The skills hand it the loops that edit, run, commit, or push
+  (implementing review threads, a chosen fix, a failing test, a
+  rebase-and-draft), so those steps stay out of the main chat. It reads
+  your remembered preferences from `memory/` (never writes them), follows
+  the skill's prompt template, and returns a few lines. The calling skill
+  picks its model per job — Haiku for mechanical edits, Sonnet for scoped
+  changes, the main chat's model for anything needing more judgment. See
+  [`CONVENTIONS.md`](CONVENTIONS.md#hand-long-loops-to-a-subagent).
 
-The checkout is `~/.claude/agent-memory/`. Sidekick rules are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull `main` and your own branch when a session starts, commit and push when a turn ends and when the session ends. A turn that learned nothing makes no network call.
+### Syncing the oracle's memory
 
-1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Sidekick files committed there live under `memory/`.
-2. Set `PR_SIDEKICK_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
+The checkout is `~/.claude/agent-memory/`. Oracle rules are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull `main` and your own branch when a session starts, commit and push when a turn ends and when the session ends. A turn that learned nothing makes no network call.
+
+1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Oracle files committed there live under `memory/`.
+2. Set `PR_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
    or a full git URL):
    - **Locally, Claude Code** — in `~/.claude/settings.json`:
-     `"env": { "PR_SIDEKICK_MEMORY_REPO": "<you>/agent-memory" }`. Your git
+     `"env": { "PR_MEMORY_REPO": "<you>/agent-memory" }`. Your git
      credentials need push access to the repo.
    - **Locally, Cursor** — the same variable, as the `pr` plugin variable
      (Plugins → Configure) or in the environment the hooks run with. Git
@@ -91,7 +101,7 @@ How it behaves:
   that can't be cloned is retried at most every 10 minutes, and once more
   when the session ends — not on every turn. Neither ever stops the session.
 - **A branch per person, merged by you.** What someone's sessions learn is
-  pushed to `sidekick/<github-login>`, never to `main`, so it can be
+  pushed to `memory/<github-login>`, never to `main`, so it can be
   reviewed and merged as a PR. Sessions pull both `main` and their own
   branch, so a person's unmerged memory follows them across machines, and
   reaches everyone else once merged. The branch is only ever merged into,
@@ -107,6 +117,6 @@ How it behaves:
   `agent-memory.bak-<timestamp>`.
 - **Concurrent edits merge.** Two machines changing the same entry keep
   both lines (git's `union` merge) instead of stopping on a conflict; the
-  sidekick merges the duplicate on its next write.
+  oracle merges the duplicate on its next write.
 - **It syncs the whole `agent-memory/` directory,** so any other agent you
   give `memory: user` is carried along too.

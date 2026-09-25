@@ -7,4 +7,4 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 `/oss:<skill-name>` once this plugin is installed, e.g. `/oss:issue-verify`
 (`/issue-verify` in Cursor).
 
-`issue-analyze`, `issue-create`, `issue-verify`, and `issue-fix` consult the `pr` plugin's `pr-sidekick` agent, when installed, for a profile of the repo (templates, test layout, monorepo packages) and, in `issue-fix`, for remembered review rules around the fix. That agent is `pr:pr-sidekick` in Claude Code and the `pr-sidekick` subagent in Cursor — install `pr` too to get it; without it, each skill works the same, just without the memory.
+`issue-analyze`, `issue-create`, `issue-verify`, and `issue-fix` consult the `pr` plugin's `pr-oracle` agent, when installed, for a profile of the repo (templates, test layout, monorepo packages) and, in `issue-fix`, for remembered review rules around the fix, and hand coding loops to its `pr-sidekick` agent. That agent is `pr:pr-oracle` in Claude Code and the `pr-oracle` subagent in Cursor — install `pr` too to get it; without it, each skill works the same, just without the memory.
