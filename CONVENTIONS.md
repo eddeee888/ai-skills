@@ -101,7 +101,8 @@ An implement/test/commit loop, a write-and-run test loop, a code survey, researc
 
 Used by: `pr:pr-address` (5a batches, 5b research), `pr:pr-sync` (Steps 2–6),
 `oss:issue-fix` (root cause, implementation), `oss:issue-verify` (the failing
-test), `oss:issue-analyze` (code survey).
+test), `oss:issue-analyze` (code survey). `pr-sidekick` follows its model and
+retry rules.
 
 ## Consulting the `pr-oracle` agent
 
