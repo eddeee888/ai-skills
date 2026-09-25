@@ -118,11 +118,5 @@ How it behaves:
 - **Concurrent edits merge.** Two machines changing the same entry keep
   both lines (git's `union` merge) instead of stopping on a conflict; the
   oracle merges the duplicate on its next write.
-- **Renamed from the `pr-sidekick` era.** The variable was
-  `PR_SIDEKICK_MEMORY_REPO` and branches were `sidekick/<github-login>`.
-  The old variable is still read, with a warning to rename it, and a pull
-  still merges your old `sidekick/<github-login>` branch, so its memory
-  moves to `memory/<github-login>` on the next push. Delete the old branch
-  once that's merged.
 - **It syncs the whole `agent-memory/` directory,** so any other agent you
   give `memory: user` is carried along too.

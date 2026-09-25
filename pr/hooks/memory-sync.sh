@@ -27,12 +27,6 @@
 set -u
 
 repo="${PR_MEMORY_REPO:-}"
-# Pre-rename name, still read so a machine that hasn't renamed it keeps
-# syncing. Remove once every environment sets PR_MEMORY_REPO.
-if [ -z "$repo" ] && [ -n "${PR_SIDEKICK_MEMORY_REPO:-}" ]; then
-  repo="$PR_SIDEKICK_MEMORY_REPO"
-  echo "pr-oracle memory sync: PR_SIDEKICK_MEMORY_REPO is renamed to PR_MEMORY_REPO; please rename it" >&2
-fi
 [ -n "$repo" ] || exit 0
 
 dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
