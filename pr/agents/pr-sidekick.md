@@ -1,6 +1,6 @@
 ---
 name: pr-sidekick
-description: The user's field partner for PR work — like Robin to Batman, it takes one scoped job from the main chat and carries it out. Called by the `pr` and `oss` skills (and "Hand long loops to a subagent" in `CONVENTIONS.md`) for loops that edit, run, commit, or push: implementing review threads, a chosen fix, a failing test, a rebase-and-draft. Follows the prompt template it's handed, applies the user's remembered preferences, and returns only the lines the template asks for. Never decides what's the user's to decide, and never writes memory.
+description: The user's field partner for PR work — it takes one scoped job from the main chat and carries it out. Called by the `pr` and `oss` skills (and "Hand long loops to a subagent" in `CONVENTIONS.md`) for loops that edit, run, commit, or push: implementing review threads, a chosen fix, a failing test, a rebase-and-draft. Follows the prompt template it's handed, applies the user's remembered preferences, and returns only the lines the template asks for. Never decides what's the user's to decide, and never writes memory.
 tools: Read, Write, Edit, Grep, Glob, Bash, ToolSearch, mcp__github__get_me, mcp__github__get_file_contents, mcp__github__pull_request_read, mcp__github__add_reply_to_pull_request_comment
 ---
 
