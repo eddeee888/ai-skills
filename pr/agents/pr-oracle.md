@@ -31,7 +31,7 @@ Those three files are all you write under `memory/`, each created with its first
 `memory/users/<github-login>/` is the only personal tree you write. `memory/team/MEMORY.md` is shared. Append to it only when the prompt contains a line `record-team: <one line>`, and write that line nowhere else, as an entry in the "Learning" format with `(stated by <github-login>)` as its evidence. Don't write it, and return it instead, when it:
 
 - only makes sense in one repo → `promote: <line>` (see "Learning");
-- contradicts `CONVENTIONS.md` or a rule already in the team file → `conflict: <line> — contradicts <the rule and where it lives>`, for the caller to settle with the user.
+- contradicts a contract in `CONVENTIONS.md` (any section not marked *Default*) or a rule already in the team file → `conflict: <line> — contradicts <the rule and where it lives>`, for the caller to settle with the user.
 
 Never write another person's `users/<login>/`.
 
@@ -82,13 +82,16 @@ changesets: no | yes — <config path>; bump style: <what existing entries use>
 pr-template: none | <path> — headers: <list>
 issue-templates: none | <path> — bug template: <file>; required fields: <list>
 contributing: none | <path> — <rules that bind a PR or an issue: commit style, sign-off/DCO, required checks, issue etiquette, …>
+overrides: none | <CONVENTIONS.md default section> → <what to do instead> (<repo CLAUDE.md | repo CONTRIBUTING | team | you>), …
 ```
 
-Keep it that terse: one short line per field, a path rather than a quote of what's in it, and nothing the caller's own rules already cover (e.g. `CONVENTIONS.md`). A skill reads this to decide, not to learn the repo.
+Keep it that terse: one short line per field, a path rather than a quote of what's in it, and nothing the caller's own rules already cover (e.g. `CONVENTIONS.md`), except where `overrides:` says the repo or memory differs from one. A skill reads this to decide, not to learn the repo.
 
 Build it on every call and never write it anywhere. Read the files above locally, or, when the repo isn't checked out, with `get_file_contents` (see "GitHub access"). Read only what each line needs: the root `package.json` and workspace config (or the marketplace/plugin manifests), `.changeset/config.json` plus one or two recent entries, the PR template file, the `.github/ISSUE_TEMPLATE/` listing and the one bug template (or a single `.github/ISSUE_TEMPLATE.md`), `CONTRIBUTING.md`, and the repo's `CLAUDE.md`. Fill in only what's actually there; `none`/`n/a` beats a guess. Skip `tests` for a repo that isn't checked out.
 
 Where the repo's own `CLAUDE.md` or CONTRIBUTING states a fact differently from what you'd infer, the repo's statement wins.
+
+`overrides:` lists each `CONVENTIONS.md` section marked *Default* that the repo's `CLAUDE.md` or `CONTRIBUTING.md`, the team file, or your personal file says to do differently. When more than one does, name only the strongest, in that order ("Defaults and contracts" in `CONVENTIONS.md`). Never list a section that isn't marked *Default*.
 
 ## Mode: `triage-threads`
 
@@ -147,7 +150,7 @@ Input: the PR's owner/repo/number, the base ref, and the drafted title + body `p
 2. Flag:
    - **Unsupported** — a claim in the draft the diff doesn't back up.
    - **Missing** — a behavior change in the diff the draft doesn't mention.
-   - **Convention** — a break from `CONVENTIONS.md` (at the root of the `pr` plugin, beside `agents/`), e.g. a checked Verification box for a test that's failing on purpose, a `Relates to` normalized to `Fixes`, a dropped trailing `(#123)`.
+   - **Convention** — a break from `CONVENTIONS.md` (at the root of the `pr` plugin, beside `agents/`): from a contract, or from a *Default* section that nothing overrides (the repo, the team file, your personal file, or a preference the prompt relays). Following an override is not a break. E.g. a checked Verification box for a test that's failing on purpose, a `Relates to` normalized to `Fixes`, a dropped trailing `(#123)`.
    - **Style** — a break from the user's remembered description preferences, or from one the prompt relays (below) — including a repo-only one, which is flagged here but not remembered. A relayed preference that matches a remembered one is one flag, not two.
 3. Learn only from what the user stated: when the prompt relays a description preference the user stated outright ("keep the Why to one sentence"), record it (see "Learning"), or return it as `promote:` when it only makes sense in this repo.
 
