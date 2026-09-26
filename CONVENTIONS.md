@@ -112,6 +112,7 @@ the branch.
 
 An implement/test/commit loop, a write-and-run test loop, a code survey, research, or a rebase-and-draft is tens of steps. On a host that resends the whole conversation every step (Cursor does), each of those steps in the main chat pays for everything already in it — hundreds of thousands of tokens late in a long session. A subagent's conversation holds only its prompt, so the same loop costs a fraction. A skill that hands a loop off supplies the prompt template; these rules hold for all of them:
 
+- **Required, not a judgment call.** When a skill names a handoff and the host can spawn a subagent, make the handoff, every time. A small diff, code already read in this chat, or a one-line edit is not a reason to do that step in the main chat instead. If a handoff looks like pure overhead this time, say so in one line and ask the user; never skip it silently.
 - **Which agent.** Work that edits, runs, or pushes → the `pr-sidekick` agent (`pr/agents/pr-sidekick.md`): `pr:pr-sidekick` on Claude Code, the `pr-sidekick` subagent on Cursor. It applies the user's remembered preferences and follows the template's limits on its own; pass it `login: <github-login>` when the skill has it. The `pr` plugin isn't installed → the `general-purpose` agent on Claude Code, a subagent on Cursor. A read-only survey or research → the `Explore` agent on Claude Code, a subagent on Cursor.
 - **The caller picks the model.** The subagent can't change the model it runs on, and only the main chat knows how hard the job is. On a host that takes a model per call (Claude Code's `model`), pass `haiku` for a mechanical job (a literal rename, move, or suggestion block — say "mechanical" in the prompt too), `sonnet` for a scoped change or a survey, and leave it unset (the main chat's model) for work that needs judgment across files. A job that's mostly design isn't a loop to hand off — do it in the main chat.
 - **The prompt is only the template, filled in** — no transcript, no PR diff, no copy of the skill, nothing the template doesn't ask for. The subagent fetches anything else it needs itself.
@@ -121,12 +122,30 @@ An implement/test/commit loop, a write-and-run test loop, a code survey, researc
 - **Every spawn and check is a main-chat step.** Keep them few — batch where the skill says to.
 - **Bounded retries.** A template that says to keep going "until" a test passes or fails the right way allows at most 3 attempts. Still not there after the third → stop, leave the work uncommitted, and return what was tried and what's still failing. The main chat takes that to the user; it doesn't respawn the same loop unasked.
 - **Resume, don't restart.** When a subagent returned a question and the main chat spawns it again with the answer, the new prompt carries the question and the answer, and the subagent picks up at the step that asked — it checks what's already done (rebased, committed, pushed) rather than redoing it.
-- **No way to spawn a subagent** → do the same steps in the main chat.
+- **No way to spawn a subagent** means the host has no subagent tool at all, not that one seems unnecessary → do the same steps in the main chat, and mark them `inline` on the handoff line ("Handoff line in the final report").
 
 Used by: `pr:pr-address` (5a batches, 5b research), `pr:pr-sync` (Steps 2–6),
 `oss:issue-fix` (root cause, implementation), `oss:issue-verify` (the failing
 test), `oss:issue-analyze` (code survey). `pr-sidekick` follows its model and
 retry rules.
+
+## Handoff line in the final report
+
+A skill that names subagent or `pr-oracle` handoffs ends its final report to the user with one line listing each handoff that applied this run, in the order the skill runs them. Each skill names its labels at its wrap-up step. For example:
+
+```text
+Handoffs: scout-repo ✓ · root cause ✓ · brief-task ✓ · fix loop ✓ · sweep-diff ✓
+```
+
+- `✓`: ran as the skill says.
+- `inline (<reason>)`: done in the main chat because the host couldn't make the handoff. The only valid reasons are that it has no subagent tool, or that the `pr` plugin isn't installed so the oracle doesn't exist.
+- `✗ (<reason>)`: skipped, and only because the user agreed to skip it.
+
+Leave out a handoff that didn't apply this run (for example, no authoritative threads means no 5a batch). Writing the line is the check. If the honest mark for a handoff would be `✗` without the user's agreement, or `inline` for any other reason, go back and make that handoff before reporting.
+
+Used by: `pr:pr-address` (Step 6), `pr:pr-sync` (Step 7), `oss:issue-analyze`
+(Step 6), `oss:issue-create` (Step 7), `oss:issue-verify` (Step 6),
+`oss:issue-fix` (Step 7).
 
 ## Consulting the `pr-oracle` agent
 
@@ -139,7 +158,7 @@ retry rules.
 
 These rules hold everywhere:
 
-- **Optional.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the oracle is missing, and don't treat Cursor itself as missing.
+- **Optional only when it's missing.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the oracle is missing, and don't treat Cursor itself as missing. "Not available" means the agent doesn't exist in this session, never that the change looks too small to need it. When it exists, call it at every point the skill names. `sweep-diff` and `brief-task` are the only checks against the user's remembered rules, and nothing inline replaces them.
 - **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. The one exception is a *Default* section: there, a remembered rule overrides this file ("Defaults and contracts"). When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
 - **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the oracle doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
 - **Pass what you already have.** Every oracle call passes `login: <github-login>` when the skill has already looked it up, so the oracle doesn't look it up again on each call. The oracle reads GitHub only through the GitHub MCP tools, never `gh`, so don't name a route or hand it `gh` commands.

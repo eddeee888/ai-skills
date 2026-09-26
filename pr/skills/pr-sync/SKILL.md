@@ -77,7 +77,7 @@ rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.
 
-Then tell the user, briefly: whether the title changed, and a one-line summary of what moved in the description/changeset. Don't paste the full new PR body back at them.
+Then tell the user, briefly: whether the title changed, and a one-line summary of what moved in the description/changeset. Don't paste the full new PR body back at them. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
 
 ## When to touch nothing
 

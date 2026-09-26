@@ -82,7 +82,7 @@ Write the confirmed title and body to files first — never inline them in `--ti
 gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>
 ```
 
-Report back the issue URL. Filing the issue is this skill's job; verifying it (writing a failing test against it) is `issue-verify`'s, when the user wants to take it further. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo; without that, the issue just waits on its own maintainers.
+Report back the issue URL, and end with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with the label `scout-repo`. Filing the issue is this skill's job; verifying it (writing a failing test against it) is `issue-verify`'s, when the user wants to take it further. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo; without that, the issue just waits on its own maintainers.
 
 ## When to stop instead of proceeding
 

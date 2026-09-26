@@ -118,7 +118,7 @@ gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
 
 ## Step 6: Suggest a sync after further pushes
 
-Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, end the report with one line saying the description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update it.
+Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, end the report with one line saying the description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update it. Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
 
 ## When to stop instead of proceeding
 
