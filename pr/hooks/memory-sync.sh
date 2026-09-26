@@ -32,10 +32,6 @@ repo="${PR_MEMORY_REPO:-}"
 dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
 branch=main
 branch_prefix=memory/
-# Pre-rename branch prefix: pull still merges <legacy_prefix><login> so memory
-# pushed there before the rename carries over to memory/<login>. Remove once
-# those branches are merged or deleted.
-legacy_prefix=sidekick/
 login_file="$dir/.git/pr-oracle-login"
 login_failed="$dir/.git/pr-oracle-login-failed"
 case "$repo" in
@@ -170,7 +166,6 @@ pull() {
   merge_remote "$branch"
   if [ -n "$ub" ]; then
     merge_remote "$ub"
-    merge_remote "$legacy_prefix${ub#"$branch_prefix"}"
   fi
   return 0
 }

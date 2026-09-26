@@ -18,7 +18,7 @@ The `pr` plugin also ships two agents. [`pr-oracle`](pr/agents/pr-oracle.md) hol
 
 Each plugin has `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests. Each skill lives in its own directory within a plugin, e.g. `oss/skills/<skill-name>/SKILL.md`.
 
-Formatting/process rules shared by more than one skill (e.g. the `[package-name]` PR title prefix for monorepos) live in [`CONVENTIONS.md`](CONVENTIONS.md) rather than being restated in each `SKILL.md` — skills point to it instead of duplicating the rule. An installed plugin only gets its own directory, so `pr/` and `oss/` each carry an identical copy; edit the root file, then copy it over both.
+Formatting/process rules shared by more than one skill (e.g. the `[package-name]` PR title prefix for monorepos) live in [`CONVENTIONS.md`](CONVENTIONS.md) rather than being restated in each `SKILL.md` — skills point to it instead of duplicating the rule. Style rules there are marked *Default*: a repo's `CLAUDE.md`, the oracle's team or personal memory, or the current conversation can override them. The rest are contracts the skills depend on. An installed plugin only gets its own directory, so `pr/` and `oss/` each carry an identical copy; edit the root file, then copy it over both.
 
 ## Install
 
