@@ -112,7 +112,7 @@ Reference the issue with a non-closing keyword, per this marketplace's shared co
 
 ## Step 7: Suggest a sync
 
-Don't run `pr:pr-sync`. A separate fix PR was just written from the fix, so it's current. When the push continued the checkpoint's PR, or went to a PR that already existed, end the report with one line saying its title and description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them.
+Don't run `pr:pr-sync`. A separate fix PR was just written from the fix, so it's current. When the push continued the checkpoint's PR, or went to a PR that already existed, end the report with one line saying its title and description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them. Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

@@ -101,7 +101,7 @@ Continue to Step 6.
 
 ## Step 6: Present the analysis
 
-Show the user: what's being reported or asked, the size classification with its reasons, the root-cause hypothesis (or the affected packages/files, for a feature), and the matching recommendation from Step 5. This skill's job ends here — no implementation, no reproduction, no test, and nothing posted to GitHub unless the user asks to share it.
+Show the user: what's being reported or asked, the size classification with its reasons, the root-cause hypothesis (or the affected packages/files, for a feature), and the matching recommendation from Step 5. This skill's job ends here — no implementation, no reproduction, no test, and nothing posted to GitHub unless the user asks to share it. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `code survey`.
 
 - Sized from an existing issue → if asked to share it, draft the comment, show it, and only post after confirmation, from a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"): `gh issue comment <number> --body-file <file>`
 - Sized from a plain-text bug description with nothing filed → if the user wants it filed, hand off to `issue-create` with the root-cause hypothesis as context rather than drafting the issue here.
