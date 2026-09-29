@@ -125,6 +125,7 @@ An implement/test/commit loop, a write-and-run test loop, a code survey, researc
 - **No way to spawn a subagent** means the host has no subagent tool at all, not that one seems unnecessary → do the same steps in the main chat, and mark them `inline` on the handoff line ("Handoff line in the final report").
 
 Used by: `pr:pr-address` (5a batches, 5b research), `pr:pr-sync` (Steps 2–6),
+`pr:pr-review` (context check),
 `oss:issue-fix` (root cause, implementation), `oss:issue-verify` (the failing
 test), `oss:issue-analyze` (code survey). `pr-sidekick` follows its model and
 retry rules.
@@ -143,7 +144,8 @@ Handoffs: scout-repo ✓ · root cause ✓ · brief-task ✓ · fix loop ✓ · 
 
 Leave out a handoff that didn't apply this run (for example, no authoritative threads means no 5a batch). Writing the line is the check. If the honest mark for a handoff would be `✗` without the user's agreement, or `inline` for any other reason, go back and make that handoff before reporting.
 
-Used by: `pr:pr-address` (Step 6), `pr:pr-sync` (Step 7), `oss:issue-analyze`
+Used by: `pr:pr-address` (Step 6), `pr:pr-sync` (Step 7), `pr:pr-review`
+(Step 7), `oss:issue-analyze`
 (Step 6), `oss:issue-create` (Step 7), `oss:issue-verify` (Step 6),
 `oss:issue-fix` (Step 7).
 
@@ -165,7 +167,8 @@ These rules hold everywhere:
 - **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The oracle appends it only to `memory/team/MEMORY.md` in the memory repo.
 
 Used by: `pr:pr-address` (triage-threads + scout-repo, sweep-diff),
-`pr:pr-sync` (scout-repo, brief-task, grill-description), `oss:issue-analyze`
+`pr:pr-sync` (scout-repo, brief-task, grill-description), `pr:pr-review`
+(scout-repo + sweep-diff), `oss:issue-analyze`
 (scout-repo), `oss:issue-create` (scout-repo), `oss:issue-verify`
 (scout-repo), `oss:issue-fix` (scout-repo, brief-task, sweep-diff).
 
@@ -185,6 +188,8 @@ Skills write their GitHub steps as `gh` commands. Not every host has `gh`: a Cla
 | `gh pr view [<number>] --json …` | `pull_request_read` method `get` (no number → find the PR first, above) |
 | `gh pr create --draft --title … --body-file …` | `create_pull_request` with `draft: true`, `head`, `base` |
 | `gh pr edit <number> --title … --body-file …` | `update_pull_request` with `title`, `body` |
+| `gh pr diff <number>` | `pull_request_read` method `get_diff` |
+| `gh api repos/<o>/<r>/pulls/<n>/reviews --input <file>` (a review with inline comments) | `pull_request_review_write` method `create` (no `event`, pending), `add_comment_to_pending_review` per comment, then method `submit_pending` with `event` |
 | review threads (`gh api graphql --paginate` … `reviewThreads`) | `pull_request_read` method `get_review_comments`, following `after` while `pageInfo.hasNextPage`; drop threads with `is_resolved: true`. Comments have no `databaseId`: it's the digits after `#discussion_r` in `html_url`. An outdated comment has no `line`; use `original_line`. |
 | `gh api repos/<o>/<r>/pulls/comments/<id> --jq .body` | from one `get_review_comments` pass, the comment whose `html_url` ends in `#discussion_r<id>` — fetch the list once and look up every comment you need in it, never once per comment |
 | `gh api repos/<o>/<r>/pulls/<n>/comments/<id>/replies -f body=…` | `add_reply_to_pull_request_comment` with `commentId: <id>`, `pullNumber`, `body` |
@@ -195,7 +200,7 @@ Skills write their GitHub steps as `gh` commands. Not every host has `gh`: a Cla
 | `gh api repos/<o>/<r>/contents/<path>` (file or directory) | `get_file_contents` (`fields: ["name", "type"]` for a directory) |
 | `gh api repos/<o>/<r> --jq .default_branch` | `search_repositories` with query `repo:<o>/<r>` → `default_branch` |
 
-Used by: `pr:pr-address`, `pr:pr-sync`, `oss:issue-analyze`,
+Used by: `pr:pr-address`, `pr:pr-sync`, `pr:pr-review`, `oss:issue-analyze`,
 `oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`. `pr-oracle`
 keeps its own copy of the read rows next to its tool allowlist.
 
@@ -208,5 +213,6 @@ Never put drafted text — a title, a body, a reply — inside a double-quoted s
 - **MCP route** → pass the text as the tool's parameter; no quoting concerns.
 
 Used by: `pr:pr-address` (thread replies), `pr:pr-sync` (title and body),
+`pr:pr-review` (review payload),
 `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`
 (issue, comment, and PR text).

@@ -30,6 +30,11 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
     `grill-description` on the draft before applying it (flagging claims the
     diff doesn't back up, and learning any description preference you
     stated).
+  - `pr-review` — `scout-repo` + `sweep-diff` in one call on the PR's diff,
+    so the drafted `Why:` / `Suggestion:` / `Issue:` / `Test:` comments
+    reflect the rules you've asked for before. A subagent checks the code
+    outside the diff first, so it doesn't ask a `Why:` the code already
+    answers.
   - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
     its code survey starts from.
   - `oss:issue-create` / `oss:issue-verify` — `scout-repo` for the issue

@@ -60,6 +60,7 @@ Read GitHub only through the read-only GitHub MCP tools below. On a host that lo
 | File / directory | `get_file_contents` (`fields: ["name", "type"]` for a directory) |
 | Review threads | `pull_request_read` method `get_review_comments` (see `triage-threads`) |
 | PR body | `pull_request_read` method `get` |
+| PR diff | `pull_request_read` method `get_diff` |
 
 ## Hard limits
 
@@ -132,7 +133,7 @@ Nothing applies → return `no relevant memory`. Don't pad the brief with every 
 
 ## Mode: `sweep-diff`
 
-Input: the repo and the diff range to check (e.g. `origin/main...HEAD`, or the working tree).
+Input: the repo and the diff to check — a range (e.g. `origin/main...HEAD`, or the working tree), or `PR #<number>`, whose diff you read with `pull_request_read` method `get_diff` (see "GitHub access").
 
 Read the diff and flag each place it repeats something a remembered rule says reviewers push back on. Return:
 
