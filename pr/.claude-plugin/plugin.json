@@ -1,4 +1,8 @@
 {
   "name": "pr",
-  "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle."
+  "version": "0.1.0",
+  "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.",
+  "author": { "name": "eddeee888" },
+  "license": "MIT",
+  "keywords": ["pr", "github", "review"]
 }

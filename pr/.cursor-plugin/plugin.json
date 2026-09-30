@@ -4,6 +4,7 @@
   "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.",
   "author": { "name": "eddeee888" },
   "license": "MIT",
+  "logo": "assets/logo.svg",
   "keywords": ["pr", "github", "review"],
   "hooks": "./hooks/cursor-hooks.json",
   "variables": {

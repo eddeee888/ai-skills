@@ -1,4 +1,8 @@
 {
   "name": "oss",
-  "description": "Skills for maintaining and contributing to open source projects — sizing, filing, verifying, and fixing issues."
+  "version": "0.1.0",
+  "description": "Skills for maintaining and contributing to open source projects — sizing, filing, verifying, and fixing issues.",
+  "author": { "name": "eddeee888" },
+  "license": "MIT",
+  "keywords": ["oss", "github", "issues"]
 }
