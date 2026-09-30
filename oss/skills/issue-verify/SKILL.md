@@ -7,7 +7,7 @@ description: Verify a GitHub issue is real and reproducible before any fix work 
 
 Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's `issue-fix`'s job. For a lighter, unverified read-only guess at root cause and size before this, see `issue-analyze`. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, first.
 
-**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, so it starts current. After a further push to its branch, say in one line that the description may be stale and leave `/pr:pr-sync` (`/pr-sync` on Cursor) to the user (Step 6).
+**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, so it starts current. After a further push to its branch, say in one line that the description may be stale and leave the update to the user — via `/pr:pr-sync` (`/pr-sync` on Cursor) when the `pr` plugin is installed (Step 6).
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -118,7 +118,7 @@ gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
 
 ## Step 6: Suggest a sync after further pushes
 
-Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, end the report with one line saying the description may now be stale and `/pr:pr-sync` (`/pr-sync` on Cursor) will update it. Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
+Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, end the report with one line saying the description may now be stale. The `pr` plugin is installed → add that `/pr:pr-sync` (`/pr-sync` on Cursor) will update it. Not installed → say it needs updating by hand instead, and don't name `/pr:pr-sync`. Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
 
 ## When to stop instead of proceeding
 
