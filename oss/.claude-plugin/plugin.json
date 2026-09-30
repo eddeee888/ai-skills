@@ -1,9 +1,15 @@
 {
   "name": "oss",
+  "displayName": "OSS",
   "version": "0.1.0",
   "description": "Skills for maintaining and contributing to open source projects — sizing, filing, verifying, and fixing issues.",
   "author": { "name": "eddeee888" },
   "license": "MIT",
+  "homepage": "https://github.com/eddeee888/ai-skills/tree/main/oss",
+  "repository": "https://github.com/eddeee888/ai-skills",
+  "documentationUrl": "https://github.com/eddeee888/ai-skills/blob/main/oss/README.md",
+  "supportUrl": "https://github.com/eddeee888/ai-skills/issues",
+  "termsOfServiceUrl": "https://github.com/eddeee888/ai-skills/blob/main/LICENSE",
   "icon": "./assets/logo.svg",
   "keywords": ["oss", "github", "issues"]
 }
