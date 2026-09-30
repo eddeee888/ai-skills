@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <!-- Tweak here, in units of the 128 canvas:
        --gap:   white gap between overlapping letters
-       --thick: extra stroke added to every letter (10% of the base O stroke of 6.44) -->
+       --thick: extra stroke added to every letter (base O stroke is 6.44) -->
   <style>
-    svg{--gap:4px;--thick:0.64px}
+    svg{--gap:4px;--thick:1.35px}
     .ink{stroke:#000;stroke-width:var(--thick);stroke-linejoin:round}
     .gap{stroke:#fff;stroke-width:calc(2 * var(--gap) + var(--thick));stroke-linejoin:round}
     .ring{fill:none;stroke:#000;stroke-width:calc(6.44px + var(--thick))}
@@ -15,5 +15,5 @@
   <use href="#s" x="48.07" class="ink"/>
   <ellipse cx="36.75" cy="64.0" rx="23.00" ry="23.00" class="gap" fill="#fff"/>
   <ellipse cx="36.75" cy="64.0" rx="19.78" ry="19.78" class="ring"/>
-  <circle cx="36.75" cy="64.0" r="4.37" fill="#000"/>
+  <circle cx="36.75" cy="64.0" r="8.74" fill="#000"/>
 </svg>
