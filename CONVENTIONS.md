@@ -2,13 +2,13 @@
 
 Formatting/process rules shared across this marketplace's skills, or
 between a skill and the `pr-oracle` checks that enforce it. Skills point
-here instead of restating a rule — change it once, and every skill that
-points to it picks it up. Each pointer names its section
-(`CONVENTIONS.md` → "<section>"); read only that section, not the whole file.
+here instead of restating a rule, so a change here reaches every skill.
+Each pointer names its section (`CONVENTIONS.md` → "<section>"); read only
+that section, not the whole file.
 
 An installed plugin gets only its own directory, so each plugin carries an
-identical copy of this file at its root: a skill finds it two levels up from
-its own `SKILL.md`. Edit the copy at the repo root, then copy it over
+identical copy of this file at its root, two levels up from each
+`SKILL.md`. Edit the copy at the repo root, then copy it over
 `pr/CONVENTIONS.md` and `oss/CONVENTIONS.md`.
 
 ## Defaults and contracts
@@ -16,37 +16,36 @@ its own `SKILL.md`. Edit the copy at the repo root, then copy it over
 Each section below is one of two kinds:
 
 - **Default** — a style choice, marked *Default* under its heading. Apply it
-  unless something stronger says otherwise. From strongest to weakest: what
-  the user asks for in the current conversation; the repo's own `CLAUDE.md`
-  or `CONTRIBUTING.md`; the team's remembered rules; the user's remembered
+  unless something stronger says otherwise. From strongest to weakest: the
+  user's ask in the current conversation; the repo's own `CLAUDE.md` or
+  `CONTRIBUTING.md`; the team's remembered rules; the user's remembered
   rules; this file. The `pr-oracle` agent's `scout-repo` profile lists every
   default the repo or memory overrides on its `overrides:` line — follow that
   line, and the current conversation over it.
-- **Contract** — every other section. The skills and agents depend on it
-  (a branch name they search for, how text reaches the shell, how they call
+- **Contract** — every other section. Skills and agents depend on it (a
+  branch name they search for, how text reaches the shell, how they call
   each other), so nothing overrides it. An override asked for anyway → tell
   the user why it can't apply, and follow the contract.
 
 ## Monorepo title prefix: `[package-name]`
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
 In a monorepo, lead a PR title with `[package-name]`, naming the package
-the change is rooted in — e.g. `[package-name] fix: ...`. A change spanning
-several packages leads with whichever carries the primary/root-cause
-change, not a list of all of them. This applies to PR titles only — issue
-titles aren't package-prefixed.
+the change is rooted in — e.g. `[package-name] fix: ...`. Spanning several
+packages → name only the one with the primary/root-cause change, not a
+list. PR titles only; issue titles aren't package-prefixed.
 
 Used by: `pr:pr-sync` (title), `oss:issue-verify` (checkpoint PR title),
 `oss:issue-fix` (fix PR title).
 
 ## Trailing issue reference in the PR title: `(#123)`
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
-A PR title that references its issue puts the reference at the end, in
-parens — `fix: <description> (#123)` — never mid-title. A resync keeps an
-existing trailing reference rather than dropping it.
+A PR title's issue reference goes at the end, in parens —
+`fix: <description> (#123)` — never mid-title. A resync keeps an existing
+trailing reference.
 
 Used by: `oss:issue-verify`, `oss:issue-fix` (titles), `pr:pr-sync`
 (preserving it on resync).
@@ -54,13 +53,13 @@ Used by: `oss:issue-verify`, `oss:issue-fix` (titles), `pr:pr-sync`
 ## Non-closing issue references: `Relates to #123` / `Refs #123`
 
 A PR that doesn't fully resolve its issue on merge — a checkpoint PR, or a
-fix PR still under review — references it with a non-closing keyword
-(`Relates to #123` / `Refs #123`), never `Fixes`/`Closes`, so the issue
-stays open until a maintainer closes it deliberately.
+fix PR still under review — uses a non-closing keyword (`Relates to #123` /
+`Refs #123`), never `Fixes`/`Closes`, so the issue stays open until a
+maintainer closes it.
 
-A resync preserves whichever keyword is already there; never normalize
-`Relates to`/`Refs` up to `Fixes`/`Closes` (or the reverse) — whether the
-PR should close the issue on merge isn't a resync's call to make.
+A resync preserves whichever keyword is there; never change `Relates
+to`/`Refs` to `Fixes`/`Closes` or the reverse — whether the PR closes the
+issue isn't a resync's call.
 
 Used by: `oss:issue-verify`, `oss:issue-fix`, `pr:pr-sync` (Resources —
 preserving the existing keyword).
@@ -68,115 +67,135 @@ preserving the existing keyword).
 ## Checkpoint/fix branch naming: `repro/<issue-number>` / `fix/<issue-number>`
 
 A checkpoint (failing-test) branch is `repro/<issue-number>`; a fix branch
-built on top of it, when it needs one of its own, is `fix/<issue-number>` —
-paired names so it's obvious at a glance which fix answers which checkpoint.
+built on it, when it needs its own, is `fix/<issue-number>`, so each fix
+pairs visibly with its checkpoint.
 
 Used by: `oss:issue-verify` (checkpoint branch), `oss:issue-fix` (fix
 branch).
 
 ## Bold the critical claim in Why/What/Verification bullets
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
-Within a bullet, bold (`**...**`) the one fact that matters — the causal
-reason, the chosen rationale, a caveat — not the whole sentence. E.g. "This
-fails because **component A fails to request component B**" or "Found
-issue D. **Not fixed in this PR.**" Skip bullets with nothing critical
-enough to call out.
+Bold (`**...**`) the one fact in a bullet that matters — the causal reason,
+the chosen rationale, a caveat — not the whole sentence. E.g. "This fails
+because **component A fails to request component B**" or "Found issue D.
+**Not fixed in this PR.**" Nothing critical enough → no bold.
 
 Used by: `pr:pr-sync` (Why/What/Verification).
 
 ## Verification checklist: name the test type, not the command
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
-When a check already ran the same way in CI, name the kind of test rather
-than the literal command — `- [x] Unit tests`, not `- [x] Ran \`pnpm
-test\``. Reserve the literal command for something run manually, outside
-what CI already covers.
+A check that ran the same way in CI → name the kind of test, not the
+command: `- [x] Unit tests`, not `- [x] Ran \`pnpm test\``. Use the literal
+command only for something run manually, beyond what CI covers.
 
 Used by: `pr:pr-sync` (Verification).
 
 ## Don't checklist an intentionally-failing check as done
 
-When a branch's own tests are failing on purpose — a checkpoint commit with
-no fix yet, not a broken build — say so plainly instead of checking it off:
+A branch's tests failing on purpose — a checkpoint commit with no fix yet,
+not a broken build — → say so instead of checking it off:
 `- [ ] Unit tests — intentionally failing, reproduces the bug`, never
-`- [x]`. A checked box reads as "this works"; a checkpoint's whole point is
-that it doesn't, yet.
+`- [x]`. A checked box reads as "this works"; a checkpoint doesn't, yet.
 
 Used by: `pr:pr-sync` (Verification), regardless of which skill produced
 the branch.
 
 ## Hand long loops to a subagent
 
-An implement/test/commit loop, a write-and-run test loop, a code survey, research, or a rebase-and-draft is tens of steps. On a host that resends the whole conversation every step (Cursor does), each of those steps in the main chat pays for everything already in it — hundreds of thousands of tokens late in a long session. A subagent's conversation holds only its prompt, so the same loop costs a fraction. A skill that hands a loop off supplies the prompt template; these rules hold for all of them:
+An implement/test/commit loop, a write-and-run test loop, a code survey, research, or a rebase-and-draft is tens of steps. On a host that resends the whole conversation every step (Cursor does), each step in the main chat pays for everything already in it — hundreds of thousands of tokens late in a long session. A subagent's conversation holds only its prompt, so the same loop costs a fraction. A skill that hands a loop off supplies the prompt template; these rules hold for all of them:
 
-- **Required, not a judgment call.** When a skill names a handoff and the host can spawn a subagent, make the handoff, every time. A small diff, code already read in this chat, or a one-line edit is not a reason to do that step in the main chat instead. If a handoff looks like pure overhead this time, say so in one line and ask the user; never skip it silently.
-- **Which agent.** Work that edits, runs, or pushes → the `pr-sidekick` agent (`pr/agents/pr-sidekick.md`): `pr:pr-sidekick` on Claude Code, the `pr-sidekick` subagent on Cursor. It applies the user's remembered preferences and follows the template's limits on its own; pass it `login: <github-login>` when the skill has it. The `pr` plugin isn't installed → the `general-purpose` agent on Claude Code, a subagent on Cursor. A read-only survey or research → the `Explore` agent on Claude Code, a subagent on Cursor.
-- **The caller picks the model.** The subagent can't change the model it runs on, and only the main chat knows how hard the job is. On a host that takes a model per call (Claude Code's `model`), pass `haiku` for a mechanical job (a literal rename, move, or suggestion block — say "mechanical" in the prompt too), `sonnet` for a scoped change or a survey, and leave it unset (the main chat's model) for work that needs judgment across files. A job that's mostly design isn't a loop to hand off — do it in the main chat.
-- **The prompt is only the template, filled in** — no transcript, no PR diff, no copy of the skill, nothing the template doesn't ask for. The subagent fetches anything else it needs itself.
+- **Required, not a judgment call.** When a skill names a handoff and the host can spawn a subagent, make the handoff, every time. A small diff, code already read in this chat, or a one-line edit is no reason to do it in the main chat. If a handoff looks like pure overhead, say so in one line and ask the user; never skip it silently.
+- **Which agent.** Work that edits, runs, or pushes → the `pr-sidekick` agent (`pr/agents/pr-sidekick.md`): `pr:pr-sidekick` on Claude Code, the `pr-sidekick` subagent on Cursor. It applies the user's remembered preferences and follows the template's limits itself; pass it `login: <github-login>` when the skill has it. The `pr` plugin isn't installed ("Companion plugin: `pr`") → the `general-purpose` agent on Claude Code, a subagent on Cursor. A read-only survey or research → the `Explore` agent on Claude Code, a subagent on Cursor.
+- **The caller picks the model.** The subagent can't change its model, and only the main chat knows how hard the job is. On a host that takes a model per call (Claude Code's `model`), pass `haiku` for a mechanical job (a literal rename, move, or suggestion block — say "mechanical" in the prompt too), `sonnet` for a scoped change or a survey, and leave it unset (the main chat's model) for work needing judgment across files. A job that's mostly design isn't a loop to hand off — do it in the main chat.
+- **The prompt is only the template, filled in** — no transcript, no PR diff, no copy of the skill, nothing the template doesn't ask for. The subagent fetches anything else itself.
 - **It can't consult the oracle.** Get what's needed from the `pr-oracle` agent in the main chat first and paste its output into the prompt.
 - **One at a time on a shared checkout.** Subagents that edit the same checkout never run in parallel.
 - **Short results.** It returns only the few lines the template asks for, and returns a question instead of guessing when a decision is the user's; the main chat asks the user and spawns it again with the answer.
 - **Every spawn and check is a main-chat step.** Keep them few — batch where the skill says to.
 - **Bounded retries.** A template that says to keep going "until" a test passes or fails the right way allows at most 3 attempts. Still not there after the third → stop, leave the work uncommitted, and return what was tried and what's still failing. The main chat takes that to the user; it doesn't respawn the same loop unasked.
-- **Resume, don't restart.** When a subagent returned a question and the main chat spawns it again with the answer, the new prompt carries the question and the answer, and the subagent picks up at the step that asked — it checks what's already done (rebased, committed, pushed) rather than redoing it.
+- **Resume, don't restart.** A respawn after a question carries the question and the answer; the subagent picks up at the step that asked, checking what's already done (rebased, committed, pushed) rather than redoing it.
 - **No way to spawn a subagent** means the host has no subagent tool at all, not that one seems unnecessary → do the same steps in the main chat, and mark them `inline` on the handoff line ("Handoff line in the final report").
 
 Used by: `pr:pr-address` (5a batches, 5b research), `pr:pr-sync` (Steps 2–6),
-`pr:pr-review` (context check),
-`oss:issue-fix` (root cause, implementation), `oss:issue-verify` (the failing
-test), `oss:issue-analyze` (code survey). `pr-sidekick` follows its model and
-retry rules.
+`pr:pr-review` (context check), `oss:issue-fix` (root cause, implementation),
+`oss:issue-verify` (the failing test), `oss:issue-analyze` (code survey).
+`pr-sidekick` follows its model and retry rules.
 
 ## Handoff line in the final report
 
-A skill that names subagent or `pr-oracle` handoffs ends its final report to the user with one line listing each handoff that applied this run, in the order the skill runs them. Each skill names its labels at its wrap-up step. For example:
+A skill that names subagent or `pr-oracle` handoffs ends its final report with one line listing each handoff that applied this run, in the order the skill runs them. Each skill names its labels at its wrap-up step. For example:
 
 ```text
 Handoffs: scout-repo ✓ · root cause ✓ · brief-task ✓ · fix loop ✓ · sweep-diff ✓
 ```
 
 - `✓`: ran as the skill says.
-- `inline (<reason>)`: done in the main chat because the host couldn't make the handoff. The only valid reasons are that it has no subagent tool, or that the `pr` plugin isn't installed so the oracle doesn't exist.
-- `✗ (<reason>)`: skipped, and only because the user agreed to skip it.
+- `inline (<reason>)`: done in the main chat because the host couldn't make the handoff. The only valid reasons: it has no subagent tool, or the `pr` plugin isn't installed so the oracle doesn't exist.
+- `✗ (<reason>)`: skipped, and only because the user agreed.
 
-Leave out a handoff that didn't apply this run (for example, no authoritative threads means no 5a batch). Writing the line is the check. If the honest mark for a handoff would be `✗` without the user's agreement, or `inline` for any other reason, go back and make that handoff before reporting.
+Leave out a handoff that didn't apply this run (e.g. no authoritative threads means no 5a batch). Writing the line is the check: if the honest mark would be `✗` without the user's agreement, or `inline` for any other reason, go back and make that handoff before reporting.
 
 Used by: `pr:pr-address` (Step 6), `pr:pr-sync` (Step 7), `pr:pr-review`
-(Step 7), `oss:issue-analyze`
-(Step 6), `oss:issue-create` (Step 7), `oss:issue-verify` (Step 6),
-`oss:issue-fix` (Step 7).
+(Step 7), `oss:issue-analyze` (Step 6), `oss:issue-create` (Step 7),
+`oss:issue-verify` (Step 6), `oss:issue-fix` (Step 7).
+
+## Companion plugin: `pr`
+
+The `oss` plugin works on its own. With the `pr` plugin installed too, `oss` skills use three things it ships: the `pr-oracle` agent, the `pr-sidekick` agent, and the `pr-sync` skill. `pr`'s own skills can take all three as given.
+
+- **How to tell.** `pr` is installed when its names exist in this session: `pr:pr-oracle`, `pr:pr-sidekick`, and `/pr:pr-sync` on Claude Code; the `pr-oracle` and `pr-sidekick` subagents and `/pr-sync` on Cursor. Check once, when the skill first needs one, and keep that answer for the run. Cursor itself is never "missing".
+- **Missing → fall back, never stop**, and don't ask the user to install `pr`:
+  - `pr-oracle` → do that step inline, exactly as the skill describes ("Consulting the `pr-oracle` agent"), and mark it `inline (pr plugin isn't installed)` on the handoff line ("Handoff line in the final report").
+  - `pr-sidekick` → the `general-purpose` agent on Claude Code, a subagent on Cursor ("Hand long loops to a subagent").
+  - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/pr:pr-sync` ("Suggesting `pr-sync` after a push").
+- **Defaults without the oracle.** No profile means no `overrides:` line. Before applying a *Default* section, check the repo's `CLAUDE.md` and `CONTRIBUTING.md` for a rule that says otherwise, and follow it ("Defaults and contracts").
+
+Used by: `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`,
+`oss:issue-fix`.
+
+## Suggesting `pr-sync` after a push
+
+A skill that pushes to a PR never runs `pr:pr-sync` itself — not in the main chat, not in a subagent. A sync is a long rebase-and-redraft loop, and whether to pay for it is the user's call. Instead:
+
+- **Only when the push left the PR behind.** A PR the skill just opened from its own change is already current; say nothing.
+- **Only on the user's own PR** — authored by the user's GitHub login (`gh api user --jq .login`, or `get_me`). Editing someone else's PR title or description isn't the skill's call.
+- **One line in the final report, before the handoff line:** the PR's title and description may now be stale, and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them. The `pr` plugin isn't installed ("Companion plugin: `pr`") → say they need updating by hand instead.
+
+Used by: `pr:pr-address` (Step 6), `oss:issue-fix` (Step 7).
+`oss:issue-verify` pushes only once, to the PR it opens, so it never needs it.
 
 ## Consulting the `pr-oracle` agent
 
-`pr/agents/pr-oracle.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description` — and each skill names which mode it calls where. A skill that needs both `scout-repo` and `brief-task` at the same point asks for them in one call (`scout-repo` + `brief-task`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
+`pr/agents/pr-oracle.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points in the modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`; each skill names which mode it calls where. A skill needing `scout-repo` and another mode at the same point asks for both in one call: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. The same agent file is the Claude Code agent and the Cursor subagent.
 
-**Call it by the name this host actually has:**
+**Call it by the name this host has:**
 
 - Claude Code — the `pr:pr-oracle` agent.
 - Cursor — delegate to the `pr-oracle` subagent and wait for it. It starts blank, so the delegation prompt carries the mode and every input that mode lists. Its reply is the mode's output; continue the skill from there.
 
 These rules hold everywhere:
 
-- **Optional only when it's missing.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the oracle is missing, and don't treat Cursor itself as missing. "Not available" means the agent doesn't exist in this session, never that the change looks too small to need it. When it exists, call it at every point the skill names. `sweep-diff` and `brief-task` are the only checks against the user's remembered rules, and nothing inline replaces them.
-- **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. The one exception is a *Default* section: there, a remembered rule overrides this file ("Defaults and contracts"). When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
-- **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the oracle doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
-- **Pass what you already have.** Every oracle call passes `login: <github-login>` when the skill has already looked it up, so the oracle doesn't look it up again on each call. The oracle reads GitHub only through the GitHub MCP tools, never `gh`, so don't name a route or hand it `gh` commands.
-- **Team memory.** When the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. Do not add that line otherwise. The oracle appends it only to `memory/team/MEMORY.md` in the memory repo.
+- **Optional only when it's missing.** The agent isn't available (the `pr` plugin isn't installed — "Companion plugin: `pr`") → do that step inline exactly as the skill describes, and carry on; never stop, and don't treat Cursor itself as missing. "Not available" means the agent doesn't exist in this session, never that the change looks too small to need it. When it exists, call it at every point the skill names: `sweep-diff` and `brief-task` are the only checks against the user's remembered rules, and nothing inline replaces them.
+- **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. The one exception is a *Default* section, where a remembered rule overrides this file ("Defaults and contracts"). A remembered rule conflicts with the current ask → surface the conflict to the user instead of silently picking one.
+- **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. Output includes `promote:` → mention it to the user once: a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the oracle doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
+- **Pass what you already have.** Every oracle call passes `login: <github-login>` when the skill has already looked it up, so the oracle doesn't repeat the lookup. The oracle reads GitHub only through the GitHub MCP tools, never `gh`, so don't name a route or hand it `gh` commands.
+- **Team memory.** Only when the user explicitly asked to remember something for the team, add `record-team: <one line>` to the delegation prompt. The oracle appends it only to `memory/team/MEMORY.md` in the memory repo.
 
 Used by: `pr:pr-address` (triage-threads + scout-repo, sweep-diff),
 `pr:pr-sync` (scout-repo, brief-task, grill-description), `pr:pr-review`
-(scout-repo + sweep-diff), `oss:issue-analyze`
-(scout-repo), `oss:issue-create` (scout-repo), `oss:issue-verify`
-(scout-repo), `oss:issue-fix` (scout-repo, brief-task, sweep-diff).
+(scout-repo + sweep-diff), `oss:issue-analyze` (scout-repo),
+`oss:issue-create` (scout-repo), `oss:issue-verify` (scout-repo),
+`oss:issue-fix` (scout-repo, brief-task, sweep-diff).
 
 ## GitHub access: `gh`, or the GitHub MCP tools
 
 Skills write their GitHub steps as `gh` commands. Not every host has `gh`: a Claude Code on the web session has no `gh` but has the GitHub MCP server (`mcp__github__*` tools).
 
-- **Pick the route once.** At the first GitHub step, run `gh auth status`. It succeeds → use `gh` for the rest of the skill. It fails (not installed, not logged in) → use the GitHub MCP tools for the rest of the skill; on a host that loads them on demand, load each one with `ToolSearch` before its first call. Neither works → treat it as the step's own "no PR"/"can't reach the repo" failure.
+- **Pick the route once.** At the first GitHub step, run `gh auth status`. Succeeds → use `gh` for the rest of the skill. Fails (not installed, not logged in) → use the GitHub MCP tools for the rest of the skill; on a host that loads them on demand, load each with `ToolSearch` before its first call. Neither works → treat it as the step's own "no PR"/"can't reach the repo" failure.
 - **Access errors.** On the `gh` route, a read that fails with 401/403/404 (org SSO, missing token scope) → retry that one read with the MCP tool before treating it as a failure.
 - **Same effect, same gates.** The MCP call replaces the command one for one: a write still needs whatever confirmation the skill requires before the `gh` command.
 - **Owner/repo.** MCP tools take them explicitly. For the current checkout, read them from `git remote get-url origin`. For "the current branch's PR", find it with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`).
@@ -213,6 +232,5 @@ Never put drafted text — a title, a body, a reply — inside a double-quoted s
 - **MCP route** → pass the text as the tool's parameter; no quoting concerns.
 
 Used by: `pr:pr-address` (thread replies), `pr:pr-sync` (title and body),
-`pr:pr-review` (review payload),
-`oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`
-(issue, comment, and PR text).
+`pr:pr-review` (review payload), `oss:issue-analyze`, `oss:issue-create`,
+`oss:issue-verify`, `oss:issue-fix` (issue, comment, and PR text).

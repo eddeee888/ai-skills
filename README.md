@@ -2,29 +2,29 @@
 
 AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
-## Structure
+## Plugins
 
-This repo is a plugin marketplace containing two plugins:
+- [`oss/`](oss/) — maintaining and contributing to open source projects: sizing, filing, verifying, and fixing issues. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`.
+- [`pr/`](pr/) — working with pull requests: reviewing, addressing comments, syncing. Claude Code: `/pr:<skill-name>`, e.g. `/pr:pr-sync`. Cursor: `/pr-sync`.
 
-- [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) — Claude Code catalog
-- [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) — Cursor catalog
+`pr` also ships two agents, used by both plugins' skills (`pr:pr-oracle` / `pr:pr-sidekick` in Claude Code, subagents in Cursor):
 
-Each plugin is its own namespace of skills:
+- [`pr-oracle`](pr/agents/pr-oracle.md) — remembers your recurring review themes, and profiles a repo's setup (tests, monorepo layout, templates).
+- [`pr-sidekick`](pr/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying those remembered preferences.
 
-- [`oss/`](oss/) — the `oss` plugin, skills for maintaining and contributing to open source projects. Skills invoke as `/oss:<skill-name>` in Claude Code, e.g. `/oss:issue-verify`, `/oss:issue-fix`. In Cursor, invoke the skill name (e.g. `/issue-verify`).
-- [`pr/`](pr/) — the `pr` plugin, skills for working with pull requests. Skills invoke as `/pr:<skill-name>` in Claude Code, e.g. `/pr:pr-sync`. In Cursor, invoke `/pr-sync`.
+`oss` works on its own; install `pr` too to add the memory and agents ([`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-pr)).
 
-The `pr` plugin also ships two agents. [`pr-oracle`](pr/agents/pr-oracle.md) holds persistent memory of your recurring review themes, which the `pr` skills and `oss:issue-analyze`, `issue-create`, `issue-verify` and `issue-fix` consult for a repo's working setup, and when classifying threads, coding, and writing PR descriptions. [`pr-sidekick`](pr/agents/pr-sidekick.md) carries out the coding loops those skills hand off — implement, test, commit — applying the same remembered preferences, on a model the calling skill picks per job. Claude Code runs them as `pr:pr-oracle` and `pr:pr-sidekick`; Cursor runs the same files as subagents.
+## Layout
 
-Each plugin has `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests. Each skill lives in its own directory within a plugin, e.g. `oss/skills/<skill-name>/SKILL.md`.
-
-Formatting/process rules shared by more than one skill (e.g. the `[package-name]` PR title prefix for monorepos) live in [`CONVENTIONS.md`](CONVENTIONS.md) rather than being restated in each `SKILL.md` — skills point to it instead of duplicating the rule. Style rules there are marked *Default*: a repo's `CLAUDE.md`, the oracle's team or personal memory, or the current conversation can override them. The rest are contracts the skills depend on. An installed plugin only gets its own directory, so `pr/` and `oss/` each carry an identical copy; edit the root file, then copy it over both.
+- Catalogs: [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) (Claude Code), [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) (Cursor).
+- Each plugin: `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests; skills in `skills/<skill-name>/SKILL.md`.
+- [`CONVENTIONS.md`](CONVENTIONS.md) holds rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to it instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `pr/` each carry an identical copy — edit the root file, then copy it over both.
 
 ## Install
 
 ### Claude Code
 
-Add this repo as a marketplace, then install whichever plugin(s) you want:
+Add the marketplace, then install the plugin(s) you want:
 
 ```
 /plugin marketplace add eddeee888/ai-skills
@@ -32,7 +32,7 @@ Add this repo as a marketplace, then install whichever plugin(s) you want:
 /plugin install pr
 ```
 
-To develop against a local checkout instead:
+Local checkout for development:
 
 ```
 claude --plugin-dir ./oss
@@ -51,4 +51,4 @@ cursor-agent plugin marketplace add https://github.com/eddeee888/ai-skills
 
 **Official public listing (optional):** submit this repo at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Manual review; the repo must stay public and open source.
 
-To develop against a local checkout, copy `oss` and `pr` into `~/.cursor/plugins/local/` (do not symlink from outside that folder) and reload the window.
+Local checkout for development: copy `oss` and `pr` into `~/.cursor/plugins/local/` (do not symlink from outside that folder) and reload the window.

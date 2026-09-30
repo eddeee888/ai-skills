@@ -1,8 +1,8 @@
 # pr-sync: Steps 2–6
 
-Read by the subagent `SKILL.md` hands these steps to (or by the main chat when there's no subagent). The oracle's profile (`scout-repo`) and brief (`brief-task`) come in your prompt — don't call the oracle yourself. Where a step says to ask the user or hand something to them, return it as your question instead.
+Read by the subagent `SKILL.md` hands these steps to (or the main chat when there's no subagent). The oracle's profile (`scout-repo`) and brief (`brief-task`) come in your prompt — don't call the oracle yourself. Where a step says to ask the user or hand something to them, return it as your question instead.
 
-Your prompt's `Resuming:` line, when it isn't `no`, carries a question you returned earlier and the user's answer. Check what's already done — `git status -sb` against `origin/<headRefName>`, whether the changeset commit exists — and pick up at the step that asked, using the answer. Don't rebase, commit or push again what's already on origin.
+`Resuming:` not `no` → it carries your earlier question and the user's answer. Check what's done — `git status -sb` against `origin/<headRefName>`, whether the changeset commit exists — and pick up at the step that asked, using the answer. Don't rebase, commit or push again what's already on origin.
 
 ## Step 2: Rebase onto the base branch
 
@@ -11,13 +11,13 @@ git fetch origin <baseRefName> --quiet
 git rebase origin/<baseRefName>
 ```
 
-Only on a branch that's yours alone — ask first if you're not sure, since rebasing out from under a collaborator loses their work on their next pull.
+Only on a branch that's yours alone — unsure → ask first; rebasing under a collaborator loses their work on their next pull.
 
 Clean → continue without pushing; Step 4 pushes once, after any changeset commit, so CI runs once.
 
-Conflicts → stop. Resolve only the obvious ones (same file, clearly compatible changes on both sides); otherwise hand them to the user with what's conflicting and why. Never force it through with `--skip` or a guessed resolution.
+Conflicts → stop. Resolve only obvious ones (same file, clearly compatible changes on both sides); otherwise hand them to the user with what conflicts and why. Never force through with `--skip` or a guessed resolution.
 
-## Step 3: Look at what's actually changed
+## Step 3: Look at what changed
 
 ```bash
 git diff origin/<baseRefName>...HEAD --stat
@@ -27,19 +27,19 @@ gh pr view <number> --json body --jq .body
 
 Your prompt says `GitHub: MCP` → read the body with `pull_request_read` method `get` instead.
 
-Start from the file list, the commit messages, and the current PR body — they often already state the *why*; use them rather than guessing from the diff alone. Then read the diff of only the files you need to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR. The full diff can be tens of thousands of tokens and would stay in context for every later step; Step 7's `grill-description` reads all of it anyway.
+Start from the file list, commit messages, and current PR body — they often state the *why*; use them rather than guessing from the diff. Then diff only the files needed to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR: the full diff can run to tens of thousands of tokens that stay in context for every later step, and Step 7's `grill-description` reads all of it anyway.
 
 Empty diff → the PR is already current; say so and stop.
 
-## Step 4: Check for a changeset, but only if the repo actually uses one
+## Step 4: Check for a changeset, only if the repo uses one
 
-Use the profile you were given: its `changesets` line answers this step, its monorepo line answers Step 5's title prefix, and its template line answers Step 6's headers. No profile → check each inline as written.
+Use the profile: its `changesets` line answers this step, its monorepo line Step 5's title prefix, its template line Step 6's headers. No profile → check each inline as written.
 
-Without a profile, look for `.changeset/config.json` or an equivalent already in use. Neither exists → skip the changeset part (but still push, below); don't introduce a changelog convention as a side effect of a sync task.
+Without a profile, look for `.changeset/config.json` or an equivalent in use. Neither → skip the changeset (still push, below); don't introduce a changelog convention as a side effect of a sync.
 
 If present:
-- A changeset file already exists for this branch → update its summary to match the current diff.
-- None exists → create one, matching the bump style the profile reports. No profile → read one or two recent entries in `.changeset/`, not all of them.
+- A changeset for this branch exists → update its summary to match the current diff.
+- None → create one, matching the profile's bump style. No profile → read one or two recent entries in `.changeset/`, not all.
 
 The changeset always gets its own commit, never squashed into an implementation commit:
 
@@ -48,9 +48,9 @@ git add .changeset/*.md
 git commit -m "chore: update changeset"
 ```
 
-If other commits already sit after the implementation commit (this sync is catching up on a few rounds of pushes), the changeset commit still only needs to exist once — don't reorder existing history to force it earlier.
+Other commits already after the implementation commit (catching up on several rounds of pushes) → the changeset commit still exists once; don't reorder history to force it earlier.
 
-Then push once, changeset or not — the rebase and any changeset commit together:
+Then push once, changeset or not — rebase and any changeset commit together:
 
 ```bash
 git push --force-with-lease
@@ -58,28 +58,28 @@ git push --force-with-lease
 
 ## Step 5: Draft the title and description
 
-The brief you were given says how the user likes descriptions written and what their reviewers keep asking to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win — except a rule that points to a *Default* section of `CONVENTIONS.md`, which the profile's `overrides:` line, and the brief, can override (`CONVENTIONS.md` → "Defaults and contracts").
+The brief says how the user likes descriptions written and what their reviewers keep asking for. Draft to it; where it conflicts with the rules below, the rules win — except a rule pointing to a *Default* section of `CONVENTIONS.md`, which the profile's `overrides:` line and the brief can override (`CONVENTIONS.md` → "Defaults and contracts").
 
-**Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md` → "Trailing issue reference"); don't let a resync silently drop it.
+**Title** — one line naming the net effect of the change, imperative after any type prefix. Keep an existing conventional-commit prefix (`fix:`, `test:`, …), updating it when the change's kind changed: a checkpoint PR that now carries its fix goes from `test: reproduce … (failing)` to `fix: …`, dropping `(failing)`. Diff bundles unrelated things → name the most user-visible one, don't cram. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title ends in a `(#123)`-style issue reference → keep it in the same form (`CONVENTIONS.md` → "Trailing issue reference"); a resync must not silently drop it.
 
-**Description** — three required sections, in this order, kept tight, since this is a PR body a reviewer skims, not a design doc:
+**Description** — three required sections, in this order, kept tight — a PR body a reviewer skims, not a design doc:
 
-- **Why** — the reason this change exists at all. Pull it from commit messages, a linked issue, or the existing description if it already states intent; ask the user only if nothing indicates the motivation. Why is the *reason*, not a rephrasing of What. Must open with a paragraph starting `This PR ...` stating the mechanism by which it solves the issue, not just what the issue was — motivation bullets can follow.
-- **What** — the concrete change, as a few short bullets: files, behavior, APIs touched. Specific enough that a reviewer doesn't have to open the diff to know what they're looking at.
-- **Verification** — how a reader can trust the change actually works: tests added/updated, commands run and their result, manual steps (with the observed outcome), or CI checks that cover it. Pull this from commit messages, test files, and the diff; ask the user only if the branch gives no indication. Don't pad with "should work" — if nothing was verified, say that plainly. A check that already ran in CI gets named by test type, not the literal command (`CONVENTIONS.md` → "Verification checklist"). Tests failing on purpose — a checkpoint commit with no fix yet — get stated plainly, never checklisted as passing (`CONVENTIONS.md` → "Don't checklist an intentionally-failing check as done").
+- **Why** — the reason this change exists, not a rephrasing of What. Pull it from commit messages, a linked issue, or the existing description; ask the user only if nothing indicates the motivation. Must open with a paragraph starting `This PR ...` stating the mechanism by which it solves the issue, not just what the issue was — motivation bullets can follow.
+- **What** — the concrete change in a few short bullets: files, behavior, APIs touched — specific enough that a reviewer needn't open the diff to know what they're looking at.
+- **Verification** — how a reader can trust the change works: tests added/updated, commands run and their result, manual steps (with observed outcome), or covering CI checks. Pull it from commit messages, test files, and the diff; ask the user only if the branch gives no indication. No "should work" padding — nothing verified → say so plainly. A check that already ran in CI gets named by test type, not the literal command (`CONVENTIONS.md` → "Verification checklist"). Tests failing on purpose — a checkpoint commit with no fix yet — get stated plainly, never checklisted as passing (`CONVENTIONS.md` → "Don't checklist an intentionally-failing check as done").
 
-Keep all three sections short — one bullet per section is enough for a trivial PR, not padding to look thorough. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS.md` → "Bold the critical claim"); skip a bullet with nothing critical enough to call out.
+One bullet per section is enough for a trivial PR; don't pad. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS.md` → "Bold the critical claim"); skip a bullet with nothing critical enough to call out.
 
-**Resources** — one more section, only when there's actually something to put in it:
+**Resources** — one more section, only when there's something to put in it:
 
-- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is already in use, closing or non-closing — never normalize one to the other as a side effect of rewriting this section; whether the PR should close the issue on merge isn't a resync's call to make (`CONVENTIONS.md` → "Non-closing issue references").
-- Any external context that actually informed the fix — an upstream issue, a design doc, a blog post — only if one genuinely exists.
+- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is in use, closing or non-closing — never normalize one to the other while rewriting; whether the PR closes the issue on merge isn't a resync's call (`CONVENTIONS.md` → "Non-closing issue references").
+- External context that informed the fix — an upstream issue, a design doc, a blog post — only if one genuinely exists.
 
-Don't go hunting for tangential links, and don't add a "Resources" section with nothing real in it. One line per link is plenty. Leave the section out entirely if neither an issue link nor external context exists.
+Don't hunt for tangential links. One line per link. Neither an issue link nor external context → leave the section out.
 
 ## Step 6: Fit the update into the existing template — don't replace it
 
-Check the PR's current body (from Step 3) and the template headers from the profile; read `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`) itself only when there's no profile. If the repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist — map Why/What/Verification/Resources onto whichever existing header is the closest match instead of inventing new ones. Verification almost always has a home already ("Testing", "Test plan", "QA steps") — ease it in there; only add a standalone "## Verification" if nothing fits. Leave every section you have no new information for untouched. No template to work from → default to:
+Check the PR's current body (from Step 3) and the profile's template headers; read `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`) only when there's no profile. Repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist → map Why/What/Verification/Resources onto the closest existing header instead of inventing new ones. Verification usually has a home ("Testing", "Test plan", "QA steps"); add a standalone "## Verification" only if nothing fits. Leave sections you have no new information for untouched. No template to work from → default to:
 
 ```markdown
 ## Why
@@ -97,6 +97,6 @@ This PR ...
 - ...
 ```
 
-(omit the `## Resources` section entirely when Step 5 found nothing to put there)
+(omit `## Resources` when Step 5 found nothing for it)
 
-The goal is a description that reads like it was written by the person who made the change, not one bulldozed by a script.
+The goal: a description that reads as written by the person who made the change, not bulldozed by a script.
