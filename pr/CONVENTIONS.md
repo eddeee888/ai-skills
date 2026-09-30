@@ -113,7 +113,7 @@ the branch.
 An implement/test/commit loop, a write-and-run test loop, a code survey, research, or a rebase-and-draft is tens of steps. On a host that resends the whole conversation every step (Cursor does), each of those steps in the main chat pays for everything already in it — hundreds of thousands of tokens late in a long session. A subagent's conversation holds only its prompt, so the same loop costs a fraction. A skill that hands a loop off supplies the prompt template; these rules hold for all of them:
 
 - **Required, not a judgment call.** When a skill names a handoff and the host can spawn a subagent, make the handoff, every time. A small diff, code already read in this chat, or a one-line edit is not a reason to do that step in the main chat instead. If a handoff looks like pure overhead this time, say so in one line and ask the user; never skip it silently.
-- **Which agent.** Work that edits, runs, or pushes → the `pr-sidekick` agent (`pr/agents/pr-sidekick.md`): `pr:pr-sidekick` on Claude Code, the `pr-sidekick` subagent on Cursor. It applies the user's remembered preferences and follows the template's limits on its own; pass it `login: <github-login>` when the skill has it. The `pr` plugin isn't installed → the `general-purpose` agent on Claude Code, a subagent on Cursor. A read-only survey or research → the `Explore` agent on Claude Code, a subagent on Cursor.
+- **Which agent.** Work that edits, runs, or pushes → the `pr-sidekick` agent (`pr/agents/pr-sidekick.md`): `pr:pr-sidekick` on Claude Code, the `pr-sidekick` subagent on Cursor. It applies the user's remembered preferences and follows the template's limits on its own; pass it `login: <github-login>` when the skill has it. The `pr` plugin isn't installed ("Companion plugin: `pr`") → the `general-purpose` agent on Claude Code, a subagent on Cursor. A read-only survey or research → the `Explore` agent on Claude Code, a subagent on Cursor.
 - **The caller picks the model.** The subagent can't change the model it runs on, and only the main chat knows how hard the job is. On a host that takes a model per call (Claude Code's `model`), pass `haiku` for a mechanical job (a literal rename, move, or suggestion block — say "mechanical" in the prompt too), `sonnet` for a scoped change or a survey, and leave it unset (the main chat's model) for work that needs judgment across files. A job that's mostly design isn't a loop to hand off — do it in the main chat.
 - **The prompt is only the template, filled in** — no transcript, no PR diff, no copy of the skill, nothing the template doesn't ask for. The subagent fetches anything else it needs itself.
 - **It can't consult the oracle.** Get what's needed from the `pr-oracle` agent in the main chat first and paste its output into the prompt.
@@ -149,6 +149,30 @@ Used by: `pr:pr-address` (Step 6), `pr:pr-sync` (Step 7), `pr:pr-review`
 (Step 6), `oss:issue-create` (Step 7), `oss:issue-verify` (Step 6),
 `oss:issue-fix` (Step 7).
 
+## Companion plugin: `pr`
+
+The `oss` plugin works on its own. When the `pr` plugin is installed too, `oss` skills use three things it ships: the `pr-oracle` agent, the `pr-sidekick` agent, and the `pr-sync` skill. `pr`'s own skills can take all three as given.
+
+- **How to tell.** `pr` is installed when its names exist in this session: `pr:pr-oracle`, `pr:pr-sidekick`, and `/pr:pr-sync` on Claude Code; the `pr-oracle` and `pr-sidekick` subagents and `/pr-sync` on Cursor. Check once, at the first point the skill needs one of them, and keep that answer for the rest of the run. Cursor itself is never "missing".
+- **Missing → fall back, never stop.** Don't stop, and don't ask the user to install `pr`:
+  - `pr-oracle` → do that step inline, exactly as the skill describes ("Consulting the `pr-oracle` agent"), and mark it `inline (pr plugin isn't installed)` on the handoff line ("Handoff line in the final report").
+  - `pr-sidekick` → the `general-purpose` agent on Claude Code, a subagent on Cursor ("Hand long loops to a subagent").
+  - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/pr:pr-sync` ("Suggesting `pr-sync` after a push").
+
+Used by: `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`,
+`oss:issue-fix`.
+
+## Suggesting `pr-sync` after a push
+
+A skill that pushes to a PR never runs `pr:pr-sync` itself — not in the main chat, not in a subagent. A sync is a long rebase-and-redraft loop, and whether to pay for it is the user's call. Instead:
+
+- **Only when the push left the PR behind.** A PR the skill just opened from its own change is already current; say nothing about it.
+- **Only on the user's own PR.** Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't the skill's call.
+- **One line in the final report, before the handoff line:** the PR's title and description may now be stale, and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them. The `pr` plugin isn't installed ("Companion plugin: `pr`") → say they need updating by hand instead.
+
+Used by: `pr:pr-address` (Step 6), `oss:issue-verify` (Step 6),
+`oss:issue-fix` (Step 7).
+
 ## Consulting the `pr-oracle` agent
 
 `pr/agents/pr-oracle.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description` — and each skill names which mode it calls where. A skill that needs both `scout-repo` and `brief-task` at the same point asks for them in one call (`scout-repo` + `brief-task`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
@@ -160,7 +184,7 @@ Used by: `pr:pr-address` (Step 6), `pr:pr-sync` (Step 7), `pr:pr-review`
 
 These rules hold everywhere:
 
-- **Optional only when it's missing.** The agent isn't available (the `pr` plugin isn't installed, so neither name above exists) → do that step inline exactly as the skill describes, and carry on. Never stop because the oracle is missing, and don't treat Cursor itself as missing. "Not available" means the agent doesn't exist in this session, never that the change looks too small to need it. When it exists, call it at every point the skill names. `sweep-diff` and `brief-task` are the only checks against the user's remembered rules, and nothing inline replaces them.
+- **Optional only when it's missing.** The agent isn't available (the `pr` plugin isn't installed — "Companion plugin: `pr`") → do that step inline exactly as the skill describes, and carry on. Never stop because the oracle is missing, and don't treat Cursor itself as missing. "Not available" means the agent doesn't exist in this session, never that the change looks too small to need it. When it exists, call it at every point the skill names. `sweep-diff` and `brief-task` are the only checks against the user's remembered rules, and nothing inline replaces them.
 - **Advice, not authority.** A brief or check informs the step; the user's current ask and the skill's own rules still win. The one exception is a *Default* section: there, a remembered rule overrides this file ("Defaults and contracts"). When a remembered rule conflicts with what's being asked right now, surface the conflict to the user instead of silently picking one.
 - **The skill acts, the agent doesn't.** Pushing, replying on threads, and editing the PR stay with the calling skill. When the agent's output includes `promote:`, mention it to the user once — a rule that only holds in this repo belongs in the repo's `CLAUDE.md`; the oracle doesn't remember it. A `conflict:` line means a `record-team:` rule contradicts an existing one and wasn't recorded — show both to the user.
 - **Pass what you already have.** Every oracle call passes `login: <github-login>` when the skill has already looked it up, so the oracle doesn't look it up again on each call. The oracle reads GitHub only through the GitHub MCP tools, never `gh`, so don't name a route or hand it `gh` commands.
