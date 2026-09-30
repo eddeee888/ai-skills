@@ -1,11 +1,11 @@
 ---
 name: pr-sync
-description: Sync an open pull request with what's actually on its branch — rebase onto its current base, then re-derive the title, description, and changeset from what's left, including the issue-tracker link and any external context that genuinely exists. Use when the user asks to "update the PR description", "sync the PR with my changes", "rebase and update the PR", "the PR is stale", or "make the changeset match my changes". Run it only when asked — other skills suggest it rather than run it. Only applies to an existing PR; with no open PR on the branch, skip rather than open one.
+description: Sync an open pull request with what's on its branch — rebase onto its current base, then re-derive the title, description, and changeset from what's left, including the issue-tracker link and any external context that genuinely exists. Use when the user asks to "update the PR description", "sync the PR with my changes", "rebase and update the PR", "the PR is stale", or "make the changeset match my changes". Run it only when asked — other skills suggest it rather than run it. Only applies to an existing PR; with no open PR on the branch, skip rather than open one.
 ---
 
 # Sync PR with branch changes
 
-A PR description is a snapshot of intent taken when the PR opened. The branch keeps moving after that — new commits, scope changes, a base that's advanced out from under it. This skill catches the branch up to its base, then re-derives the title, description, and changeset from what's actually there, so a reviewer never reads a stale summary or reviews a diff cluttered with someone else's already-merged commits.
+A PR description is a snapshot of intent from when the PR opened; the branch keeps moving — new commits, scope changes, an advancing base. This skill rebases the branch onto its base, then re-derives the title, description, and changeset from what's there, so a reviewer never reads a stale summary or a diff cluttered with already-merged commits.
 
 GitHub steps are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -42,7 +42,7 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
 
 No way to spawn a subagent → read `draft.md` and run Steps 2–6 here.
 
-## Step 1: Check whether a PR even exists
+## Step 1: Check whether a PR exists
 
 ```bash
 gh pr view --json number,title,url,baseRefName,headRefName 2>&1
@@ -50,7 +50,7 @@ gh pr view --json number,title,url,baseRefName,headRefName 2>&1
 
 On the MCP route, find the branch's PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`), then `pull_request_read` method `get`.
 
-Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) → stop, tell the user there's no PR to sync, and don't create one — opening a PR is a different task with its own judgment calls (base branch, reviewers, draft-or-not).
+Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) → stop, tell the user there's no PR to sync, and don't create one — opening a PR is a different task with its own judgment calls (base, reviewers, draft-or-not).
 
 Succeeds → keep the PR number and `baseRefName`; everything downstream diffs against that base, not the last commit.
 
@@ -61,13 +61,13 @@ git fetch origin <baseRefName> --quiet
 git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 ```
 
-`no diff` → the branch has nothing beyond its base; say the PR is already current and stop.
+`no diff` → say the PR is already current and stop.
 
-Get the repo's profile and a brief for "PR description" in one call (`scout-repo` + `brief-task`) from `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Both go into the subagent's prompt: the profile answers the changeset, title-prefix and template questions in Steps 4–6, the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
+Get the repo's profile and a brief for "PR description" in one call (`scout-repo` + `brief-task`) from `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
 
 ## Step 7: Apply it
 
-First, run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass the owner/repo, PR number, base ref (`origin/<baseRefName>`), and the two draft file paths, not their text. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. When the user stated a description preference in this conversation ("keep the Why to one sentence"), pass it along in their words. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and remembers any preference you passed along. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
+First, run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass owner/repo, PR number, base ref (`origin/<baseRefName>`), and the two draft file paths, not their text. User explicitly asked to remember something for the team → also pass `record-team: <one line>`. User stated a description preference in this conversation ("keep the Why to one sentence") → pass it in their words. It flags claims the diff doesn't back, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style, and remembers any preference passed. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it. Then apply:
 
 ```bash
 d="$(git rev-parse --git-dir)"
@@ -77,12 +77,12 @@ rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.
 
-Then tell the user, briefly: whether the title changed, and a one-line summary of what moved in the description/changeset. Don't paste the full new PR body back at them. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
+Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
 
 ## When to touch nothing
 
 - No open PR on the branch → skip, say so, stop. This skill never opens a PR.
 - Rebase conflicts you can't resolve confidently → stop and hand them to the user.
 - Unsure whether the branch is shared with anyone else → ask before force-pushing a rebase.
-- No diff since the PR's base → say it's already current, don't force an edit.
+- No diff since the PR's base → say it's already current; don't force an edit.
 - No changeset tooling in the repo → don't add one.

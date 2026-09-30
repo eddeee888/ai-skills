@@ -1,6 +1,6 @@
 # pr
 
-Plugin for Claude Code and Cursor — skills for working with pull requests: reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.
+Plugin for Claude Code and Cursor — skills for the PR lifecycle: reviewing, describing, syncing, and more.
 
 Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 `/pr:<skill-name>` once this plugin is installed, e.g. `/pr:pr-sync`
@@ -9,32 +9,30 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 ## Agents
 
 - [`agents/pr-oracle.md`](agents/pr-oracle.md) — your PR oracle, with
-  persistent memory (`memory: user`) of the review themes and
-  preferences you keep coming back to. In the memory checkout
-  (`~/.claude/agent-memory/`, the repo `PR_MEMORY_REPO` points at
-  when sync is on) every oracle file lives under `memory/`:
-  `memory/users/<github-login>/` for that person's rules, and
+  persistent memory (`memory: user`) of your recurring review themes and
+  preferences. In the memory checkout (`~/.claude/agent-memory/`, the
+  repo `PR_MEMORY_REPO` points at when sync is on) every oracle file lives
+  under `memory/`: `memory/users/<github-login>/` for that person's rules,
   `memory/team/` for rules someone explicitly asked to share. Memory holds
-  only rules that apply in every repo. The GitHub login is the one the calling skill passes, or the GitHub MCP `get_me` tool's. Its
-  profile of a repo from `scout-repo` (test runner, monorepo layout, changesets, PR/issue
-  templates, contribution rules) is read from the repo on each call. The skills consult it at fixed points:
+  only rules that apply in every repo. The GitHub login is the one the
+  calling skill passes, or the GitHub MCP `get_me` tool's. Its `scout-repo`
+  profile (test runner, monorepo layout, changesets, PR/issue templates,
+  contribution rules) is read from the repo on each call. The skills
+  consult it at fixed points:
   - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
     threads, the rules each matches, and how to run tests), then
-    `sweep-diff` on each batch. Low-risk
-    asks are implemented by a subagent, up to 10 threads per batch, that
-    sees only those threads, not the parent chat, so the edit/test loop
-    stays cheap in a long session.
+    `sweep-diff` on each batch. A subagent implements low-risk asks, up
+    to 10 threads per batch, seeing only those threads, not the parent
+    chat, so the edit/test loop stays cheap in a long session.
   - `pr-sync` — `scout-repo` + `brief-task` in one call (changesets, the title
     prefix, the PR template, and how to write the description), handed to
-    the subagent that rebases and drafts, and
-    `grill-description` on the draft before applying it (flagging claims the
-    diff doesn't back up, and learning any description preference you
-    stated).
+    the subagent that rebases and drafts, then `grill-description` on the
+    draft before applying it (flagging claims the diff doesn't back, and
+    learning any description preference you stated).
   - `pr-review` — `scout-repo` + `sweep-diff` in one call on the PR's diff,
     so the drafted `Why:` / `Suggestion:` / `Issue:` / `Test:` comments
-    reflect the rules you've asked for before. A subagent checks the code
-    outside the diff first, so it doesn't ask a `Why:` the code already
-    answers.
+    reflect rules you've asked for before. A subagent first checks code
+    outside the diff, so no `Why:` asks what the code already answers.
   - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
     its code survey starts from.
   - `oss:issue-create` — `scout-repo` for the issue template.
@@ -48,37 +46,35 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
   Personal files stay in that person's `memory/users/<github-login>/` tree.
   `memory/team/MEMORY.md` grows only when a skill passes `record-team:`
   because the user explicitly asked to share a rule (`CONVENTIONS.md`).
-  A rule that only makes sense in one repo isn't remembered; the oracle
-  suggests putting it in that repo's `CLAUDE.md` instead, so teammates and
-  CI see it too. To code
-  with its memory loaded for a whole session, run
-  `claude --agent pr:pr-oracle`. In Cursor the same file is the
-  `pr-oracle` subagent — the skills delegate to it, and it reads and
-  writes `memory/` itself. Claude Code preloads
-  `pr-pr-oracle/MEMORY.md`, which is only a stub pointing at `memory/`.
+  A one-repo rule isn't remembered; the oracle suggests that repo's
+  `CLAUDE.md` instead, so teammates and CI see it too. To code with its
+  memory loaded for a whole session, run `claude --agent pr:pr-oracle`.
+  In Cursor the same file is the `pr-oracle` subagent — the skills
+  delegate to it, and it reads and writes `memory/` itself. Claude Code
+  preloads `pr-pr-oracle/MEMORY.md`, only a stub pointing at `memory/`.
 
   Memory sync across machines and cloud sessions is opt-in; see below.
 
   The oracle reads GitHub through read-only GitHub MCP tools, so it
   needs the GitHub MCP server.
 
-  The `pr` plugin has to be installed for the agent to exist. Without it,
-  the skills do each step themselves. See
+  The agent exists only with the `pr` plugin installed; without it, the
+  skills do each step themselves. See
   [`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-pr).
 
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your sidekick in the
-  field. The skills hand it the loops that edit, run, commit, or push
+  field. The skills hand it loops that edit, run, commit, or push
   (implementing review threads, a chosen fix, a failing test, a
-  rebase-and-draft), so those steps stay out of the main chat. It reads
-  your remembered preferences from `memory/` (never writes them), follows
-  the skill's prompt template, and returns a few lines. The calling skill
+  rebase-and-draft), keeping them out of the main chat. It reads your
+  remembered preferences from `memory/` (never writes them), follows the
+  skill's prompt template, and returns a few lines. The calling skill
   picks its model per job — Haiku for mechanical edits, Sonnet for scoped
   changes, the main chat's model for anything needing more judgment. See
   [`CONVENTIONS.md`](CONVENTIONS.md#hand-long-loops-to-a-subagent).
 
 ### Syncing the oracle's memory
 
-The checkout is `~/.claude/agent-memory/`. Oracle rules are under `memory/` in that directory (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, and its memory, is thrown away when the session ends. The same directory is what Cursor's subagent reads and writes, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync that directory with a git repo the team can push to: pull `main` and your own branch when a session starts, commit and push when a turn ends and when the session ends. A turn that learned nothing makes no network call.
+The checkout is `~/.claude/agent-memory/`, oracle rules under its `memory/` (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, memory included, is discarded when the session ends. Cursor's subagent uses the same directory, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync it with a git repo the team can push to: pull `main` and your own branch at session start, commit and push at each turn end and at session end. A turn that learned nothing makes no network call.
 
 1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Oracle files committed there live under `memory/`.
 2. Set `PR_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
@@ -87,18 +83,17 @@ The checkout is `~/.claude/agent-memory/`. Oracle rules are under `memory/` in t
      `"env": { "PR_MEMORY_REPO": "<you>/agent-memory" }`. Your git
      credentials need push access to the repo.
    - **Locally, Cursor** — the same variable, as the `pr` plugin variable
-     (Plugins → Configure) or in the environment the hooks run with. Git
-     credentials need push access to the repo.
+     (Plugins → Configure) or in the hooks' environment. Git credentials
+     need push access to the repo.
    - **Claude Code on the web** — add the same variable to the cloud
      environment's environment variables, and make sure the Claude GitHub
      App can access the repo (github.com/settings/installations → the
-     Claude app → Repository access). A cloud session can only reach a repo
-     once it's attached to it. You can add the memory repo in the repository
-     selector when starting a session, but you don't have to: when the
-     startup pull can't reach it, the hook asks Claude (through the
-     `SessionStart` context) to attach the repo itself and pull again. If
-     that fails, the next push still picks the repo up once it's attached,
-     keeping anything learned in the meantime.
+     Claude app → Repository access). A cloud session reaches a repo only
+     once it's attached. You can add the memory repo in the repository
+     selector when starting a session, but needn't: when the startup pull
+     can't reach it, the hook asks Claude (via the `SessionStart` context)
+     to attach the repo and pull again. If that fails, the next push picks
+     the repo up once attached, keeping anything learned meanwhile.
 
 How it behaves:
 
@@ -108,15 +103,15 @@ How it behaves:
   when the session ends — not on every turn. Neither ever stops the session.
 - **A branch per person, merged by you.** What someone's sessions learn is
   pushed to `memory/<github-login>`, never to `main`, so it can be
-  reviewed and merged as a PR. Sessions pull both `main` and their own
-  branch, so a person's unmerged memory follows them across machines, and
-  reaches everyone else once merged. The branch is only ever merged into,
-  never rewritten. A turn with nothing new pushes nothing, and neither does
-  bringing in a newer `main`. The login comes from `gh api user`, else the
+  reviewed and merged as a PR. Sessions pull `main` and their own branch,
+  so a person's unmerged memory follows them across machines and reaches
+  everyone once merged. The branch is only merged into, never rewritten.
+  Neither a turn with nothing new nor bringing in a newer `main` pushes
+  anything. The login comes from `gh api user`, else the
   GitHub API with `GH_TOKEN`/`GITHUB_TOKEN` (or a proxy that
   authenticates, as in Claude Code on the web), else the one person with a
-  `memory/users/` tree in the checkout. If none of those works, memory
-  stays local and a warning says so.
+  `memory/users/` tree in the checkout. None works → memory stays local,
+  with a warning.
 - **Existing memory is kept.** The first sync on a machine carries local
   memory into the repo — new files as is, and lines missing from the repo's
   copy of a shared file appended to it — and backs up the old directory to
