@@ -5,13 +5,13 @@ description: Draft and file a well-formed bug-report issue on a GitHub repo, cov
 
 # Create a GitHub issue
 
-A bug report that's missing context, a clear problem statement, a reproduction, or the environment it happened in just bounces back with "can you provide more details" — costing a round trip before anyone can act on it. This skill front-loads that: it drafts a complete report against four sections before anything is posted, and never files anything the user hasn't seen first.
+A bug report missing context, a clear problem statement, a reproduction, or its environment bounces back with "can you provide more details", costing a round trip. This skill drafts a complete report against four sections before anything is posted, and never files anything the user hasn't seen.
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
 ## Step 1: Ask for the repo
 
-This skill isn't scoped to one repo — always ask which one the issue is for (`owner/repo` or a full GitHub URL) before doing anything else. Don't assume it's the repo the current session happens to be in; a bug found while working on one repo often belongs on a dependency's repo instead.
+Always ask which repo the issue is for (`owner/repo` or a full GitHub URL) before anything else. Don't assume the current session's repo; a bug found while working on one repo often belongs on a dependency's.
 
 ## Step 2: Check for a duplicate
 
@@ -19,40 +19,40 @@ This skill isn't scoped to one repo — always ask which one the issue is for (`
 gh issue list --repo <owner>/<repo> --search "<keywords>" --state all
 ```
 
-Found a close match → show it to the user and ask whether to proceed anyway. Nothing close → continue.
+Close match → show it and ask whether to proceed anyway. Nothing close → continue.
 
 ## Step 3: Fetch that repo's issue template, if it has one
 
-`pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent") → get the target repo's profile (`scout-repo`); it doesn't need to be checked out. It names the bug-report template and its required fields, and flags contribution rules that bind an issue — fetch just that one template's full text. If it couldn't tell which template is the bug report, handle it as below. Not available → look it up inline:
+`pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent") → get the target repo's profile (`scout-repo`); it doesn't need to be checked out. It names the bug-report template and its required fields, and flags contribution rules that bind an issue — fetch only that template's full text. It couldn't tell which template is the bug report → handle it as below. Not available → look it up inline:
 
 ```bash
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE --jq '.[].name' 2>/dev/null
 ```
 
-From the names, pick the one meant for bug reports (e.g. `bug_report.md` over `feature_request.md`); ask the user if it's genuinely ambiguous. Fetch only that file, as raw text rather than the default base64 JSON:
+Pick the bug-report one from the names (e.g. `bug_report.md` over `feature_request.md`); ambiguous → ask the user. Fetch only that file, as raw text rather than base64 JSON:
 
 ```bash
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE/<file> -H 'Accept: application/vnd.github.raw'
 ```
 
-No `.github/ISSUE_TEMPLATE/` at all → also check for a plain `.github/ISSUE_TEMPLATE.md`. Neither exists → proceed with the four sections below as-is.
+No `.github/ISSUE_TEMPLATE/` → check for a plain `.github/ISSUE_TEMPLATE.md`. Neither → use the four sections below as-is.
 
 ## Step 4: Gather the four sections
 
-Pull together, from the conversation so far and by asking the user for whatever's missing:
+From the conversation, asking the user for whatever's missing:
 
 - **Context** — what the user was doing, what setup/usage led here.
-- **Problem** — the actual bug: expected behavior vs. actual behavior, stated plainly.
+- **Problem** — expected vs. actual behavior, stated plainly.
 - **Reproduction** — concrete steps, a minimal code sample, or a link to a live repro (CodeSandbox/StackBlitz/a small repo). Vague steps ("it breaks sometimes") aren't a reproduction — push for something concrete.
-- **Any specific environments** — versions, OS, browser, runtime, or "reproduces on all environments tested" if genuinely so.
+- **Any specific environments** — versions, OS, browser, runtime, or "reproduces on all environments tested" if so.
 
-Don't fabricate detail for a section nobody's provided — ask, or leave it explicitly marked as unknown.
+Don't fabricate detail for a section nobody provided — ask, or mark it explicitly as unknown.
 
 ## Step 5: Draft the issue, fitting the repo's template
 
-**If a template exists:** map Context/Problem/Reproduction/Environment onto its existing headers/fields by closest match instead of inventing new ones. Keep every field the template requires, even ones with no content (mark them clearly rather than deleting them) — a required field going missing on a form-based template can make submission fail outright.
+**Template exists:** map Context/Problem/Reproduction/Environment onto its headers/fields by closest match; don't invent new ones. Keep every required field, even empty ones (mark them clearly rather than deleting) — a missing required field on a form-based template can make submission fail.
 
-**If no template exists:** default to:
+**No template:** default to:
 
 ```markdown
 ## Context
@@ -68,11 +68,11 @@ Don't fabricate detail for a section nobody's provided — ask, or leave it expl
 ...
 ```
 
-Draft a title too: one line, specific, naming the actual behavior (not "bug in X" — say what's wrong).
+Draft a title too: one specific line naming the actual behavior (not "bug in X" — say what's wrong).
 
 ## Step 6: Show the draft, get confirmation
 
-Show the full drafted title and body back to the user, verbatim, before touching GitHub. Treat this as a hard gate, not a formality — apply any edits they ask for and show the result again if it changed materially. Only move to Step 7 once they've explicitly confirmed it's ready to post.
+Show the full drafted title and body verbatim before touching GitHub. This is a hard gate, not a formality — apply requested edits and show the result again if it changed materially. Move to Step 7 only once they've explicitly confirmed it's ready to post.
 
 ## Step 7: Create it
 
@@ -82,11 +82,11 @@ Write the confirmed title and body to files first — never inline them in `--ti
 gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>
 ```
 
-Report back the issue URL, and end with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with the label `scout-repo`. Filing the issue is this skill's job; verifying it (writing a failing test against it) is `issue-verify`'s, when the user wants to take it further. If `<owner>/<repo>` isn't a repo the user maintains or has a local checkout of, note that plainly — `issue-verify`'s pairing with this skill assumes write access and a local checkout of the target repo; without that, the issue just waits on its own maintainers.
+Report the issue URL, and end with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with the label `scout-repo`. Verifying the issue (writing a failing test against it) is `issue-verify`'s job, if the user wants to go further. If the user doesn't maintain `<owner>/<repo>` or have a local checkout, say so plainly — `issue-verify` assumes write access and a local checkout; without them, the issue waits on its own maintainers.
 
 ## When to stop instead of proceeding
 
-- No repo given yet → ask before doing anything else; don't guess a repo from context.
-- A reproduction is missing or too vague → push back for a concrete one in Step 4 rather than drafting around a gap.
-- User hasn't confirmed the draft → never run `gh issue create` on an unconfirmed draft, even if every section looks filled in.
-- Multiple templates and it's unclear which fits → ask, don't default to the first one alphabetically.
+- No repo given yet → ask before anything else; don't guess from context.
+- Reproduction missing or too vague → push back for a concrete one in Step 4 rather than drafting around the gap.
+- User hasn't confirmed the draft → never run `gh issue create`, even if every section looks filled in.
+- Multiple templates and unclear which fits → ask; don't default to the first alphabetically.
