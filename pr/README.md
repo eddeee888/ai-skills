@@ -37,8 +37,9 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
     answers.
   - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
     its code survey starts from.
-  - `oss:issue-create` / `oss:issue-verify` — `scout-repo` for the issue
-    template, and for where tests live and how to run them.
+  - `oss:issue-create` — `scout-repo` for the issue template.
+  - `oss:issue-verify` — `scout-repo` for the issue template, and for
+    where tests live and how to run them.
   - `oss:issue-fix` — `scout-repo` before running the failing test,
     `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
     subagent commits.
@@ -63,7 +64,7 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 
   The `pr` plugin has to be installed for the agent to exist. Without it,
   the skills do each step themselves. See
-  [`CONVENTIONS.md`](CONVENTIONS.md#consulting-the-pr-oracle-agent).
+  [`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-pr).
 
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your sidekick in the
   field. The skills hand it the loops that edit, run, commit, or push

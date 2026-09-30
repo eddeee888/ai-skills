@@ -63,7 +63,7 @@ For each option: what changes, blast radius, risk, rough effort. Ask which they 
 
 ## Step 5: Implement the chosen option
 
-Get a brief (`brief-task`) from the oracle, passing the files the chosen option touches and a one-line summary of it — the profile from Step 2 already covers how to run tests. The brief brings the rules the user's reviewers have already asked for that apply to this change. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call and on the `sweep-diff` call below. Not available → pass "none" as the rules, and do the `sweep-diff` step below as a quick read of your own diff instead.
+Get a brief (`brief-task`) from the oracle, passing the files the chosen option touches and a one-line summary of it — the profile from Step 2 already covers how to run tests. The brief brings the rules the user's reviewers have already asked for that apply to this change. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>` on this call only — not again on the `sweep-diff` call below, or it's recorded twice. Not available → pass "none" as the rules, and do the `sweep-diff` step below as a quick read of your own diff instead.
 
 Then hand the edit/test/commit loop to one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"), with this prompt:
 
@@ -89,7 +89,7 @@ Return at most 5 lines: files changed, commit sha, tests run and result,
 or why you stopped.
 ```
 
-Then run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode against the checkpoint commit. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further.
+Then run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode on the range `<verify-commit-sha>..HEAD` — the fix commits since the checkpoint. Anything it flags within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason back to the user before going further.
 
 A later `pr:pr-sync` rebase still replays the checkpoint's SHA but leaves its content and trailer untouched — that's not the kind of rewrite the prompt rules out.
 
@@ -98,10 +98,10 @@ A later `pr:pr-sync` rebase still replays the checkpoint's SHA but leaves its co
 Check whether the Step 1 branch already has an open PR — its answer, not a guess from Step 1, decides what happens:
 
 ```bash
-gh pr view --json number 2>&1
+gh pr view --json number,author 2>&1
 ```
 
-- **It has one** (normally the checkpoint's PR, continued in Step 1) → just `git push`. Never run `gh pr create` here — it either errors on a branch that already has an open PR, or opens a second PR for what should stay one. Its title and description still describe the checkpoint — Step 7 covers that.
+- **It has one** (normally the checkpoint's PR, continued in Step 1) → just `git push`. Never run `gh pr create` here — it either errors on a branch that already has an open PR, or opens a second PR for what should stay one. Its title and description still describe the checkpoint — keep its `author.login` for Step 7.
 - **It has none** (the `fix/<issue-number>` branch from Step 1) → `git push -u origin <branch>` and open a draft PR. In a monorepo, apply this marketplace's shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"), prefixed with the package Step 3's root-cause tracing pointed at, not whichever package the issue was filed under — e.g. `[package-name] fix: <short description of the fix> (#<issue number>)`, with the issue reference at the end (`CONVENTIONS.md` → "Trailing issue reference"). Write the title and body to files first (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
   ```bash
@@ -112,7 +112,7 @@ Reference the issue with a non-closing keyword, per this marketplace's shared co
 
 ## Step 7: Suggest a sync
 
-Don't run `pr:pr-sync`. A separate fix PR was just written from the fix, so it's current. When the push continued the checkpoint's PR, or went to a PR that already existed, add the stale-description line (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push"). Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
+Don't run `pr:pr-sync`. A new `fix/<issue-number>` PR was just written from the fix, so it's current. When the push went to a PR that already had one (normally the checkpoint's), add the stale-description line if that PR's author is the user (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push"). Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

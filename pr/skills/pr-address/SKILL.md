@@ -93,6 +93,7 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
 
    ```text
    Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
+   login: <the user's login from Step 1>
    Rules that apply: <the threads' "remembered" lines from triage-threads, or "none">
    Tests: <the profile's tests line, or "find out">
    GitHub: <"gh" | "MCP — use the GitHub MCP tools named below instead of gh; load each with ToolSearch first if needed">
@@ -113,25 +114,24 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    config/infra), or its tests still fail after 3 attempts inside the ask,
    discard that thread's uncommitted edits and go on to the next one.
    After the last thread, run the affected tests for all committed threads
-   together. Fix a break only inside the asks; otherwise stop without pushing.
-   Once they pass, push once, then reply on each committed thread with a
-   one-line summary, single-quoted (write any ' as '\'') — never in double
-   quotes, where backticks in the summary would run as commands:
-     gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body='<summary>'
-     (MCP: add_reply_to_pull_request_comment with commentId <databaseId>)
-   Do not resolve any thread. Do not run pr-sync.
-   Return one line per thread: comment id, done (commit sha, reply posted
-   yes/no) or skipped (why) — then one line for the final test run and push.
+   together. Fix a break only inside the asks; otherwise stop and say which
+   tests still fail.
+   Do not push, reply on any thread, resolve any thread, or run pr-sync.
+   Return one line per thread: comment id, done (commit sha, one-line
+   summary for the reply) or skipped (why) — then one line for the final
+   test run.
    ```
 
-3. **Check.** Run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits. Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape.
-4. **Merge the result.** Note the per-thread lines and move on — don't ask for a longer report. A skipped thread → bring it back to the user with the reason, as in Step 4. A batch that stopped before pushing leaves its commits local → don't start the next batch; bring the whole batch and its failing tests to the user. A thread marked done without a reply → post the reply yourself (text quoted per `CONVENTIONS.md` → "Passing drafted text to `gh`"):
+3. **Check, before pushing.** Run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits (the range from the commit before the batch to `HEAD`). Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape; it commits the fixes, still without pushing.
+4. **Push and reply.** Note the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push and don't start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary, single-quoted (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
 
    ```bash
    gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body='<summary>'
    ```
 
-A thread the user approved in Step 4 despite its risk flag gets its own single-thread subagent, same prompt shape, run only after any low-risk batches — never batched with other threads, since it's the one most likely to stop. Before moving on, show the user its result line and commit, and run `sweep-diff` on it as above. No way to spawn a subagent → do every thread here: implement and test → `sweep-diff` → commit and push → reply.
+   A skipped thread → bring it back to the user with the reason, as in Step 4.
+
+A thread the user approved in Step 4 despite its risk flag gets its own single-thread subagent, same prompt shape, run only after any low-risk batches — never batched with other threads, since it's the one most likely to stop. Before moving on, show the user its result line and commit, then check, push and reply as above. No way to spawn a subagent → do every thread here: implement, test and commit → `sweep-diff` → push → reply.
 
 Do **not** resolve the thread — that's for the reviewer or the user.
 

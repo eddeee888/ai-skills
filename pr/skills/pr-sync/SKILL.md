@@ -67,7 +67,7 @@ Get the repo's profile and a brief for "PR description" in one call (`scout-repo
 
 ## Step 7: Apply it
 
-First, run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass the two draft file paths, not their text. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. When the user stated a description preference in this conversation ("keep the Why to one sentence"), pass it along in their words. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and remembers any preference you passed along. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
+First, run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass the owner/repo, PR number, base ref (`origin/<baseRefName>`), and the two draft file paths, not their text. When the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. When the user stated a description preference in this conversation ("keep the Why to one sentence"), pass it along in their words. It flags claims the diff doesn't back up, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style — and remembers any preference you passed along. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it and move on. Then apply:
 
 ```bash
 d="$(git rev-parse --git-dir)"

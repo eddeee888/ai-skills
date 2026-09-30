@@ -56,7 +56,7 @@ Also fetch the existing review threads (the review-threads row in `CONVENTIONS.m
 
 ## Step 3: Consult the oracle
 
-Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `sweep-diff` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, `PR #<number>` as the diff to check, and `login: <login>`. It returns the repo's profile (where tests live, contribution rules), plus each place the diff breaks a remembered rule. Each flag is a candidate `Suggestion:` that still has to pass "What counts as substantial". Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team.
+Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `sweep-diff` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `PR #<number>` as the diff to check, and `login: <login>`. It returns the repo's profile (where tests live, contribution rules), plus each place the diff breaks a remembered rule. Each flag is a candidate `Suggestion:` that still has to pass "What counts as substantial". Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team.
 
 ## Step 4: Check the context behind each `Why:`
 

@@ -60,7 +60,7 @@ git push --force-with-lease
 
 The brief you were given says how the user likes descriptions written and what their reviewers keep asking to see in them. Draft to it where it doesn't conflict with the rules below; where it does, the rules below win — except a rule that points to a *Default* section of `CONVENTIONS.md`, which the profile's `overrides:` line, and the brief, can override (`CONVENTIONS.md` → "Defaults and contracts").
 
-**Title** — one line, imperative, naming the net effect of the change. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md` → "Trailing issue reference"); don't let a resync silently drop it.
+**Title** — one line naming the net effect of the change, imperative after any type prefix. Keep an existing conventional-commit prefix (`fix:`, `test:`, …), but update it when the change's kind changed: a checkpoint PR that now carries its fix goes from `test: reproduce … (failing)` to `fix: …`, dropping `(failing)`. If the diff bundles a few unrelated things, name the most user-visible one rather than cramming everything in. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title already ends in a trailing `(#123)`-style issue reference → keep it, in the same form (`CONVENTIONS.md` → "Trailing issue reference"); don't let a resync silently drop it.
 
 **Description** — three required sections, in this order, kept tight, since this is a PR body a reviewer skims, not a design doc:
 

@@ -29,7 +29,7 @@ Each section below is one of two kinds:
 
 ## Monorepo title prefix: `[package-name]`
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
 In a monorepo, lead a PR title with `[package-name]`, naming the package
 the change is rooted in — e.g. `[package-name] fix: ...`. A change spanning
@@ -42,7 +42,7 @@ Used by: `pr:pr-sync` (title), `oss:issue-verify` (checkpoint PR title),
 
 ## Trailing issue reference in the PR title: `(#123)`
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
 A PR title that references its issue puts the reference at the end, in
 parens — `fix: <description> (#123)` — never mid-title. A resync keeps an
@@ -76,7 +76,7 @@ branch).
 
 ## Bold the critical claim in Why/What/Verification bullets
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
 Within a bullet, bold (`**...**`) the one fact that matters — the causal
 reason, the chosen rationale, a caveat — not the whole sentence. E.g. "This
@@ -88,7 +88,7 @@ Used by: `pr:pr-sync` (Why/What/Verification).
 
 ## Verification checklist: name the test type, not the command
 
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section, replaces it ("Defaults and contracts").
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `pr`"), replaces it ("Defaults and contracts").
 
 When a check already ran the same way in CI, name the kind of test rather
 than the literal command — `- [x] Unit tests`, not `- [x] Ran \`pnpm
@@ -158,6 +158,7 @@ The `oss` plugin works on its own. When the `pr` plugin is installed too, `oss` 
   - `pr-oracle` → do that step inline, exactly as the skill describes ("Consulting the `pr-oracle` agent"), and mark it `inline (pr plugin isn't installed)` on the handoff line ("Handoff line in the final report").
   - `pr-sidekick` → the `general-purpose` agent on Claude Code, a subagent on Cursor ("Hand long loops to a subagent").
   - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/pr:pr-sync` ("Suggesting `pr-sync` after a push").
+- **Defaults without the oracle.** No profile means no `overrides:` line. Before applying a *Default* section, check the repo's `CLAUDE.md` and `CONTRIBUTING.md` for a rule that says otherwise, and follow it ("Defaults and contracts").
 
 Used by: `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`,
 `oss:issue-fix`.
@@ -167,15 +168,15 @@ Used by: `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`,
 A skill that pushes to a PR never runs `pr:pr-sync` itself — not in the main chat, not in a subagent. A sync is a long rebase-and-redraft loop, and whether to pay for it is the user's call. Instead:
 
 - **Only when the push left the PR behind.** A PR the skill just opened from its own change is already current; say nothing about it.
-- **Only on the user's own PR.** Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't the skill's call.
+- **Only on the user's own PR** — one whose author is the user's GitHub login (`gh api user --jq .login`, or `get_me`). Never suggest it on a PR the user doesn't own — editing someone else's PR title or description isn't the skill's call.
 - **One line in the final report, before the handoff line:** the PR's title and description may now be stale, and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them. The `pr` plugin isn't installed ("Companion plugin: `pr`") → say they need updating by hand instead.
 
-Used by: `pr:pr-address` (Step 6), `oss:issue-verify` (Step 6),
-`oss:issue-fix` (Step 7).
+Used by: `pr:pr-address` (Step 6), `oss:issue-fix` (Step 7).
+`oss:issue-verify` pushes only once, to the PR it opens, so it never needs it.
 
 ## Consulting the `pr-oracle` agent
 
-`pr/agents/pr-oracle.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description` — and each skill names which mode it calls where. A skill that needs both `scout-repo` and `brief-task` at the same point asks for them in one call (`scout-repo` + `brief-task`), to save a round trip. The same agent file is the Claude Code agent and the Cursor subagent.
+`pr/agents/pr-oracle.md` remembers the user's recurring review themes and preferences — rules that apply in every repo — and profiles a repo's working setup. Skills consult it at fixed points — `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description` — and each skill names which mode it calls where. A skill that needs `scout-repo` and one other mode at the same point asks for both in one call, to save a round trip: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. The same agent file is the Claude Code agent and the Cursor subagent.
 
 **Call it by the name this host actually has:**
 

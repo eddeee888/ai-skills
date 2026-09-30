@@ -7,7 +7,7 @@ description: Verify a GitHub issue is real and reproducible before any fix work 
 
 Fixing a bug nobody can reproduce is a guess dressed up as a fix. This skill turns a reported issue into evidence: a concrete, failing test that proves the bug exists, or a specific, template-grounded ask back to the reporter when there isn't enough to go on yet. Nothing gets "fixed" here — that's `issue-fix`'s job. For a lighter, unverified read-only guess at root cause and size before this, see `issue-analyze`. This skill's job ends the moment the failing test is committed and pushed — it does **not** need that PR merged, or even green, first.
 
-**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, so it starts current. After a further push to its branch, suggest it instead (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push", Step 6).
+**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with, and this skill pushes to it only once, so it's always current.
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -116,13 +116,13 @@ Write the title and body to files first, then (`CONVENTIONS.md` → "Passing dra
 gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
 ```
 
-## Step 6: Suggest a sync after further pushes
+## Step 6: Wrap up
 
-Don't run `pr:pr-sync`. The PR just opened already matches its branch. After any further push to the same branch, add the stale-description line (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push"). Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
+Don't run `pr:pr-sync` or suggest it — the PR just opened already matches its branch. Report the PR URL; the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
 
 ## When to stop instead of proceeding
 
 - A checkpoint already exists for this issue → stop at Step 1, point at `issue-fix` instead of verifying it a second time.
-- No repro and the reporter hasn't confirmed the ask yet → post the request (Step 3) and stop. Don't write a speculative test against an unconfirmed guess at the bug.
+- No usable repro → post the request once the user has approved its wording (Step 3), and stop. Don't write a speculative test against an unconfirmed guess at the bug.
 - The test doesn't fail the way the issue describes → don't commit and push it; go back to the reporter with what you actually found.
 - Tempted to skip the test so the PR's checks come back green → don't. Leave it red.
