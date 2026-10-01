@@ -13,7 +13,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 Every comment starts with exactly one of these prefixes, then one or two sentences. The prefix tells the author what's expected: an answer, a decision, or a fix.
 
-- **`Question:`** — something about a change isn't clear from context: a runtime condition rewritten, a default changed, a check removed, code moved for no visible reason. The prefix only marks that an answer is expected. Open with `why` when the gap is motivation (`Question: why did this runtime check change?`), or `what` when the gap is the resulting behavior or condition (`Question: what does this guard cover now?`). `what` is only for a gap the diff doesn't answer — a restatement of what the code already shows isn't a comment. Ask only after Step 4 finds no answer in the PR description, the commit messages, or the surrounding code.
+- **`Question:`** — something about a change isn't clear from context: a runtime condition rewritten, a default changed, a check removed, code moved for no visible reason. The prefix only marks that an answer is expected. Open with `why` when the gap is motivation (`Question: why did this runtime check change?`), or `what` when the gap is the resulting behavior or condition (`Question: what does this guard cover now?`). `what` is only for a gap the diff doesn't answer — a restatement of what the code already shows isn't a comment. Ask only after Step 4 finds no answer in the PR description, the commit messages, the author's notes, or the surrounding code.
 - **`Suggestion:`** — there's a better way to write it, and you can say what: `Suggestion: use an IIFE to keep these in scope`. When the fix replaces only the commented lines, add a ```suggestion``` block with the exact replacement so the author can commit it from the PR page. Keep the original indentation and cover every line in the comment's range — the block replaces all of them. A fix spanning other lines or files gets a plain description, no block.
 - **`Issue:`** — a concrete bug you can name the failing case for: `Issue: \`items[0]\` throws when the list is empty`. Add a ```suggestion``` block when the fix fits the commented lines. Can't name the input that breaks it → it's a `Question:`, not an `Issue:`.
 - **`Test:`** — a behavior change, fixed bug, or new branch no test in the PR exercises: `Test: add a case for an empty list, since that's the branch this fixes`. Name the case, not just "add tests".
@@ -52,7 +52,7 @@ On the MCP route, use `pull_request_read` method `get_diff`, then method `get_co
 
 Read the whole diff, the PR body, and the commit messages before drafting anything — the last two answer many would-be `Question:` questions. Note each changed line you might comment on, with its path and its line number on the new side of the diff. Only lines inside a diff hunk can hold an inline comment.
 
-Also fetch the existing review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access"). A point someone already raised, resolved or not, is not yours to raise again.
+Also fetch the existing review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access"). A point someone already raised, resolved or not, is not yours to raise again. The author's `Note:` and `Drive-by:` comments explain their lines (`CONVENTIONS.md` → "Author notes"): read them as part of the PR's context, like the body.
 
 ## Step 3: Consult the oracle
 
@@ -62,7 +62,7 @@ Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on C
 
 Before drafting, sort every candidate `Question:` by where its answer could be:
 
-- **Already answered by the diff, the PR body, or the commit messages** → drop it. If the answer shows a real problem, it becomes a `Suggestion:` or `Issue:`.
+- **Already answered by the diff, the PR body, the commit messages, or an author's `Note:` / `Drive-by:` on those lines** → drop it. If the answer shows a real problem, it becomes a `Suggestion:` or `Issue:`.
 - **Needs code outside the diff** (a caller, a definition, or `git log`/`git blame` of the changed lines) → hand all such questions to one `Explore` subagent (`CONVENTIONS.md` → "Hand long loops to a subagent", with model `sonnet`). Don't open those files here. The prompt:
 
   ```text

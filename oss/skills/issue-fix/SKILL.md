@@ -112,7 +112,9 @@ Reference the issue with a non-closing keyword (`CONVENTIONS.md` → "Non-closin
 
 ## Step 7: Suggest a sync
 
-Don't run `pr:pr-sync`. A new `fix/<issue-number>` PR was just written from the fix, so it's current. When the push went to an existing PR (normally the checkpoint's), add the stale-description line if that PR's author is the user (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push"). Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
+Don't run `pr:pr-sync`. A new `fix/<issue-number>` PR was just written from the fix, so it's current. When the push went to an existing PR (normally the checkpoint's), add the stale-description line if that PR's author is the user (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push").
+
+Don't run `pr:pr-note` either; suggest it per `CONVENTIONS.md` → "Suggesting `pr-note`". Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

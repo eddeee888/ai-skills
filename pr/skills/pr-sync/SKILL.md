@@ -45,7 +45,7 @@ No way to spawn a subagent → read `draft.md` and run Steps 2–6 here.
 ## Step 1: Check whether a PR exists
 
 ```bash
-gh pr view --json number,title,url,baseRefName,headRefName 2>&1
+gh pr view --json number,title,url,author,baseRefName,headRefName 2>&1
 ```
 
 On the MCP route, find the branch's PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`), then `pull_request_read` method `get`.
@@ -77,7 +77,7 @@ rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.
 
-Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
+Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. Don't run `pr:pr-note`; suggest it per `CONVENTIONS.md` → "Suggesting `pr-note`", checking the PR's `author.login` from Step 1. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
 
 ## When to touch nothing
 
