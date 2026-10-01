@@ -144,7 +144,7 @@ Answer here only from what this chat already knows. Anything needing a web fetch
 
 ## Step 6: Wrap up
 
-Don't run `pr:pr-sync` from this skill. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → add the stale-description line (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push"). Report concisely: how many threads were replied to or implemented, and how many remain open for manual resolution. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `triage-threads + scout-repo`, `5a batch` (one per batch), `5b research`, and `sweep-diff`.
+Don't run `pr:pr-sync` from this skill. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → suggest `pr-sync` (`CONVENTIONS.md` → "Suggesting next steps"). Report concisely: how many threads were replied to or implemented, and how many remain open for manual resolution. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `triage-threads + scout-repo`, `5a batch` (one per batch), `5b research`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

@@ -151,22 +151,11 @@ The `oss` plugin works on its own. With the `pr` plugin installed too, `oss` ski
 - **Missing → fall back, never stop**, and don't ask the user to install `pr`:
   - `pr-oracle` → do that step inline, exactly as the skill describes ("Consulting the `pr-oracle` agent"), and mark it `inline (pr plugin isn't installed)` on the handoff line ("Handoff line in the final report").
   - `pr-sidekick` → the `general-purpose` agent on Claude Code, a subagent on Cursor ("Hand long loops to a subagent").
-  - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/pr:pr-sync` ("Suggesting `pr-sync` after a push").
+  - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/pr:pr-sync` ("Suggesting next steps").
 - **Defaults without the oracle.** No profile means no `overrides:` line. Before applying a *Default* section, check the repo's `CLAUDE.md` and `CONTRIBUTING.md` for a rule that says otherwise, and follow it ("Defaults and contracts").
 
 Used by: `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`,
 `oss:issue-fix`.
-
-## Suggesting `pr-sync` after a push
-
-A skill that pushes to a PR never runs `pr:pr-sync` itself — not in the main chat, not in a subagent. A sync is a long rebase-and-redraft loop, and whether to pay for it is the user's call. Instead:
-
-- **Only when the push left the PR behind.** A PR the skill just opened from its own change is already current; say nothing.
-- **Only on the user's own PR** — authored by the user's GitHub login (`gh api user --jq .login`, or `get_me`). Editing someone else's PR title or description isn't the skill's call.
-- **One line in the final report, before the handoff line:** the PR's title and description may now be stale, and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them. The `pr` plugin isn't installed ("Companion plugin: `pr`") → say they need updating by hand instead.
-
-Used by: `pr:pr-address` (Step 6), `oss:issue-fix` (Step 7).
-`oss:issue-verify` pushes only once, to the PR it opens, so it never needs it.
 
 ## Author notes: `Note:` / `Drive-by:`
 
@@ -188,17 +177,20 @@ A comment meant as an ask never opens with either prefix.
 Used by: `pr:pr-note` (posts them), `pr:pr-address` (Step 3, skipping
 them), `pr:pr-review` (Steps 2 and 4).
 
-## Suggesting `pr-note`
+## Suggesting next steps
 
-A skill that finishes work on a PR never runs `pr:pr-note` itself; it suggests it in one line of its final report, before the handoff line, when all of these hold:
+A skill never runs another skill to finish up; whether to pay for it is the user's call. Instead, its final report suggests it in one line each, before the handoff line, and only on the user's own PR — authored by their GitHub login (`gh api user --jq .login`, or `get_me`).
 
-- The `pr` plugin is installed ("Companion plugin: `pr`"). Missing → say nothing.
-- The PR is the user's own — authored by their GitHub login (`gh api user --jq .login`, or `get_me`).
-- Its review threads (the review-threads row in "GitHub access") hold no comment from anyone else, and no `Note:` or `Drive-by:` from the user — so it's still the first implementation, and not noted yet.
+| Suggest | When | Line |
+|---|---|---|
+| `/pr:pr-sync` (`/pr-sync` on Cursor) | The skill pushed to an existing PR, leaving its title and description behind. A PR the skill just opened is already current. | The PR's title and description may now be stale; `/pr:pr-sync` will update them. |
+| `/pr:pr-note` (`/pr-note` on Cursor) | The PR's review threads (the review-threads row in "GitHub access") hold no comment from anyone else and no `Note:` or `Drive-by:` from the user — still the first implementation, not noted yet ("Author notes"). | `/pr:pr-note` will post the reasoning behind the PR's choices, and any drive-by change, as inline comments for reviewers. |
 
-The line: `/pr:pr-note` (`/pr-note` on Cursor) will post the reasoning behind the PR's choices, and any drive-by change, as inline comments for reviewers.
+The `pr` plugin isn't installed ("Companion plugin: `pr`") → instead of `pr-sync`, say the title and description need updating by hand; skip `pr-note`.
 
-Used by: `pr:pr-sync` (Step 7), `oss:issue-fix` (Step 7).
+Used by: `pr:pr-address` (Step 6, pr-sync), `pr:pr-sync` (Step 7, pr-note),
+`oss:issue-fix` (Step 7, both). `oss:issue-verify` pushes only once, to
+the PR it opens, so it suggests neither.
 
 ## Consulting the `pr-oracle` agent
 
