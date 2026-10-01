@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a pull request and leave inline comments on its changed lines, shaped by the user's remembered review preferences. Each comment opens with its kind — `Question:` when a change's reason or resulting behavior isn't clear from the diff, the PR, or the code around it (`why` for motivation, `what` for what it now does); `Suggestion:` for a better approach, with a committable ```suggestion``` block where the fix fits the commented lines; `Issue:` for a concrete bug; `Test:` for a behavior change no test covers. Comments only on substantial lines, and shows the drafted review to the user before posting it as a single `COMMENT` review. Never approves or requests changes unless asked. Use when asked to "review this PR", "leave review comments", "review <PR URL>", or "take a pass at #123".
+description: Review a pull request and leave inline comments on its changed lines, shaped by the user's remembered review preferences. Each comment opens with its kind — `Question:` when a change's reason or resulting behavior isn't clear from the diff, the PR, or the code around it (`why` for motivation, `what` for what it now does); `Suggestion:` for a better approach, with a committable ```suggestion``` block where the fix fits the commented lines; `Issue:` for a concrete bug, including a shared payload that no longer matches a downstream type; `Test:` for a behavior change no test covers. Comments only on substantial lines, and shows the drafted review to the user before posting it as a single `COMMENT` review. Never approves or requests changes unless asked. Use when asked to "review this PR", "leave review comments", "review <PR URL>", or "take a pass at #123".
 ---
 
 # Review a pull request
@@ -15,7 +15,7 @@ Every comment starts with exactly one of these prefixes, then one or two sentenc
 
 - **`Question:`** — something about a change isn't clear from context: a runtime condition rewritten, a default changed, a check removed, code moved for no visible reason. The prefix only marks that an answer is expected. Open with `why` when the gap is motivation (`Question: why did this runtime check change?`), or `what` when the gap is the resulting behavior or condition (`Question: what does this guard cover now?`). `what` is only for a gap the diff doesn't answer — a restatement of what the code already shows isn't a comment. Ask only after Step 4 finds no answer in the PR description, the commit messages, the author's notes, or the surrounding code.
 - **`Suggestion:`** — there's a better way to write it, and you can say what: `Suggestion: use an IIFE to keep these in scope`. When the fix replaces only the commented lines, add a ```suggestion``` block with the exact replacement so the author can commit it from the PR page. Keep the original indentation and cover every line in the comment's range — the block replaces all of them. A fix spanning other lines or files gets a plain description, no block.
-- **`Issue:`** — a concrete bug you can name the failing case for: `Issue: \`items[0]\` throws when the list is empty`. Add a ```suggestion``` block when the fix fits the commented lines. Can't name the input that breaks it → it's a `Question:`, not an `Issue:`.
+- **`Issue:`** — a concrete bug you can name the failing case for: `Issue: \`items[0]\` throws when the list is empty`. A shared payload that now defaults fields another service's type treats as real data is the same kind of bug: name the contract and the request that produces it. The caller's current query, or the one caller you found, does not retire it. Add a ```suggestion``` block when the fix fits the commented lines. Can't name the input or that contract → it's a `Question:`, not an `Issue:`.
 - **`Test:`** — a behavior change, fixed bug, or new branch no test in the PR exercises: `Test: add a case for an empty list, since that's the branch this fixes`. Name the case, not just "add tests".
 
 A comment that fits none of these isn't worth posting: praise, a restatement of what the code does, a nit a linter or formatter would catch, or a matter of taste with no remembered rule behind it.
@@ -24,7 +24,7 @@ A comment that fits none of these isn't worth posting: praise, a restatement of 
 
 Comment on a line only when the author would plausibly change the code, or explain the change, because of it:
 
-- Behavior, correctness, and public surface come first: runtime conditions, error handling, exported types and APIs, config defaults, migrations.
+- Behavior, correctness, and public surface come first: runtime conditions, error handling, exported types and APIs, config defaults, migrations. A downstream type that assumes fields this change stops populating is one of these, including when today's caller still works.
 - A remembered rule the diff breaks counts (Step 3). Raise it as a normal `Suggestion:`, in your own words, without citing "memory" or the user's preferences to the author.
 - One comment per problem. A pattern repeated across the diff gets one comment on its first occurrence saying it recurs (`same in b.ts and c.ts`), not a copy on each line.
 - Generated files, lockfiles, snapshots, and vendored code get no comments.
@@ -52,7 +52,7 @@ On the MCP route, use `pull_request_read` method `get_diff`, then method `get_co
 
 Read the whole diff, the PR body, and the commit messages before drafting anything — the last two answer many would-be `Question:` questions. Note each changed line you might comment on, with its path and its line number on the new side of the diff. Only lines inside a diff hunk can hold an inline comment.
 
-Also fetch the existing review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access"). A point someone already raised, resolved or not, is not yours to raise again. The author's `Note:` and `Drive-by:` comments explain their lines (`CONVENTIONS.md` → "Author notes"): read them as part of the PR's context, like the body.
+Also fetch the existing review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access"). A point another reviewer already raised, resolved or not, is not yours to raise again. An author saying the change is temporary, that the body is still empty, or that a separate endpoint would be the real fix does not count: that admission stays an `Issue:`. Their follow-up is not a resolution. The author's `Note:` and `Drive-by:` comments explain their lines (`CONVENTIONS.md` → "Author notes"): read them as part of the PR's context, like the body. They can answer a `Question:`. They do not retire the `Issue:` above.
 
 ## Step 3: Consult the oracle
 
@@ -62,14 +62,20 @@ Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on C
 
 Before drafting, sort every candidate `Question:` by where its answer could be:
 
-- **Already answered by the diff, the PR body, the commit messages, or an author's `Note:` / `Drive-by:` on those lines** → drop it. If the answer shows a real problem, it becomes a `Suggestion:` or `Issue:`.
-- **Needs code outside the diff** (a caller, a definition, or `git log`/`git blame` of the changed lines) → hand all such questions to one `Explore` subagent (`CONVENTIONS.md` → "Hand long loops to a subagent", with model `sonnet`). Don't open those files here. The prompt:
+- **Already answered by the diff, the PR body, the commit messages, or an author's `Note:` / `Drive-by:` on those lines** → drop it. If the answer shows a real problem, it becomes a `Suggestion:` or `Issue:`. A narrower payload the author calls temporary or intentional is still that problem when a downstream type assumes the fields that are now defaulted.
+- **Needs code outside the diff** (a caller, a definition, `git log`/`git blame` of the changed lines, or another repo, operation, or payload type the diff, the PR, or a comment names) → hand all such questions to one `Explore` subagent (`CONVENTIONS.md` → "Hand long loops to a subagent", with model `sonnet`). Don't open those files here. The prompt:
 
   ```text
   Repo <owner>/<repo>, PR #<number>, head <headRefOid>.
   Checked out: <yes — path | no — read files with get_file_contents at ref <headRefOid>>
   For each question, find out whether the code outside the diff already
   answers it (a definition, a caller, the history of the changed lines).
+  When the diff, the PR, or a comment names another service, operation, or
+  payload type, follow it: client operation, then the type the parent mapper
+  expects, then this handler.
+  If that type assumes fields this change stops populating, return problem,
+  even when the current query does not read those fields. A GraphQL selection
+  set is not evidence the fields are unused: resolvers read the parent payload.
   1. <path>:<line> — <the question>
   2. ...
   Return one line per question: answered (the answer, with the file:line
@@ -77,7 +83,7 @@ Before drafting, sort every candidate `Question:` by where its answer could be:
   Don't comment on the PR.
   ```
 
-  `answered` → drop. `unanswered` → stays a `Question:`. `problem` → a `Suggestion:` or `Issue:`.
+  `answered` → drop. `unanswered` → stays a `Question:`. `problem` → a `Suggestion:` or `Issue:`. A downstream type that assumes the dropped fields is problem, including when the same answer also says the current query avoids them.
 
 No candidate needs outside code → skip the subagent.
 
