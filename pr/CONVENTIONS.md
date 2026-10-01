@@ -168,7 +168,7 @@ A thread whose opening comment starts with either prefix, written by the PR's au
 
 - **Nobody else has commented** → already handled. Don't implement it, don't answer it.
 - **Someone else replied** → classify from the last comment, as any other thread.
-- **It answers questions about its lines.** A review doesn't raise a `Question:` on a change one of these already explains.
+- **It answers questions about its lines.** A review doesn't raise a `Question:` on a change one of these already explains. A critical change is still an `Issue:` ("Critical changes").
 
 A comment meant as an ask never opens with either prefix.
 
@@ -176,6 +176,14 @@ A comment meant as an ask never opens with either prefix.
 
 Used by: `pr:pr-note` (posts them), `pr:pr-address` (Step 3, skipping
 them), `pr:pr-review` (Steps 2 and 4).
+
+## Critical changes
+
+A critical or dangerous change is worth a review comment even when the path you checked still works. Examples: a breaking change, or a hacky implementation that may have user impact.
+
+Raise it as an `Issue:` and suggest adding a `// FIXME` that names what's wrong. An author's note can answer a `Question:` ("Author notes"). It does not retire this.
+
+Used by: `pr:pr-review`.
 
 ## Suggesting next steps
 
