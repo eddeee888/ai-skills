@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a pull request and leave inline comments on its changed lines, shaped by the user's remembered review preferences. Each comment opens with its kind — `Why:` for a change whose reason isn't clear from the diff, the PR, or the code around it; `Suggestion:` for a better approach, with a committable ```suggestion``` block where the fix fits the commented lines; `Issue:` for a concrete bug; `Test:` for a behavior change no test covers. Comments only on substantial lines, and shows the drafted review to the user before posting it as a single `COMMENT` review. Never approves or requests changes unless asked. Use when asked to "review this PR", "leave review comments", "review <PR URL>", or "take a pass at #123".
+description: Review a pull request and leave inline comments on its changed lines, shaped by the user's remembered review preferences. Each comment opens with its kind — `Question:` when a change's reason or resulting behavior isn't clear from the diff, the PR, or the code around it (`why` for motivation, `what` for what it now does); `Suggestion:` for a better approach, with a committable ```suggestion``` block where the fix fits the commented lines; `Issue:` for a concrete bug; `Test:` for a behavior change no test covers. Comments only on substantial lines, and shows the drafted review to the user before posting it as a single `COMMENT` review. Never approves or requests changes unless asked. Use when asked to "review this PR", "leave review comments", "review <PR URL>", or "take a pass at #123".
 ---
 
 # Review a pull request
@@ -13,9 +13,9 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 Every comment starts with exactly one of these prefixes, then one or two sentences. The prefix tells the author what's expected: an answer, a decision, or a fix.
 
-- **`Why:`** — the reason for a change isn't clear from context: a runtime condition rewritten, a default changed, a check removed, code moved for no visible reason. Ask about that one change, short and neutral: `Why: changing this runtime check?` Ask only after Step 4 finds no answer in the PR description, the commit messages, or the surrounding code.
+- **`Question:`** — something about a change isn't clear from context: a runtime condition rewritten, a default changed, a check removed, code moved for no visible reason. The prefix only marks that an answer is expected. Open with `why` when the gap is motivation (`Question: why did this runtime check change?`), or `what` when the gap is the resulting behavior or condition (`Question: what does this guard cover now?`). `what` is only for a gap the diff doesn't answer — a restatement of what the code already shows isn't a comment. Ask only after Step 4 finds no answer in the PR description, the commit messages, or the surrounding code.
 - **`Suggestion:`** — there's a better way to write it, and you can say what: `Suggestion: use an IIFE to keep these in scope`. When the fix replaces only the commented lines, add a ```suggestion``` block with the exact replacement so the author can commit it from the PR page. Keep the original indentation and cover every line in the comment's range — the block replaces all of them. A fix spanning other lines or files gets a plain description, no block.
-- **`Issue:`** — a concrete bug you can name the failing case for: `Issue: \`items[0]\` throws when the list is empty`. Add a ```suggestion``` block when the fix fits the commented lines. Can't name the input that breaks it → it's a `Why:`, not an `Issue:`.
+- **`Issue:`** — a concrete bug you can name the failing case for: `Issue: \`items[0]\` throws when the list is empty`. Add a ```suggestion``` block when the fix fits the commented lines. Can't name the input that breaks it → it's a `Question:`, not an `Issue:`.
 - **`Test:`** — a behavior change, fixed bug, or new branch no test in the PR exercises: `Test: add a case for an empty list, since that's the branch this fixes`. Name the case, not just "add tests".
 
 A comment that fits none of these isn't worth posting: praise, a restatement of what the code does, a nit a linter or formatter would catch, or a matter of taste with no remembered rule behind it.
@@ -50,7 +50,7 @@ gh pr view <number> --json commits --jq '.commits[].messageHeadline'
 
 On the MCP route, use `pull_request_read` method `get_diff`, then method `get_commits`.
 
-Read the whole diff, the PR body, and the commit messages before drafting anything — the last two answer many would-be `Why:` questions. Note each changed line you might comment on, with its path and its line number on the new side of the diff. Only lines inside a diff hunk can hold an inline comment.
+Read the whole diff, the PR body, and the commit messages before drafting anything — the last two answer many would-be `Question:` questions. Note each changed line you might comment on, with its path and its line number on the new side of the diff. Only lines inside a diff hunk can hold an inline comment.
 
 Also fetch the existing review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access"). A point someone already raised, resolved or not, is not yours to raise again.
 
@@ -58,9 +58,9 @@ Also fetch the existing review threads (the review-threads row in `CONVENTIONS.m
 
 Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `sweep-diff` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `PR #<number>` as the diff to check, and `login: <login>`. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team. It returns the repo's profile (where tests live, contribution rules) plus each place the diff breaks a remembered rule. Each flag is a candidate `Suggestion:` that still has to pass "What counts as substantial".
 
-## Step 4: Check the context behind each `Why:`
+## Step 4: Check the context behind each `Question:`
 
-Before drafting, sort every candidate `Why:` by where its answer could be:
+Before drafting, sort every candidate `Question:` by where its answer could be:
 
 - **Already answered by the diff, the PR body, or the commit messages** → drop it. If the answer shows a real problem, it becomes a `Suggestion:` or `Issue:`.
 - **Needs code outside the diff** (a caller, a definition, or `git log`/`git blame` of the changed lines) → hand all such questions to one `Explore` subagent (`CONVENTIONS.md` → "Hand long loops to a subagent", with model `sonnet`). Don't open those files here. The prompt:
@@ -77,7 +77,7 @@ Before drafting, sort every candidate `Why:` by where its answer could be:
   Don't comment on the PR.
   ```
 
-  `answered` → drop. `unanswered` → stays a `Why:`. `problem` → a `Suggestion:` or `Issue:`.
+  `answered` → drop. `unanswered` → stays a `Question:`. `problem` → a `Suggestion:` or `Issue:`.
 
 No candidate needs outside code → skip the subagent.
 
@@ -91,7 +91,7 @@ Show the draft to the user before posting anything — it posts under their name
 
 ```text
 Review for <owner>/<repo>#<number> — <n> comments (<m> dropped as lower priority)
-1. <path>:<line>  Why: <body>
+1. <path>:<line>  Question: <body>
 2. <path>:<start>-<end>  Suggestion: <body>  [+ suggestion block]
 ...
 Post as COMMENT? (drop/edit by number, or "post")
