@@ -140,7 +140,7 @@ Handoffs: scout-repo ✓ · root cause ✓ · brief-task ✓ · fix loop ✓ · 
 Leave out a handoff that didn't apply this run (e.g. no authoritative threads means no 5a batch). Writing the line is the check: if the honest mark would be `✗` without the user's agreement, or `inline` for any other reason, go back and make that handoff before reporting.
 
 Used by: `pr:pr-address` (Step 6), `pr:pr-sync` (Step 7), `pr:pr-review`
-(Step 7), `oss:issue-analyze` (Step 6), `oss:issue-create` (Step 7),
+(Step 7), `pr:pr-note` (Step 6), `oss:issue-analyze` (Step 6), `oss:issue-create` (Step 7),
 `oss:issue-verify` (Step 6), `oss:issue-fix` (Step 7).
 
 ## Companion plugin: `pr`
@@ -151,22 +151,46 @@ The `oss` plugin works on its own. With the `pr` plugin installed too, `oss` ski
 - **Missing → fall back, never stop**, and don't ask the user to install `pr`:
   - `pr-oracle` → do that step inline, exactly as the skill describes ("Consulting the `pr-oracle` agent"), and mark it `inline (pr plugin isn't installed)` on the handoff line ("Handoff line in the final report").
   - `pr-sidekick` → the `general-purpose` agent on Claude Code, a subagent on Cursor ("Hand long loops to a subagent").
-  - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/pr:pr-sync` ("Suggesting `pr-sync` after a push").
+  - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/pr:pr-sync` ("Suggesting next steps").
 - **Defaults without the oracle.** No profile means no `overrides:` line. Before applying a *Default* section, check the repo's `CLAUDE.md` and `CONTRIBUTING.md` for a rule that says otherwise, and follow it ("Defaults and contracts").
 
 Used by: `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`,
 `oss:issue-fix`.
 
-## Suggesting `pr-sync` after a push
+## Author notes: `Note:` / `Drive-by:`
 
-A skill that pushes to a PR never runs `pr:pr-sync` itself — not in the main chat, not in a subagent. A sync is a long rebase-and-redraft loop, and whether to pay for it is the user's call. Instead:
+The PR author's own inline comments that explain a change rather than ask for one. `pr:pr-note` posts them on the first implementation:
 
-- **Only when the push left the PR behind.** A PR the skill just opened from its own change is already current; say nothing.
-- **Only on the user's own PR** — authored by the user's GitHub login (`gh api user --jq .login`, or `get_me`). Editing someone else's PR title or description isn't the skill's call.
-- **One line in the final report, before the handoff line:** the PR's title and description may now be stale, and `/pr:pr-sync` (`/pr-sync` on Cursor) will update them. The `pr` plugin isn't installed ("Companion plugin: `pr`") → say they need updating by hand instead.
+- **`Note:`** — why the change made a choice the task didn't specify.
+- **`Drive-by:`** — why a change the task doesn't need is in the PR.
 
-Used by: `pr:pr-address` (Step 6), `oss:issue-fix` (Step 7).
-`oss:issue-verify` pushes only once, to the PR it opens, so it never needs it.
+A thread whose opening comment starts with either prefix, written by the PR's author, is an explanation, not an ask:
+
+- **Nobody else has commented** → already handled. Don't implement it, don't answer it.
+- **Someone else replied** → classify from the last comment, as any other thread.
+- **It answers questions about its lines.** A review doesn't raise a `Question:` on a change one of these already explains.
+
+A comment meant as an ask never opens with either prefix.
+
+`pr:pr-note` posts without a draft to confirm: the notes are the author's own reasoning on the author's own PR.
+
+Used by: `pr:pr-note` (posts them), `pr:pr-address` (Step 3, skipping
+them), `pr:pr-review` (Steps 2 and 4).
+
+## Suggesting next steps
+
+A skill never runs another skill to finish up; whether to pay for it is the user's call. Instead, its final report suggests it in one line each, before the handoff line, and only on the user's own PR — authored by their GitHub login (`gh api user --jq .login`, or `get_me`).
+
+| Suggest | When | Line |
+|---|---|---|
+| `/pr:pr-sync` (`/pr-sync` on Cursor) | The skill pushed to an existing PR, leaving its title and description behind. A PR the skill just opened is already current. | The PR's title and description may now be stale; `/pr:pr-sync` will update them. |
+| `/pr:pr-note` (`/pr-note` on Cursor) | The PR's review threads (the review-threads row in "GitHub access") hold no comment from anyone else and no `Note:` or `Drive-by:` from the user — still the first implementation, not noted yet ("Author notes"). | `/pr:pr-note` will post the reasoning behind the PR's choices, and any drive-by change, as inline comments for reviewers. |
+
+The `pr` plugin isn't installed ("Companion plugin: `pr`") → instead of `pr-sync`, say the title and description need updating by hand; skip `pr-note`.
+
+Used by: `pr:pr-address` (Step 6, pr-sync), `pr:pr-sync` (Step 7, pr-note),
+`oss:issue-fix` (Step 7, both). `oss:issue-verify` pushes only once, to
+the PR it opens, so it suggests neither.
 
 ## Consulting the `pr-oracle` agent
 
@@ -187,7 +211,8 @@ These rules hold everywhere:
 
 Used by: `pr:pr-address` (triage-threads + scout-repo, sweep-diff),
 `pr:pr-sync` (scout-repo, brief-task, grill-description), `pr:pr-review`
-(scout-repo + sweep-diff), `oss:issue-analyze` (scout-repo),
+(scout-repo + sweep-diff), `pr:pr-note` (scout-repo + brief-task),
+`oss:issue-analyze` (scout-repo),
 `oss:issue-create` (scout-repo), `oss:issue-verify` (scout-repo),
 `oss:issue-fix` (scout-repo, brief-task, sweep-diff).
 
@@ -219,7 +244,7 @@ Skills write their GitHub steps as `gh` commands. Not every host has `gh`: a Cla
 | `gh api repos/<o>/<r>/contents/<path>` (file or directory) | `get_file_contents` (`fields: ["name", "type"]` for a directory) |
 | `gh api repos/<o>/<r> --jq .default_branch` | `search_repositories` with query `repo:<o>/<r>` → `default_branch` |
 
-Used by: `pr:pr-address`, `pr:pr-sync`, `pr:pr-review`, `oss:issue-analyze`,
+Used by: `pr:pr-address`, `pr:pr-sync`, `pr:pr-review`, `pr:pr-note`, `oss:issue-analyze`,
 `oss:issue-create`, `oss:issue-verify`, `oss:issue-fix`. `pr-oracle`
 keeps its own copy of the read rows next to its tool allowlist.
 
@@ -232,5 +257,5 @@ Never put drafted text — a title, a body, a reply — inside a double-quoted s
 - **MCP route** → pass the text as the tool's parameter; no quoting concerns.
 
 Used by: `pr:pr-address` (thread replies), `pr:pr-sync` (title and body),
-`pr:pr-review` (review payload), `oss:issue-analyze`, `oss:issue-create`,
+`pr:pr-review`, `pr:pr-note` (review payload), `oss:issue-analyze`, `oss:issue-create`,
 `oss:issue-verify`, `oss:issue-fix` (issue, comment, and PR text).

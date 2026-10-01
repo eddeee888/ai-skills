@@ -7,7 +7,7 @@ description: Turn an `issue-verify` checkpoint commit into a fix. Locates the fa
 
 Second half of the TDD loop `issue-verify` started: a failing test, committed with an `eddeee888:oss:issue-verify` marker, proves the bug is real. This skill makes that test pass, and makes the fix decision *with* the user — a bug rooted in a dependency wants a different response than one in this repo's code, and the user should choose the trade-off before code gets written.
 
-**This skill never runs `pr:pr-sync` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push", Step 7).
+**This skill never runs `pr:pr-sync` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS.md` → "Suggesting next steps", Step 7).
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -110,9 +110,9 @@ gh pr view --json number,author 2>&1
 
 Reference the issue with a non-closing keyword (`CONVENTIONS.md` → "Non-closing issue references") — never `Fixes #123`/`Closes #123`, even though this PR resolves it. State which option was chosen and why in a sentence or two — no need to re-litigate the options.
 
-## Step 7: Suggest a sync
+## Step 7: Wrap up
 
-Don't run `pr:pr-sync`. A new `fix/<issue-number>` PR was just written from the fix, so it's current. When the push went to an existing PR (normally the checkpoint's), add the stale-description line if that PR's author is the user (`CONVENTIONS.md` → "Suggesting `pr-sync` after a push"). Either way, the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
+Don't run `pr:pr-sync` or `pr:pr-note`; suggest them per `CONVENTIONS.md` → "Suggesting next steps". A new `fix/<issue-number>` PR was just written from the fix, so it needs no sync; a push to an existing PR (normally the checkpoint's) may. The report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

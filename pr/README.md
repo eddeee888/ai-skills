@@ -33,6 +33,13 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
     so the drafted `Question:` / `Suggestion:` / `Issue:` / `Test:` comments
     reflect rules you've asked for before. A subagent first checks code
     outside the diff, so no `Question:` asks what the code already answers.
+  - `pr-note` — `scout-repo` + `brief-task` in one call on the user's own
+    PR, before anyone else has commented, so the `Note:` comments it posts
+    (no draft to confirm) give the reason for choices that follow a
+    remembered rule, and `Drive-by:` comments say why an off-task change is
+    in the PR. `pr-sync` and `oss:issue-fix` suggest it on a PR that has
+    none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
+    `Question:` one of them already answers.
   - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
     its code survey starts from.
   - `oss:issue-create` — `scout-repo` for the issue template.
