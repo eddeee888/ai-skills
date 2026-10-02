@@ -5,20 +5,20 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 ## Plugins
 
 - [`oss/`](oss/) — maintaining and contributing to open source projects: sizing, filing, verifying, and fixing issues. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`.
-- [`pr/`](pr/) — working with pull requests: reviewing, addressing comments, syncing. Claude Code: `/pr:<skill-name>`, e.g. `/pr:pr-sync`. Cursor: `/pr-sync`.
+- [`cops/`](cops/) **Code Ops** — working with pull requests: reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-sync`. Cursor: `/pr-sync`.
 
-`pr` also ships two agents, used by both plugins' skills (`pr:pr-oracle` / `pr:pr-sidekick` in Claude Code, subagents in Cursor):
+`cops` also ships two agents, used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
 
-- [`pr-oracle`](pr/agents/pr-oracle.md) — remembers your recurring review themes, and profiles a repo's setup (tests, monorepo layout, templates).
-- [`pr-sidekick`](pr/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying those remembered preferences.
+- [`pr-oracle`](cops/agents/pr-oracle.md) — remembers your recurring review themes, and profiles a repo's setup (tests, monorepo layout, templates).
+- [`pr-sidekick`](cops/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying those remembered preferences.
 
-`oss` works on its own; install `pr` too to add the memory and agents ([`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-pr)).
+`oss` works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-cops)).
 
 ## Layout
 
 - Catalogs: [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) (Claude Code), [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) (Cursor).
 - Each plugin: `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests; skills in `skills/<skill-name>/SKILL.md`.
-- [`CONVENTIONS.md`](CONVENTIONS.md) holds rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to it instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `pr/` each carry an identical copy — edit the root file, then copy it over both.
+- [`CONVENTIONS.md`](CONVENTIONS.md) holds rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to it instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `cops/` each carry an identical copy — edit the root file, then copy it over both.
 
 ## Install
 
@@ -29,26 +29,26 @@ Add the marketplace, then install the plugin(s) you want:
 ```
 /plugin marketplace add eddeee888/ai-skills
 /plugin install oss
-/plugin install pr
+/plugin install cops
 ```
 
 Local checkout for development:
 
 ```
 claude --plugin-dir ./oss
-claude --plugin-dir ./pr
+claude --plugin-dir ./cops
 ```
 
 ### Cursor
 
-**Anyone / yourself:** add the GitHub catalog, then install `oss` and/or `pr` from Customize or the CLI `/plugin` Marketplace tab:
+**Anyone / yourself:** add the GitHub catalog, then install `oss` and/or `cops` from Customize or the CLI `/plugin` Marketplace tab:
 
 ```
 cursor-agent plugin marketplace add https://github.com/eddeee888/ai-skills
 ```
 
-**Team / Enterprise:** [Dashboard → Plugins → Add Marketplace → Import from Repo](https://cursor.com/docs/plugins), paste `https://github.com/eddeee888/ai-skills`, review `oss` and `pr`, set access and Default Off / On / Required. Optionally enable Auto Refresh (needs the [Cursor GitHub App](https://cursor.com/docs/integrations/github.md) on this repo).
+**Team / Enterprise:** [Dashboard → Plugins → Add Marketplace → Import from Repo](https://cursor.com/docs/plugins), paste `https://github.com/eddeee888/ai-skills`, review `oss` and `cops`, set access and Default Off / On / Required. Optionally enable Auto Refresh (needs the [Cursor GitHub App](https://cursor.com/docs/integrations/github.md) on this repo).
 
 **Official public listing (optional):** submit this repo at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Manual review; the repo must stay public and open source.
 
-Local checkout for development: copy `oss` and `pr` into `~/.cursor/plugins/local/` (do not symlink from outside that folder) and reload the window.
+Local checkout for development: copy `oss` and `cops` into `~/.cursor/plugins/local/` (do not symlink from outside that folder) and reload the window.

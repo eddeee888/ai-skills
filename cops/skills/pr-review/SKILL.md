@@ -39,7 +39,7 @@ gh api user --jq .login
 
 Use the PR the user named, else the current branch's PR. No PR found, or it's closed or merged → stop and say so.
 
-Keep `headRefOid`: every comment anchors to that commit. When the PR is the user's own, tell them in one line that `/pr:pr-address` treats their own comments on their own diff as instructions to carry out. GitHub doesn't let them approve their own PR, so the review is always `COMMENT` there.
+Keep `headRefOid`: every comment anchors to that commit. When the PR is the user's own, tell them in one line that `/cops:pr-address` treats their own comments on their own diff as instructions to carry out. GitHub doesn't let them approve their own PR, so the review is always `COMMENT` there.
 
 ## Step 2: Read the change
 
@@ -56,7 +56,7 @@ Also fetch the existing review threads (the review-threads row in `CONVENTIONS.m
 
 ## Step 3: Consult the oracle
 
-Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `sweep-diff` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `PR #<number>` as the diff to check, and `login: <login>`. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team. It returns the repo's profile (where tests live, contribution rules) plus each place the diff breaks a remembered rule. Each flag is a candidate `Suggestion:` that still has to pass "What counts as substantial".
+Make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `sweep-diff` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `PR #<number>` as the diff to check, and `login: <login>`. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team. It returns the repo's profile (where tests live, contribution rules) plus each place the diff breaks a remembered rule. Each flag is a candidate `Suggestion:` that still has to pass "What counts as substantial".
 
 ## Step 4: Check the context behind each `Question:`
 

@@ -11,7 +11,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 ## Comment kinds
 
-Every comment starts with exactly one of these prefixes, then one or two sentences on why. No ```suggestion``` blocks — these explain the code as it is. What `pr:pr-address` and `pr:pr-review` do with them is in `CONVENTIONS.md` → "Author notes".
+Every comment starts with exactly one of these prefixes, then one or two sentences on why. No ```suggestion``` blocks — these explain the code as it is. What `cops:pr-address` and `cops:pr-review` do with them is in `CONVENTIONS.md` → "Author notes".
 
 - **`Note:`** — a choice the task didn't specify: one approach over another, where a helper lives, a default picked, an edge case handled a particular way. Give the reason in plain words: `Note: inlined the parser, since this is its only caller`. A choice that follows a remembered preference still gets its reason, not "per my preferences" — never cite memory or the oracle.
 - **`Drive-by:`** — a change the task doesn't need: a fix, rename, or cleanup made in passing. Leave the code in and say why it's here: `Drive-by: this guard threw on an empty list, which the new caller hits`. A drive-by with no reason worth stating is one to take out, not explain — don't comment on it; name it in the wrap-up instead.
@@ -35,7 +35,7 @@ Use the PR the user named, else the current branch's PR. Stop (see "When to stop
 
 - there's no PR, or it's closed or merged;
 - its `author.login` isn't the user's login — the reasoning is the author's to give;
-- its review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access") hold a comment from anyone but the user — review has started, and `/pr:pr-address` (`/pr-address` on Cursor) owns the threads from here.
+- its review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access") hold a comment from anyone but the user — review has started, and `/cops:pr-address` (`/pr-address` on Cursor) owns the threads from here.
 
 Keep `headRefOid`: every comment anchors to that commit. The user's own `Note:` or `Drive-by:` comments already on the PR → this is a re-run; draft only for lines none of them covers.
 
@@ -52,7 +52,7 @@ Read the whole diff, the PR body, the commit messages, and the issue before draf
 
 ## Step 3: Consult the oracle
 
-Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `brief-task` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `login: <login>`, and for `brief-task` the changed files plus the task in one line. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team.
+Make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `brief-task` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `login: <login>`, and for `brief-task` the changed files plus the task in one line. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team.
 
 The brief lists the remembered rules that apply to this change. A changed line that follows one is a candidate `Note:` — the rule tells you the choice was deliberate, and its wording gives you the reason to state, in your own words.
 
@@ -62,7 +62,7 @@ Draft every comment in the "Comment kinds" format: path, line (or start and end 
 
 ## Step 5: Post it as one review
 
-Post every comment in a single `COMMENT` review on `headRefOid`, exactly as `pr:pr-review` Step 6 does: on the `gh` route, the payload goes in `$(git rev-parse --git-dir)/pr-note.json` (`CONVENTIONS.md` → "Passing drafted text to `gh`") and is sent with `gh api repos/<owner>/<repo>/pulls/<number>/reviews --input`, then removed; on the MCP route, a pending review, one `add_comment_to_pending_review` per comment, then `submit_pending` with `event: COMMENT`.
+Post every comment in a single `COMMENT` review on `headRefOid`, exactly as `cops:pr-review` Step 6 does: on the `gh` route, the payload goes in `$(git rev-parse --git-dir)/pr-note.json` (`CONVENTIONS.md` → "Passing drafted text to `gh`") and is sent with `gh api repos/<owner>/<repo>/pulls/<number>/reviews --input`, then removed; on the MCP route, a pending review, one `add_comment_to_pending_review` per comment, then `submit_pending` with `event: COMMENT`.
 
 GitHub rejects a comment because its line isn't in the diff → move it to the nearest changed line in the same hunk. No such line → tell the user; never drop it silently. A failure partway through the MCP route leaves a pending review only the user can see → tell them; delete it with `delete_pending` only if they say to.
 
@@ -81,7 +81,7 @@ Then name any drive-by with no reason worth stating, as a change the user may wa
 ## When to stop instead of proceeding
 
 - No PR, or it's closed or merged → stop, say so.
-- Not the user's PR → stop; suggest `/pr:pr-review` (`/pr-review` on Cursor) if they want to comment on it.
+- Not the user's PR → stop; suggest `/cops:pr-review` (`/pr-review` on Cursor) if they want to comment on it.
 - Someone other than the user has commented on its lines → stop; review has started.
 - Nothing states what the PR is for, and the user hasn't said → ask, don't guess.
 - Nothing unexplained → say so and post nothing.

@@ -7,7 +7,7 @@ description: Verify a GitHub issue is real and reproducible before any fix work 
 
 Fixing a bug nobody can reproduce is a guess. This skill turns a reported issue into evidence: a failing test proving the bug exists, or a template-grounded ask back to the reporter when there isn't enough to go on. Nothing gets fixed here — that's `issue-fix`. For a lighter, unverified read-only guess at root cause and size first, see `issue-analyze`. The job ends once the failing test is committed and pushed — the PR need not be merged, or green.
 
-**This skill never runs `pr:pr-sync` itself.** The checkpoint PR is written from the test it opens with and pushed to only once, so it's always current.
+**This skill never runs `cops:pr-sync` itself.** The checkpoint PR is written from the test it opens with and pushed to only once, so it's always current.
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -40,7 +40,7 @@ gh issue view <number> --json number,title,body,url,labels,state,comments \
 
 That's the body and last 10 comments. Repro not in them and `total` says there are more → read the earlier comments too.
 
-Then find the repo's bug-report template. When available, get the repo's profile (`scout-repo`) from `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which. No such directory → check for a single `.github/ISSUE_TEMPLATE.md`. Don't read every template.
+Then find the repo's bug-report template. When available, get the repo's profile (`scout-repo`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): it names the bug-report template and its required fields, and Step 4 reuses it for the test layout. Read only that template file. Not available → `ls .github/ISSUE_TEMPLATE/ 2>/dev/null` and read only the bug-report template — ask the user if it's unclear which. No such directory → check for a single `.github/ISSUE_TEMPLATE.md`. Don't read every template.
 
 Note the template's reproduction field and its exact wording — Step 3 reuses it instead of asking generically.
 
@@ -118,7 +118,7 @@ gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
 
 ## Step 6: Wrap up
 
-Don't run or suggest `pr:pr-sync` — the new PR already matches its branch. Report the PR URL; the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
+Don't run or suggest `cops:pr-sync` — the new PR already matches its branch. Report the PR URL; the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
 
 ## When to stop instead of proceeding
 
