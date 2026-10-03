@@ -98,16 +98,19 @@ available, and the skills call them.
 The checkout is `~/.claude/agent-memory/`, oracle rules under its `memory/` (`memory/users/<github-login>/` and `memory/team/`). Without sync it stays on one machine — and a cloud session's container, memory included, is discarded when the session ends. Cursor's subagent uses the same directory, so one sync covers both hosts. The plugin ships hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) that sync it with a git repo the team can push to: pull `main` and your own branch at session start, commit and push at each turn end and at session end. A turn that learned nothing makes no network call.
 
 1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Oracle files committed there live under `memory/`.
-2. Set `PR_MEMORY_REPO` to it (`owner/repo` for GitHub over HTTPS,
-   or a full git URL):
-   - **Locally, Claude Code** — in `~/.claude/settings.json`:
-     `"env": { "PR_MEMORY_REPO": "<you>/agent-memory" }`. Your git
-     credentials need push access to the repo.
-   - **Locally, Cursor** — the same variable, as the `cops` plugin variable
-     (Plugins → Configure) or in the hooks' environment. Git credentials
-     need push access to the repo.
-   - **Claude Code on the web** — add the same variable to the cloud
-     environment's environment variables, and make sure the Claude GitHub
+2. Point the plugin at it (`owner/repo` for GitHub over HTTPS, or a full
+   git URL), and give it your GitHub login — what you learn is pushed to
+   `memory/<login>`:
+   - **Locally, Claude Code** — the `cops` plugin's **PR memory repo** and
+     **GitHub login** options, asked for when you enable the plugin (or in
+     `/plugin` → `cops` → Configure). The `PR_MEMORY_REPO` and
+     `PR_MEMORY_LOGIN` environment variables work too, and win over the
+     options. Your git credentials need push access to the repo.
+   - **Locally, Cursor** — the `PR_MEMORY_REPO` and `PR_MEMORY_LOGIN`
+     plugin variables (Plugins → Configure) or the same names in the
+     hooks' environment. Git credentials need push access to the repo.
+   - **Claude Code on the web** — add `PR_MEMORY_REPO` and
+     `PR_MEMORY_LOGIN` to the cloud environment's environment variables, and make sure the Claude GitHub
      App can access the repo (github.com/settings/installations → the
      Claude app → Repository access). A cloud session reaches a repo only
      once it's attached. You can add the memory repo in the repository
@@ -118,7 +121,7 @@ The checkout is `~/.claude/agent-memory/`, oracle rules under its `memory/` (`me
 
 How it behaves:
 
-- **Opt-in and never blocking.** Unset variable → the hooks do nothing. A
+- **Opt-in and never blocking.** No memory repo set → the hooks do nothing. A
   failed push is reported on stderr and retried on the next push. A repo
   that can't be cloned is retried at most every 10 minutes, and once more
   when the session ends — not on every turn. Neither ever stops the session.
@@ -128,10 +131,9 @@ How it behaves:
   so a person's unmerged memory follows them across machines and reaches
   everyone once merged. The branch is only merged into, never rewritten.
   Neither a turn with nothing new nor bringing in a newer `main` pushes
-  anything. The login comes from `gh api user`, else the
-  GitHub API with `GH_TOKEN`/`GITHUB_TOKEN` (or a proxy that
-  authenticates, as in Claude Code on the web), else the one person with a
-  `memory/users/` tree in the checkout. None works → memory stays local,
+  anything. The login is the one you set — the hooks never
+  read a token or `gh` to look it up — else the one person with a
+  `memory/users/` tree in the checkout. Neither → memory stays local,
   with a warning.
 - **Existing memory is kept.** The first sync on a machine carries local
   memory into the repo — new files as is, and lines missing from the repo's

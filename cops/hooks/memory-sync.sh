@@ -11,29 +11,28 @@
 # Memory is pushed to a branch per GitHub user, memory/<login>, never to
 # main: what someone's sessions learn collects there, for a PR to review and
 # merge. Pull brings in both main and that branch, merging rather than
-# rebasing so the branch only ever moves forward. The login comes from
-# `gh api user`, or the GitHub API directly (GH_TOKEN/GITHUB_TOKEN, or a
-# proxy that authenticates for us), once per session start.
+# rebasing so the branch only ever moves forward. The login is configured,
+# never looked up with a credential: the plugin's github_login option
+# (CLAUDE_PLUGIN_OPTION_GITHUB_LOGIN) or PR_MEMORY_LOGIN.
 #
 # Stop fires after every turn, so push stays off the network unless there's
 # something to send: nothing new → no fetch or push. A repo that
 # couldn't be cloned isn't retried on each turn either — only once the last
 # failure is RETRY_MINUTES old, and always at session end.
 #
-# Opt-in: does nothing unless PR_MEMORY_REPO is set, to `owner/repo`
-# (GitHub over HTTPS) or a full git URL. Never fails the session: every
-# problem is reported on stderr and the script exits 0.
+# Opt-in: does nothing unless the memory repo is set — the plugin's
+# memory_repo option (CLAUDE_PLUGIN_OPTION_MEMORY_REPO) or PR_MEMORY_REPO —
+# to `owner/repo` (GitHub over HTTPS) or a full git URL. Never fails the
+# session: every problem is reported on stderr and the script exits 0.
 
 set -u
 
-repo="${PR_MEMORY_REPO:-}"
+repo="${PR_MEMORY_REPO:-${CLAUDE_PLUGIN_OPTION_MEMORY_REPO:-}}"
 [ -n "$repo" ] || exit 0
 
 dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
 branch=main
 branch_prefix=memory/
-login_file="$dir/.git/pr-oracle-login"
-login_failed="$dir/.git/pr-oracle-login-failed"
 case "$repo" in
   *://* | git@*) url="$repo" ;;
   *) url="https://github.com/$repo.git" ;;
@@ -50,7 +49,7 @@ warn() { echo "pr-oracle memory sync: $*" >&2; }
 # attached to it) and pull again, instead of leaving the user to notice.
 ask_claude_to_attach() {
   cat <<MSG
-pr-oracle memory sync: couldn't reach the memory repo \`$repo\` (PR_MEMORY_REPO), so the oracle's memory from earlier sessions isn't loaded.
+pr-oracle memory sync: couldn't reach the memory repo \`$repo\`, so the oracle's memory from earlier sessions isn't loaded.
 - In a Claude Code on the web session with an \`add_repo\` tool: attach \`$repo\` with push access (no need to clone it yourself), then run \`"$self" pull\` so memory is in place before the pr-oracle agent is used. Mention it to the user in one line.
 - Otherwise, or if attaching fails: tell the user in one line that memory sync couldn't reach \`$repo\` and why, and carry on — the skills work without memory.
 MSG
@@ -119,27 +118,11 @@ commit_changes() {
 }
 
 # memory/<login>, from the first of these that gives a login, else empty:
-#   login cached at the last pull: alice               → memory/alice
-#   `gh api user`, else api.github.com/user: alice     → memory/alice (cached)
-#   both fail, one tree memory/users/alice/            → memory/alice
-#   both fail, trees memory/users/alice/ and bob/      → (empty)
-# Like an unreachable repo, a failed lookup is only retried once it's
-# RETRY_MINUTES old, and at session end; until then it goes straight to the
-# memory/users/ fallback.
+#   github_login option or PR_MEMORY_LOGIN: alice      → memory/alice
+#   neither set, one tree memory/users/alice/          → memory/alice
+#   neither set, trees memory/users/alice/ and bob/    → (empty)
 user_branch() {
-  local login="" users token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
-  login="$(cat "$login_file" 2>/dev/null)"
-  if [ -z "$login" ] && { [ "$mode" = end ] || [ -z "$(find "$login_failed" -mmin -"$RETRY_MINUTES" 2>/dev/null)" ]; }; then
-    command -v gh >/dev/null 2>&1 && login="$(gh api user --jq .login 2>/dev/null)"
-    [ -n "$login" ] || login="$(curl -fsS -m 10 ${token:+-H "Authorization: Bearer $token"} https://api.github.com/user 2>/dev/null |
-      sed -nE 's/^[[:space:]]*"login"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n 1)"
-    if [ -n "$login" ]; then
-      printf '%s\n' "$login" > "$login_file"
-      rm -f "$login_failed"
-    else
-      touch "$login_failed"
-    fi
-  fi
+  local login="${PR_MEMORY_LOGIN:-${CLAUDE_PLUGIN_OPTION_GITHUB_LOGIN:-}}" users
   if [ -z "$login" ]; then
     users="$(ls "$dir/memory/users" 2>/dev/null)"
     [ "$(printf '%s\n' "$users" | grep -c .)" = 1 ] && login="$users"
@@ -159,7 +142,6 @@ pull() {
     clone || return 0
   fi
   union_merge
-  rm -f "$login_file" "$login_failed"
   local ub
   ub="$(user_branch)"
   commit_changes
@@ -200,7 +182,7 @@ push() {
   ahead "" || return 0
   local ub
   ub="$(user_branch)"
-  [ -n "$ub" ] || { warn "can't tell your GitHub login; memory kept locally, not pushed"; return 0; }
+  [ -n "$ub" ] || { warn "can't tell your GitHub login — set the github_login option or PR_MEMORY_LOGIN; memory kept locally, not pushed"; return 0; }
   ahead "$ub" || return 0
   # Another machine of the same user may have pushed since: take that first.
   merge_remote "$ub"

@@ -1,6 +1,6 @@
 {
   "name": "cops",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.",
   "author": { "name": "eddeee888" },
   "license": "MIT",
@@ -14,6 +14,11 @@
         "type": "string",
         "title": "PR memory repo",
         "description": "Private git repo (owner/repo or a git URL) that syncs pr-oracle memory across machines. Leave unset to keep memory on this machine only."
+      },
+      "PR_MEMORY_LOGIN": {
+        "type": "string",
+        "title": "GitHub login",
+        "description": "Your GitHub username. Memory sync pushes what you learn to the memory/<login> branch of the memory repo. Leave unset only if the memory repo holds no one else's memory/users/ tree."
       }
     }
   }
