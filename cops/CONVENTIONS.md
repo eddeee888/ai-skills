@@ -174,6 +174,20 @@ The `oss` plugin works on its own. With the `cops` plugin installed too, `oss` s
 Used by: `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`,
 `oss:issue-fix`.
 
+## Comment labels: bold when writing, either form when reading
+
+Every inline comment a skill posts opens with its label — `Question:`,
+`Suggestion:`, `Issue:`, `Test:`, `Note:`, `Drive-by:` — written in bold
+(`**Note:** inlined the parser, since this is its only caller`), so the
+kind stands out when scanning a thread.
+
+A skill that recognises a comment by its label matches it with or without
+the bold: `Note:` and `**Note:**` are the same label, so comments posted
+before this rule still count.
+
+Used by: `cops:pr-review`, `cops:pr-note` (writing); `cops:pr-address`,
+`cops:pr-note`, "Author notes", "Suggesting next steps" (reading).
+
 ## Author notes: `Note:` / `Drive-by:`
 
 The PR author's own inline comments that explain a change rather than ask for one. `cops:pr-note` posts them on the first implementation:
@@ -181,7 +195,7 @@ The PR author's own inline comments that explain a change rather than ask for on
 - **`Note:`** — why the change made a choice the task didn't specify.
 - **`Drive-by:`** — why a change the task doesn't need is in the PR.
 
-A thread whose opening comment starts with either prefix, written by the PR's author, is an explanation, not an ask:
+A thread whose opening comment starts with either label (in either form — "Comment labels"), written by the PR's author, is an explanation, not an ask:
 
 - **Nobody else has commented** → already handled. Don't implement it, don't answer it.
 - **Someone else replied** → classify from the last comment, as any other thread.
@@ -209,7 +223,7 @@ A skill never runs another skill to finish up; whether to pay for it is the user
 | Suggest | When | Line |
 |---|---|---|
 | `/cops:pr-sync` (`/pr-sync` on Cursor) | The skill pushed to an existing PR, leaving its title and description behind. A PR the skill just opened is already current. | The PR's title and description may now be stale; `/cops:pr-sync` will update them. |
-| `/cops:pr-note` (`/pr-note` on Cursor) | The PR's review threads (the review-threads row in "GitHub access") hold no comment from anyone else and no `Note:` or `Drive-by:` from the user — still the first implementation, not noted yet ("Author notes"). | `/cops:pr-note` will post the reasoning behind the PR's choices, and any drive-by change, as inline comments for reviewers. |
+| `/cops:pr-note` (`/pr-note` on Cursor) | The PR's review threads (the review-threads row in "GitHub access") hold no comment from anyone else and no `Note:` or `Drive-by:` from the user (either form — "Comment labels") — still the first implementation, not noted yet ("Author notes"). | `/cops:pr-note` will post the reasoning behind the PR's choices, and any drive-by change, as inline comments for reviewers. |
 
 The `cops` plugin isn't installed ("Companion plugin: `cops`") → instead of `pr-sync`, say the title and description need updating by hand; skip `pr-note`.
 
