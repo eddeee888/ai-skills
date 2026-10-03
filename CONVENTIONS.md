@@ -84,6 +84,18 @@ because **component A fails to request component B**" or "Found issue D.
 
 Used by: `cops:pr-sync` (Why/What/Verification).
 
+## Split What into Main and Drive-by
+
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
+
+A PR whose diff carries a drive-by (a change the task doesn't need,
+"Author notes") → split the description's What into `### Main` (the task's
+change) and `### Drive-by` (one bullet per drive-by, saying why it's in
+this PR), so a drive-by can't hide among the main bullets. No drive-by →
+plain bullets, no subsections.
+
+Used by: `cops:pr-sync` (What).
+
 ## Verification checklist: name the test type, not the command
 
 *Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
