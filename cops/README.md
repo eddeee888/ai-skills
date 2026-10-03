@@ -6,68 +6,50 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 `/cops:<skill-name>` once this plugin is installed, e.g. `/cops:pr-sync`
 (`/pr-sync` in Cursor).
 
+## Setup
+
+1. **Install the plugin** — `/plugin install cops` (see the
+   [root README](../README.md#install)). Install `oss` too for the issue
+   skills; they use this plugin's agents when it's there.
+2. **Connect GitHub.** The skills use `gh` when it's logged in, and the
+   GitHub MCP server otherwise. The `pr-oracle` agent reads GitHub only
+   through the GitHub MCP server, so connect it even if you have `gh`.
+3. **Memory — nothing to do on one machine.** The oracle keeps it in
+   `~/.claude/agent-memory/`. It starts empty and learns as you go: tell a
+   skill what you want ("always add a test for a fixed bug", "keep the Why
+   to one sentence") and it's remembered for every repo. To share it across
+   machines, cloud sessions, or a team, see
+   [Syncing the oracle's memory](#syncing-the-oracles-memory).
+4. **Check it.** Run a skill, e.g. `/cops:pr-review <PR URL>`. Its report
+   ends with a `Handoffs:` list. `✓` on each line means the agents ran;
+   `inline (…)` means one wasn't available and the skill did that step
+   itself.
+
+The agents need no setup of their own: installing `cops` makes them
+available, and the skills call them.
+
 ## Agents
 
-- [`agents/pr-oracle.md`](agents/pr-oracle.md) — your PR oracle, with
-  persistent memory (`memory: user`) of your recurring review themes and
-  preferences. In the memory checkout (`~/.claude/agent-memory/`, the
-  repo `PR_MEMORY_REPO` points at when sync is on) every oracle file lives
-  under `memory/`: `memory/users/<github-login>/` for that person's rules,
-  `memory/team/` for rules someone explicitly asked to share. Memory holds
-  only rules that apply in every repo. The GitHub login is the one the
-  calling skill passes, or the GitHub MCP `get_me` tool's. Its `scout-repo`
-  profile (test runner, monorepo layout, changesets, PR/issue templates,
-  contribution rules) is read from the repo on each call. The skills
-  consult it at fixed points:
-  - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
-    threads, the rules each matches, and how to run tests), then
-    `sweep-diff` on each batch. A subagent implements low-risk asks, up
-    to 10 threads per batch, seeing only those threads, not the parent
-    chat, so the edit/test loop stays cheap in a long session.
-  - `pr-sync` — `scout-repo` + `brief-task` in one call (changesets, the title
-    prefix, the PR template, and how to write the description), handed to
-    the subagent that rebases and drafts, then `grill-description` on the
-    draft before applying it (flagging claims the diff doesn't back, and
-    learning any description preference you stated).
-  - `pr-review` — `scout-repo` + `sweep-diff` in one call on the PR's diff,
-    so the drafted `Question:` / `Suggestion:` / `Issue:` / `Test:` comments
-    reflect rules you've asked for before. A subagent first checks code
-    outside the diff, so no `Question:` asks what the code already answers.
-  - `pr-note` — `scout-repo` + `brief-task` in one call on the user's own
-    PR, before anyone else has commented, so the `Note:` comments it posts
-    (no draft to confirm) give the reason for choices that follow a
-    remembered rule, and `Drive-by:` comments say why an off-task change is
-    in the PR. `pr-sync` and `oss:issue-fix` suggest it on a PR that has
-    none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
-    `Question:` one of them already answers.
-  - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
-    its code survey starts from.
-  - `oss:issue-create` — `scout-repo` for the issue template.
-  - `oss:issue-verify` — `scout-repo` for the issue template, and for
-    where tests live and how to run them.
-  - `oss:issue-fix` — `scout-repo` before running the failing test,
-    `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
-    subagent commits.
-
-  It only advises: the skills still do every push, reply, and PR edit.
-  Personal files stay in that person's `memory/users/<github-login>/` tree.
-  `memory/team/MEMORY.md` grows only when a skill passes `record-team:`
-  because the user explicitly asked to share a rule (`CONVENTIONS.md`).
-  A one-repo rule isn't remembered; the oracle suggests that repo's
-  `CLAUDE.md` instead, so teammates and CI see it too. To code with its
-  memory loaded for a whole session, run `claude --agent cops:pr-oracle`.
-  In Cursor the same file is the `pr-oracle` subagent — the skills
-  delegate to it, and it reads and writes `memory/` itself. Claude Code
-  preloads `cops-pr-oracle/MEMORY.md`, only a stub pointing at `memory/`.
-
-  Memory sync across machines and cloud sessions is opt-in; see below.
-
-  The oracle reads GitHub through read-only GitHub MCP tools, so it
-  needs the GitHub MCP server.
-
-  The agent exists only with the `cops` plugin installed; without it, the
-  skills do each step themselves. See
-  [`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-cops).
+- [`agents/pr-oracle.md`](agents/pr-oracle.md) — remembers, briefs, and
+  checks, but never edits code or a PR. It holds your review themes and preferences
+  (rules that apply in every repo) and profiles a repo's setup (test
+  runner, monorepo layout, changesets, PR/issue templates, contribution
+  rules) on each call.
+  - **Memory:** `memory: user`, in the checkout at `~/.claude/agent-memory/`.
+    Every oracle file lives under `memory/`: `memory/users/<github-login>/`
+    for one person's rules, `memory/team/` for rules someone explicitly
+    asked to share (a skill passes `record-team:`). The GitHub login is the
+    one the calling skill passes, or the GitHub MCP `get_me` tool's. Claude
+    Code preloads `cops-pr-oracle/MEMORY.md`, only a stub pointing at
+    `memory/`.
+  - **One-repo rules aren't remembered.** The oracle suggests that repo's
+    `CLAUDE.md` instead, so teammates and CI see it too.
+  - **It only advises.** The skills still do every push, reply, and PR edit.
+  - **Whole session with its memory:** `claude --agent cops:pr-oracle`.
+  - **Cursor:** the same file is the `pr-oracle` subagent; it reads and
+    writes `memory/` itself.
+  - **Without `cops` installed,** the skills do each oracle step themselves
+    ([`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-cops)).
 
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your sidekick in the
   field. The skills hand it loops that edit, run, commit, or push
@@ -78,6 +60,38 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
   picks its model per job — Haiku for mechanical edits, Sonnet for scoped
   changes, the main chat's model for anything needing more judgment. See
   [`CONVENTIONS.md`](CONVENTIONS.md#hand-long-loops-to-a-subagent).
+
+### When the skills consult the oracle
+
+- `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
+  threads, the rules each matches, and how to run tests), then
+  `sweep-diff` on each batch. A subagent implements low-risk asks, up
+  to 10 threads per batch, seeing only those threads, not the parent
+  chat, so the edit/test loop stays cheap in a long session.
+- `pr-sync` — `scout-repo` + `brief-task` in one call (changesets, the title
+  prefix, the PR template, and how to write the description), handed to
+  the subagent that rebases and drafts, then `grill-description` on the
+  draft before applying it (flagging claims the diff doesn't back, and
+  learning any description preference you stated).
+- `pr-review` — `scout-repo` + `sweep-diff` in one call on the PR's diff,
+  so the drafted `Question:` / `Suggestion:` / `Issue:` / `Test:` comments
+  reflect rules you've asked for before. A subagent first checks code
+  outside the diff, so no `Question:` asks what the code already answers.
+- `pr-note` — `scout-repo` + `brief-task` in one call on the user's own
+  PR, before anyone else has commented, so the `Note:` comments it posts
+  (no draft to confirm) give the reason for choices that follow a
+  remembered rule, and `Drive-by:` comments say why an off-task change is
+  in the PR. `pr-sync` and `oss:issue-fix` suggest it on a PR that has
+  none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
+  `Question:` one of them already answers.
+- `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
+  its code survey starts from.
+- `oss:issue-create` — `scout-repo` for the issue template.
+- `oss:issue-verify` — `scout-repo` for the issue template, and for
+  where tests live and how to run them.
+- `oss:issue-fix` — `scout-repo` before running the failing test,
+  `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
+  subagent commits.
 
 ### Syncing the oracle's memory
 
