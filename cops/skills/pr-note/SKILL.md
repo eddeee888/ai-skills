@@ -20,6 +20,7 @@ Every comment starts with exactly one of these prefixes, then one or two sentenc
 
 - **The task** is what the linked issue, the PR body, and the commit messages say the PR is for. None of them says → ask the user what the PR is for before drafting; never treat the whole diff as drive-bys.
 - **Only what's unexplained.** Skip a choice the PR body, a commit message, or a code comment already explains, and a choice so standard no reviewer would ask.
+- **Every drive-by gets one anyway.** A drive-by is easy to miss, and a reviewer may not read the PR body, so a `Drive-by:` goes on its lines even when the body or a commit message already explains it.
 - **One comment per decision.** The same choice repeated across the diff gets one comment on its first occurrence saying where else it applies (`same in b.ts and c.ts`).
 - Generated files, lockfiles, snapshots, and vendored code get no comments.
 - About 10 at most. More → rank by what a reviewer is likeliest to ask about, keep the top ones, and tell the user how many you dropped.
