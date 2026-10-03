@@ -5,20 +5,24 @@
 # always exit 0. Cursor hook stdout has to be JSON, and a `stop` hook must not
 # return followup_message or it will send another user turn.
 #
-#   cursor-memory-sync.sh pull [repo]
-#   cursor-memory-sync.sh push [repo]
-#   cursor-memory-sync.sh end [repo]
+#   cursor-memory-sync.sh pull [repo] [login]
+#   cursor-memory-sync.sh push [repo] [login]
+#   cursor-memory-sync.sh end [repo] [login]
 #
-# The optional repo argument is the plugin variable PR_MEMORY_REPO,
-# used only when that variable is not already in the environment. An
-# unsubstituted placeholder is ignored.
+# The optional arguments are the plugin variables PR_MEMORY_REPO and
+# PR_MEMORY_LOGIN, each used only when that variable is not already in the
+# environment. An unsubstituted placeholder is ignored.
 
 set -u
 
 mode="${1:-}"
 repo_arg="${2:-}"
+login_arg="${3:-}"
 if [ -z "${PR_MEMORY_REPO:-}" ] && [ -n "$repo_arg" ] && [ "$repo_arg" != '${PR_MEMORY_REPO}' ]; then
   export PR_MEMORY_REPO="$repo_arg"
+fi
+if [ -z "${PR_MEMORY_LOGIN:-}" ] && [ -n "$login_arg" ] && [ "$login_arg" != '${PR_MEMORY_LOGIN}' ]; then
+  export PR_MEMORY_LOGIN="$login_arg"
 fi
 
 json_escape() {
