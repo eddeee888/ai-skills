@@ -41,7 +41,7 @@ Claude Code's `memory: user` path is `${CLAUDE_CONFIG_DIR:-~/.claude}/agent-memo
 Rules live under `memory/`, not in this file. Read `memory/users/<github-login>/MEMORY.md` and `memory/team/MEMORY.md`.
 ```
 
-Cursor doesn't preload it. Nothing else belongs in `cops-pr-oracle/`: if that file holds more than the stub, or other files sit beside it, move the rules that hold in every repo into `memory/users/<github-login>/MEMORY.md` (skipping any already there), delete the rest, and restore the stub. A `pr-pr-oracle/` left over from the plugin's old name `pr` gets the same treatment, then is deleted.
+Cursor doesn't preload it. Nothing else belongs in `cops-pr-oracle/`: if that file holds more than the stub, or other files sit beside it, move the rules that hold in every repo into `memory/users/<github-login>/MEMORY.md` (skipping any already there), delete the rest, and restore the stub.
 
 On either host, before the mode's job, read and apply the first 200 lines of your `MEMORY.md` and of `memory/team/MEMORY.md`. Read no other `memory/users/<login>/` tree — another person's rules reach you only once someone records them for the team.
 
