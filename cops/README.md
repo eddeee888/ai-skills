@@ -1,9 +1,9 @@
-# pr
+# Code Ops (`cops`)
 
 Plugin for Claude Code and Cursor — skills for the PR lifecycle: reviewing, describing, syncing, and more.
 
 Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
-`/pr:<skill-name>` once this plugin is installed, e.g. `/pr:pr-sync`
+`/cops:<skill-name>` once this plugin is installed, e.g. `/cops:pr-sync`
 (`/pr-sync` in Cursor).
 
 ## Agents
@@ -55,19 +55,19 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
   because the user explicitly asked to share a rule (`CONVENTIONS.md`).
   A one-repo rule isn't remembered; the oracle suggests that repo's
   `CLAUDE.md` instead, so teammates and CI see it too. To code with its
-  memory loaded for a whole session, run `claude --agent pr:pr-oracle`.
+  memory loaded for a whole session, run `claude --agent cops:pr-oracle`.
   In Cursor the same file is the `pr-oracle` subagent — the skills
   delegate to it, and it reads and writes `memory/` itself. Claude Code
-  preloads `pr-pr-oracle/MEMORY.md`, only a stub pointing at `memory/`.
+  preloads `cops-pr-oracle/MEMORY.md`, only a stub pointing at `memory/`.
 
   Memory sync across machines and cloud sessions is opt-in; see below.
 
   The oracle reads GitHub through read-only GitHub MCP tools, so it
   needs the GitHub MCP server.
 
-  The agent exists only with the `pr` plugin installed; without it, the
+  The agent exists only with the `cops` plugin installed; without it, the
   skills do each step themselves. See
-  [`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-pr).
+  [`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-cops).
 
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your sidekick in the
   field. The skills hand it loops that edit, run, commit, or push
@@ -89,7 +89,7 @@ The checkout is `~/.claude/agent-memory/`, oracle rules under its `memory/` (`me
    - **Locally, Claude Code** — in `~/.claude/settings.json`:
      `"env": { "PR_MEMORY_REPO": "<you>/agent-memory" }`. Your git
      credentials need push access to the repo.
-   - **Locally, Cursor** — the same variable, as the `pr` plugin variable
+   - **Locally, Cursor** — the same variable, as the `cops` plugin variable
      (Plugins → Configure) or in the hooks' environment. Git credentials
      need push access to the repo.
    - **Claude Code on the web** — add the same variable to the cloud

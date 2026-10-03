@@ -16,7 +16,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 - Issue URL or number given → pull the body and last 10 comments: `gh issue view <url or number> --json number,title,body,url,labels,state,comments --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'`. Read earlier comments only when what you need isn't there and `total` says there are more.
 - Only a description in the conversation → treat it as the issue. Thin (a one-liner with no use case or shape) → ask a clarifying question before sizing rather than inventing detail. Search for a duplicate first (`gh issue list --repo <owner>/<repo> --search "<keywords>" --state all` — closed ones count too). Match → point the user at it instead of continuing.
 
-In a monorepo, get the repo's profile (`scout-repo`) from `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, when available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"), and pass its package map to Step 3's subagent so the survey doesn't rediscover the workspace layout. Not available → the subagent works it out.
+In a monorepo, get the repo's profile (`scout-repo`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, when available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"), and pass its package map to Step 3's subagent so the survey doesn't rediscover the workspace layout. Not available → the subagent works it out.
 
 Then classify it and jump to the matching path:
 
@@ -101,7 +101,7 @@ Continue to Step 6.
 
 ## Step 6: Present the analysis
 
-Show the user: what's reported or asked, the size classification with its reasons, the root-cause hypothesis (or affected packages/files, for a feature), and Step 5's recommendation. This skill ends here — no implementation, reproduction, or test, and nothing posted to GitHub unless the user asks to share it. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `code survey`.
+Show the user: what's reported or asked, the size classification with its reasons, the root-cause hypothesis (or affected packages/files, for a feature), and Step 5's recommendation. This skill ends here — no implementation, reproduction, or test, and nothing posted to GitHub unless the user asks to share it. End with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo` and `code survey`.
 
 - Sized from an existing issue, asked to share → draft the comment, show it, and post only after confirmation, from a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"): `gh issue comment <number> --body-file <file>`
 - Plain-text bug description, nothing filed, user wants it filed → hand off to `issue-create` with the root-cause hypothesis as context rather than drafting here.

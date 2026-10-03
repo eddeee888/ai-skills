@@ -1,0 +1,7 @@
+{
+  "name": "cops",
+  "displayName": "Code Ops",
+  "version": "0.1.1",
+  "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.",
+  "icon": "./assets/logo.svg"
+}

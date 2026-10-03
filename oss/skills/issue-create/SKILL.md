@@ -23,7 +23,7 @@ Close match → show it and ask whether to proceed anyway. Nothing close → con
 
 ## Step 3: Fetch that repo's issue template, if it has one
 
-`pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent") → get the target repo's profile (`scout-repo`); it doesn't need to be checked out. It names the bug-report template and its required fields, and flags contribution rules that bind an issue — fetch only that template's full text. It couldn't tell which template is the bug report → handle it as below. Not available → look it up inline:
+`cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent") → get the target repo's profile (`scout-repo`); it doesn't need to be checked out. It names the bug-report template and its required fields, and flags contribution rules that bind an issue — fetch only that template's full text. It couldn't tell which template is the bug report → handle it as below. Not available → look it up inline:
 
 ```bash
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE --jq '.[].name' 2>/dev/null
@@ -82,7 +82,7 @@ Write the confirmed title and body to files first — never inline them in `--ti
 gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>
 ```
 
-Report the issue URL, and end with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with the label `scout-repo`. Verifying the issue (writing a failing test against it) is `issue-verify`'s job, if the user wants to go further. If the user doesn't maintain `<owner>/<repo>` or have a local checkout, say so plainly — `issue-verify` assumes write access and a local checkout; without them, the issue waits on its own maintainers.
+Report the issue URL, and end with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with the label `scout-repo`. Verifying the issue (writing a failing test against it) is `issue-verify`'s job, if the user wants to go further. If the user doesn't maintain `<owner>/<repo>` or have a local checkout, say so plainly — `issue-verify` assumes write access and a local checkout; without them, the issue waits on its own maintainers.
 
 ## When to stop instead of proceeding
 

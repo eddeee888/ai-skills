@@ -13,8 +13,8 @@
       "description": "Skills for maintaining and contributing to open source projects."
     },
     {
-      "name": "pr",
-      "source": "pr",
+      "name": "cops",
+      "source": "cops",
       "description": "Skills for working with pull requests."
     }
   ]

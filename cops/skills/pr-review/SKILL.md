@@ -11,7 +11,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 ## Comment kinds
 
-Every comment starts with exactly one of these prefixes, then one or two sentences. The prefix tells the author what's expected: an answer, a decision, or a fix.
+Every comment starts with exactly one of these prefixes, in bold (`**Question:**`, `CONVENTIONS.md` → "Comment labels"), then one or two sentences. The prefix tells the author what's expected: an answer, a decision, or a fix.
 
 - **`Question:`** — something about a change isn't clear from context: a runtime condition rewritten, a default changed, a check removed, code moved for no visible reason. The prefix only marks that an answer is expected. Open with `why` when the gap is motivation (`Question: why did this runtime check change?`), or `what` when the gap is the resulting behavior or condition (`Question: what does this guard cover now?`). `what` is only for a gap the diff doesn't answer — a restatement of what the code already shows isn't a comment. Ask only after Step 4 finds no answer in the PR description, the commit messages, the author's notes, or the surrounding code.
 - **`Suggestion:`** — there's a better way to write it, and you can say what: `Suggestion: use an IIFE to keep these in scope`. When the fix replaces only the commented lines, add a ```suggestion``` block with the exact replacement so the author can commit it from the PR page. Keep the original indentation and cover every line in the comment's range — the block replaces all of them. A fix spanning other lines or files gets a plain description, no block.
@@ -39,7 +39,7 @@ gh api user --jq .login
 
 Use the PR the user named, else the current branch's PR. No PR found, or it's closed or merged → stop and say so.
 
-Keep `headRefOid`: every comment anchors to that commit. When the PR is the user's own, tell them in one line that `/pr:pr-address` treats their own comments on their own diff as instructions to carry out. GitHub doesn't let them approve their own PR, so the review is always `COMMENT` there.
+Keep `headRefOid`: every comment anchors to that commit. When the PR is the user's own, tell them in one line that `/cops:pr-address` treats their own comments on their own diff as instructions to carry out. GitHub doesn't let them approve their own PR, so the review is always `COMMENT` there.
 
 ## Step 2: Read the change
 
@@ -56,7 +56,7 @@ Also fetch the existing review threads (the review-threads row in `CONVENTIONS.m
 
 ## Step 3: Consult the oracle
 
-Make one call to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `sweep-diff` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `PR #<number>` as the diff to check, and `login: <login>`. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team. It returns the repo's profile (where tests live, contribution rules) plus each place the diff breaks a remembered rule. Each flag is a candidate `Suggestion:` that still has to pass "What counts as substantial".
+Make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `sweep-diff` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `PR #<number>` as the diff to check, and `login: <login>`. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team. It returns the repo's profile (where tests live, contribution rules) plus each place the diff breaks a remembered rule. Each flag is a candidate `Suggestion:` that still has to pass "What counts as substantial".
 
 ## Step 4: Check the context behind each `Question:`
 
@@ -126,7 +126,7 @@ GitHub rejects a comment because its line isn't in the diff → move it to the n
 
 ## Step 7: Wrap up
 
-Report briefly: the review link, how many comments of each kind, and how many were dropped as lower priority. Don't paste the comments back. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo + sweep-diff` and `context check`.
+Report briefly: the review link, how many comments of each kind, and how many were dropped as lower priority. Don't paste the comments back. End with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo + sweep-diff` and `context check`.
 
 ## When to stop instead of proceeding
 

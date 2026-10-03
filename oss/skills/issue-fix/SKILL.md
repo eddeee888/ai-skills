@@ -1,13 +1,13 @@
 ---
 name: issue-fix
-description: Turn an `issue-verify` checkpoint commit into a fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or another), root-causes it, works out whether the bug lives in this library or a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements the one they pick — built directly on the checkpoint commit — commits it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushes. By default builds on the checkpoint's own branch and PR, checking that branch out if needed; pass `--new-pr` to open a separate fix PR instead. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction (`issue-verify` does), and does not require the checkpoint's PR to be merged — only for the commit to exist. It never runs `pr:pr-sync` itself; it suggests it after pushing when the `pr` plugin is installed.
+description: Turn an `issue-verify` checkpoint commit into a fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or another), root-causes it, works out whether the bug lives in this library or a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements the one they pick — built directly on the checkpoint commit — commits it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushes. By default builds on the checkpoint's own branch and PR, checking that branch out if needed; pass `--new-pr` to open a separate fix PR instead. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction (`issue-verify` does), and does not require the checkpoint's PR to be merged — only for the commit to exist. It never runs `cops:pr-sync` itself; it suggests it after pushing when the `cops` plugin is installed.
 ---
 
 # Fix a verified issue
 
 Second half of the TDD loop `issue-verify` started: a failing test, committed with an `eddeee888:oss:issue-verify` marker, proves the bug is real. This skill makes that test pass, and makes the fix decision *with* the user — a bug rooted in a dependency wants a different response than one in this repo's code, and the user should choose the trade-off before code gets written.
 
-**This skill never runs `pr:pr-sync` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS.md` → "Suggesting next steps", Step 7).
+**This skill never runs `cops:pr-sync` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS.md` → "Suggesting next steps", Step 7).
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
 
@@ -39,7 +39,7 @@ This commit is the base for everything that follows. By default, build the fix o
 
 ## Step 2: Re-root-cause it
 
-First get the repo's profile (`scout-repo`) from `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): how to run one test in the affected package, where tests live, and whether Step 6's title needs a package prefix. Not available → work those out from the repo.
+First get the repo's profile (`scout-repo`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): how to run one test in the affected package, where tests live, and whether Step 6's title needs a package prefix. Not available → work those out from the repo.
 
 Then run only the failing test locally, with the runner's quiet or summary reporter so only the failure lands in context, and read the failure (stack trace, assertion diff, error type) — it may be more specific than the issue. Re-read the issue thread only when the failure doesn't match the checkpoint commit message.
 
@@ -89,9 +89,9 @@ Return at most 5 lines: files changed, commit sha, tests run and result,
 or why you stopped.
 ```
 
-Then run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode on `<verify-commit-sha>..HEAD` — the fix commits since the checkpoint. Anything flagged within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason to the user before going further.
+Then run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode on `<verify-commit-sha>..HEAD` — the fix commits since the checkpoint. Anything flagged within the chosen option's scope → one follow-up subagent with just the flags and the sha, same prompt shape. The subagent stopped → bring its reason to the user before going further.
 
-A later `pr:pr-sync` rebase replays the checkpoint's SHA but leaves its content and trailer untouched — not the rewrite the prompt rules out.
+A later `cops:pr-sync` rebase replays the checkpoint's SHA but leaves its content and trailer untouched — not the rewrite the prompt rules out.
 
 ## Step 6: Push — open a new PR only when the branch has none
 
@@ -112,7 +112,7 @@ Reference the issue with a non-closing keyword (`CONVENTIONS.md` → "Non-closin
 
 ## Step 7: Wrap up
 
-Don't run `pr:pr-sync` or `pr:pr-note`; suggest them per `CONVENTIONS.md` → "Suggesting next steps". A new `fix/<issue-number>` PR was just written from the fix, so it needs no sync; a push to an existing PR (normally the checkpoint's) may. The report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
+Don't run `cops:pr-sync` or `cops:pr-note`; suggest them per `CONVENTIONS.md` → "Suggesting next steps". A new `fix/<issue-number>` PR was just written from the fix, so it needs no sync; a push to an existing PR (normally the checkpoint's) may. The report ends with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

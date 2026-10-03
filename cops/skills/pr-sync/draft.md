@@ -65,7 +65,7 @@ The brief says how the user likes descriptions written and what their reviewers 
 **Description** — three required sections, in this order, kept tight — a PR body a reviewer skims, not a design doc:
 
 - **Why** — the reason this change exists, not a rephrasing of What. Pull it from commit messages, a linked issue, or the existing description; ask the user only if nothing indicates the motivation. Must open with a paragraph starting `This PR ...` stating the mechanism by which it solves the issue, not just what the issue was — motivation bullets can follow.
-- **What** — the concrete change in a few short bullets: files, behavior, APIs touched — specific enough that a reviewer needn't open the diff to know what they're looking at.
+- **What** — the concrete change in a few short bullets: files, behavior, APIs touched — specific enough that a reviewer needn't open the diff to know what they're looking at. The diff carries a drive-by → split What into `### Main` and `### Drive-by` (`CONVENTIONS.md` → "Split What into Main and Drive-by").
 - **Verification** — how a reader can trust the change works: tests added/updated, commands run and their result, manual steps (with observed outcome), or covering CI checks. Pull it from commit messages, test files, and the diff; ask the user only if the branch gives no indication. No "should work" padding — nothing verified → say so plainly. A check that already ran in CI gets named by test type, not the literal command (`CONVENTIONS.md` → "Verification checklist"). Tests failing on purpose — a checkpoint commit with no fix yet — get stated plainly, never checklisted as passing (`CONVENTIONS.md` → "Don't checklist an intentionally-failing check as done").
 
 One bullet per section is enough for a trivial PR; don't pad. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS.md` → "Bold the critical claim"); skip a bullet with nothing critical enough to call out.
@@ -89,6 +89,8 @@ This PR ...
 
 ## What
 - ...
+
+(with a drive-by: `### Main` and `### Drive-by` under What, each with its bullets)
 
 ## Verification
 - ...

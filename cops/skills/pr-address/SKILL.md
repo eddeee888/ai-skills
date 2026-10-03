@@ -22,7 +22,7 @@ Compare the PR's `author.login` to the authenticated login. This gates everythin
 
 ## Step 2: Fetch review threads
 
-**Hand Steps 2–3 to `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `triage-threads` + `scout-repo` mode** when available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), and Step 3's rules verbatim — not the query below; it fetches the threads with the GitHub MCP tools. If the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, and the repo profile (5a passes the rules and the profile's `tests` line on), learning from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline.
+**Hand Steps 2–3 to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `triage-threads` + `scout-repo` mode** when available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"): pass the PR's owner/repo/number, the user's login, whether the PR is theirs (Step 1), and Step 3's rules verbatim — not the query below; it fetches the threads with the GitHub MCP tools. If the user explicitly asked to remember something for the team, also pass `record-team: <one line>`. It returns the buckets, the remembered rules each thread matches, and the repo profile (5a passes the rules and the profile's `tests` line on), learning from the threads as it goes. Pick up at Step 4 with its buckets. Not available → do Steps 2–3 inline.
 
 Pull review threads via GraphQL, for resolution state and comment order. Conversation-tab comments are out of scope — they have no reply chain.
 
@@ -59,7 +59,7 @@ On the MCP route, use `pull_request_read` method `get_review_comments`, per the 
 
 **High risk** means hard to reverse, security/auth, data loss, production config/infra, a public API, or a wide blast radius. Judge from the comment text and file path alone — don't open code. Can't tell → high risk.
 
-- **Only the PR's author ever commented, and the opening comment starts with `Note:` or `Drive-by:`** → an author note explaining the change, not an ask (`CONVENTIONS.md` → "Author notes"). Already handled: don't implement or answer it. Someone else has replied → classify from the last comment, as below.
+- **Only the PR's author ever commented, and the opening comment starts with `Note:` or `Drive-by:`** (bold or not — `CONVENTIONS.md` → "Comment labels") → an author note explaining the change, not an ask (`CONVENTIONS.md` → "Author notes"). Already handled: don't implement or answer it. Someone else has replied → classify from the last comment, as below.
 - **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both ask and go-ahead. Not high risk → automatic; high risk → needs the user first. Several comments, all the user's → the later ones are replies already posted (this skill replies as the user), so it's handled — unless the last is a new ask rather than a reply, which then counts as the note.
 - **A reviewer commented** → automatic only when the last comment is the user's short go-ahead ("Ok", "let's do it", "let me check" — not a paragraph that already answers) and the ask isn't high risk. Last comment is the user's own full answer or instruction → already handled; note it, don't ask.
 
@@ -123,7 +123,7 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    test run.
    ```
 
-3. **Check, before pushing.** Run `pr:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits (from the commit before the batch to `HEAD`). Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape; it commits the fixes, still without pushing.
+3. **Check, before pushing.** Run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits (from the commit before the batch to `HEAD`). Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape; it commits the fixes, still without pushing.
 4. **Push and reply.** Use the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push or start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary, single-quoted (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
 
    ```bash
@@ -144,7 +144,7 @@ Answer here only from what this chat already knows. Anything needing a web fetch
 
 ## Step 6: Wrap up
 
-Don't run `pr:pr-sync` from this skill. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → suggest `pr-sync` (`CONVENTIONS.md` → "Suggesting next steps"). Report concisely: how many threads were replied to or implemented, and how many remain open for manual resolution. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `triage-threads + scout-repo`, `5a batch` (one per batch), `5b research`, and `sweep-diff`.
+Don't run `cops:pr-sync` from this skill. Implementation changes were pushed **and the PR is the user's own** (per Step 1) → suggest `pr-sync` (`CONVENTIONS.md` → "Suggesting next steps"). Report concisely: how many threads were replied to or implemented, and how many remain open for manual resolution. End with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `triage-threads + scout-repo`, `5a batch` (one per batch), `5b research`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 
