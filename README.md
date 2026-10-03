@@ -22,6 +22,8 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ## Install
 
+After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally sync its memory.
+
 ### Claude Code
 
 Add the marketplace, then install the plugin(s) you want:
