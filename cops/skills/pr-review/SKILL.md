@@ -126,7 +126,7 @@ GitHub rejects a comment because its line isn't in the diff → move it to the n
 
 ## Step 7: Wrap up
 
-Report briefly: the review link, how many comments of each kind, and how many were dropped as lower priority. Don't paste the comments back. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo + sweep-diff` and `context check`.
+Report briefly: the review link, how many comments of each kind, and how many were dropped as lower priority. Don't paste the comments back. End with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo + sweep-diff` and `context check`.
 
 ## When to stop instead of proceeding
 

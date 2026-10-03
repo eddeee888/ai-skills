@@ -76,7 +76,7 @@ Notes on <owner>/<repo>#<number> — <review link> (<m> dropped as lower priorit
 2. <path>:<start>-<end>  Drive-by: <body>
 ```
 
-Then name any drive-by with no reason worth stating, as a change the user may want to take out. End with the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with label `scout-repo + brief-task`.
+Then name any drive-by with no reason worth stating, as a change the user may want to take out. End with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with label `scout-repo + brief-task`.
 
 ## When to stop instead of proceeding
 

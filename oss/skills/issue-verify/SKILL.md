@@ -118,7 +118,7 @@ gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
 
 ## Step 6: Wrap up
 
-Don't run or suggest `cops:pr-sync` — the new PR already matches its branch. Report the PR URL; the report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo` and `test loop`.
+Don't run or suggest `cops:pr-sync` — the new PR already matches its branch. Report the PR URL; the report ends with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo` and `test loop`.
 
 ## When to stop instead of proceeding
 

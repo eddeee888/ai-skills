@@ -112,7 +112,7 @@ Reference the issue with a non-closing keyword (`CONVENTIONS.md` → "Non-closin
 
 ## Step 7: Wrap up
 
-Don't run `cops:pr-sync` or `cops:pr-note`; suggest them per `CONVENTIONS.md` → "Suggesting next steps". A new `fix/<issue-number>` PR was just written from the fix, so it needs no sync; a push to an existing PR (normally the checkpoint's) may. The report's last line is the handoff line (`CONVENTIONS.md` → "Handoff line in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
+Don't run `cops:pr-sync` or `cops:pr-note`; suggest them per `CONVENTIONS.md` → "Suggesting next steps". A new `fix/<issue-number>` PR was just written from the fix, so it needs no sync; a push to an existing PR (normally the checkpoint's) may. The report ends with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo`, `root cause`, `brief-task`, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

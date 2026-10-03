@@ -118,26 +118,31 @@ An implement/test/commit loop, a write-and-run test loop, a code survey, researc
 - **Every spawn and check is a main-chat step.** Keep them few — batch where the skill says to.
 - **Bounded retries.** A template that says to keep going "until" a test passes or fails the right way allows at most 3 attempts. Still not there after the third → stop, leave the work uncommitted, and return what was tried and what's still failing. The main chat takes that to the user; it doesn't respawn the same loop unasked.
 - **Resume, don't restart.** A respawn after a question carries the question and the answer; the subagent picks up at the step that asked, checking what's already done (rebased, committed, pushed) rather than redoing it.
-- **No way to spawn a subagent** means the host has no subagent tool at all, not that one seems unnecessary → do the same steps in the main chat, and mark them `inline` on the handoff line ("Handoff line in the final report").
+- **No way to spawn a subagent** means the host has no subagent tool at all, not that one seems unnecessary → do the same steps in the main chat, and mark them `inline` on the handoffs list ("Handoffs in the final report").
 
 Used by: `cops:pr-address` (5a batches, 5b research), `cops:pr-sync` (Steps 2–6),
 `cops:pr-review` (context check), `oss:issue-fix` (root cause, implementation),
 `oss:issue-verify` (the failing test), `oss:issue-analyze` (code survey).
 `pr-sidekick` follows its model and retry rules.
 
-## Handoff line in the final report
+## Handoffs in the final report
 
-A skill that names subagent or `pr-oracle` handoffs ends its final report with one line listing each handoff that applied this run, in the order the skill runs them. Each skill names its labels at its wrap-up step. For example:
+A skill that names subagent or `pr-oracle` handoffs ends its final report with a `Handoffs:` list: one bullet per handoff that applied this run, in the order the skill runs them. Each skill names its labels at its wrap-up step. For example:
 
-```text
-Handoffs: scout-repo ✓ · root cause ✓ · brief-task ✓ · fix loop ✓ · sweep-diff ✓
+```markdown
+Handoffs:
+- scout-repo ✓
+- root cause ✓
+- brief-task ✓
+- fix loop ✓
+- sweep-diff ✓
 ```
 
 - `✓`: ran as the skill says.
 - `inline (<reason>)`: done in the main chat because the host couldn't make the handoff. The only valid reasons: it has no subagent tool, or the `cops` plugin isn't installed so the oracle doesn't exist.
 - `✗ (<reason>)`: skipped, and only because the user agreed.
 
-Leave out a handoff that didn't apply this run (e.g. no authoritative threads means no 5a batch). Writing the line is the check: if the honest mark would be `✗` without the user's agreement, or `inline` for any other reason, go back and make that handoff before reporting.
+Leave out a handoff that didn't apply this run (e.g. no authoritative threads means no 5a batch). Writing the list is the check: if the honest mark would be `✗` without the user's agreement, or `inline` for any other reason, go back and make that handoff before reporting.
 
 Used by: `cops:pr-address` (Step 6), `cops:pr-sync` (Step 7), `cops:pr-review`
 (Step 7), `cops:pr-note` (Step 6), `oss:issue-analyze` (Step 6), `oss:issue-create` (Step 7),
@@ -149,7 +154,7 @@ The `oss` plugin works on its own. With the `cops` plugin installed too, `oss` s
 
 - **How to tell.** `cops` is installed when its names exist in this session: `cops:pr-oracle`, `cops:pr-sidekick`, and `/cops:pr-sync` on Claude Code; the `pr-oracle` and `pr-sidekick` subagents and `/pr-sync` on Cursor. Check once, when the skill first needs one, and keep that answer for the run. Cursor itself is never "missing".
 - **Missing → fall back, never stop**, and don't ask the user to install `cops`:
-  - `pr-oracle` → do that step inline, exactly as the skill describes ("Consulting the `pr-oracle` agent"), and mark it `inline (cops plugin isn't installed)` on the handoff line ("Handoff line in the final report").
+  - `pr-oracle` → do that step inline, exactly as the skill describes ("Consulting the `pr-oracle` agent"), and mark it `inline (cops plugin isn't installed)` on the handoffs list ("Handoffs in the final report").
   - `pr-sidekick` → the `general-purpose` agent on Claude Code, a subagent on Cursor ("Hand long loops to a subagent").
   - `pr-sync` → say the PR's title and description need updating by hand, and don't name `/cops:pr-sync` ("Suggesting next steps").
 - **Defaults without the oracle.** No profile means no `overrides:` line. Before applying a *Default* section, check the repo's `CLAUDE.md` and `CONTRIBUTING.md` for a rule that says otherwise, and follow it ("Defaults and contracts").
@@ -187,7 +192,7 @@ Used by: `cops:pr-review`.
 
 ## Suggesting next steps
 
-A skill never runs another skill to finish up; whether to pay for it is the user's call. Instead, its final report suggests it in one line each, before the handoff line, and only on the user's own PR — authored by their GitHub login (`gh api user --jq .login`, or `get_me`).
+A skill never runs another skill to finish up; whether to pay for it is the user's call. Instead, its final report suggests it in one line each, before the handoffs list, and only on the user's own PR — authored by their GitHub login (`gh api user --jq .login`, or `get_me`).
 
 | Suggest | When | Line |
 |---|---|---|
