@@ -125,7 +125,7 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    ```
 
 3. **Check, before pushing.** Run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits (from the commit before the batch to `HEAD`). Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape; it commits the fixes, still without pushing.
-4. **Push and reply.** Use the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push or start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary, signed with `cops:pr-address` and the `✓ <login>` approval (`CONVENTIONS.md` → "Skill signature"). The signed reply goes in a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
+4. **Push and reply.** Use the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push or start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary, signed with `cops:pr-address` and the `Approved: <login>` part (`CONVENTIONS.md` → "Skill signature"). The signed reply goes in a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
 
    ```bash
    gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -F body=@<file>
