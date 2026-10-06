@@ -103,6 +103,8 @@ Apply the user's edits and drops. The user wants approve or request changes → 
 
 Post every comment in a single review, so the author gets one notification instead of one per line.
 
+Sign every comment, and the top-level body if it has one, with `cops:pr-review` and the `✓ <login>` approval — the user confirmed the draft (`CONVENTIONS.md` → "Skill signature"). The signature isn't part of the draft shown in Step 5.
+
 On the `gh` route, write the payload to a file with the file-writing tool (`CONVENTIONS.md` → "Passing drafted text to `gh`"). Then:
 
 ```bash

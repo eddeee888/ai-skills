@@ -1,6 +1,6 @@
 ---
 name: issue-verify
-description: Verify a GitHub issue is real and reproducible before any fix work starts. Checks the issue for a reproduction, asks the reporter for one if it's missing (guided by the repo's issue template), writes a test encoding the repro, and — once it's confirmed failing for the right reason — pushes it, still failing, as a checkpoint commit marked `eddeee888:oss:issue-verify`. Use when asked to "verify issue #123", "triage this issue", "check if this bug is real/reproducible", or as the mandatory first step before fixing any reported bug. Pairs with the `issue-fix` skill, which builds directly on this checkpoint commit — its PR doesn't need to merge first.
+description: Verify a GitHub issue is real and reproducible before any fix work starts. Checks the issue for a reproduction, asks the reporter for one if it's missing (guided by the repo's issue template), writes a test encoding the repro, and — once it's confirmed failing for the right reason — pushes it, still failing, as a checkpoint commit with the `Skill: oss:issue-verify` trailer. Use when asked to "verify issue #123", "triage this issue", "check if this bug is real/reproducible", or as the mandatory first step before fixing any reported bug. Pairs with the `issue-fix` skill, which builds directly on this checkpoint commit — its PR doesn't need to merge first.
 ---
 
 # Verify a GitHub issue
@@ -17,14 +17,14 @@ Cheap, exact checks first — a checkpoint branch by its conventional name, and 
 
 ```bash
 git ls-remote --heads origin "repro/<number>"
-git log --oneline --grep="eddeee888:oss:issue-verify" HEAD | grep -E "#<number>([^0-9]|$)"
+git log --oneline --grep='^Skill: oss:issue-verify$' HEAD | grep -E "#<number>([^0-9]|$)"
 ```
 
 Both empty → one wider sweep, since a checkpoint can sit on a differently named branch:
 
 ```bash
 git fetch origin --quiet
-git log --all --oneline --grep="eddeee888:oss:issue-verify" | grep -E "#<number>([^0-9]|$)"
+git log --all --oneline --grep='^Skill: oss:issue-verify$' | grep -E "#<number>([^0-9]|$)"
 ```
 
 The `([^0-9]|$)` keeps `#12` from matching `#123`.
@@ -61,7 +61,7 @@ Point at what the template asks for, not a generic "please provide more info":
 - Template has a reproduction field → name it: *"Could you share a link to a minimal reproduction? This issue template asks for one under '\<field name\>' — a CodeSandbox/StackBlitz link or a small repo works best."*
 - No template → ask for exact package version(s), a minimal code sample, and expected vs. actual behavior.
 
-Show the draft to the user before posting — "confirmed" means they approved the wording, not that the reporter replied. Then write it to a file and post from there — never inline in `--body "…"` (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
+Show the draft to the user before posting — "confirmed" means they approved the wording, not that the reporter replied. End the body with the `oss:issue-verify` signature and the `✓ <login>` approval — the user confirmed it (`CONVENTIONS.md` → "Skill signature"). Then write it to a file and post from there — never inline in `--body "…"` (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
 ```bash
 gh issue comment <number> --body-file <file>
@@ -99,12 +99,12 @@ It doesn't fail the way the issue claims → that's a finding. Discard the test 
 ## Step 5: Leave it failing, commit it as the checkpoint, open the PR
 
 - Leave the test failing — don't skip it or mark it pending. A skipped test is invisible to CI; the failing one is the checkpoint this skill exists to produce. Red checks on this PR are expected.
-- Commit it on a new branch `repro/<issue-number>` (paired with `issue-fix`'s `fix/<issue-number>` — `CONVENTIONS.md` → "Checkpoint/fix branch naming"), with the marker `eddeee888:oss:issue-verify` as the commit message's last line — a plain trailer, not prose, so it stays grep-able:
+- Commit it on a new branch `repro/<issue-number>` (paired with `issue-fix`'s `fix/<issue-number>` — `CONVENTIONS.md` → "Checkpoint/fix branch naming"), with the trailer `Skill: oss:issue-verify` in the message's final paragraph, so it stays grep-able. No `Approved-by:` — the user didn't OK this commit (`CONVENTIONS.md` → "Commit trailers"):
 
   ```
   test: reproduce #123 — <short bug description>
 
-  eddeee888:oss:issue-verify
+  Skill: oss:issue-verify
   ```
 - Push, then open the PR as a **draft**, referencing the issue with a non-closing keyword (`CONVENTIONS.md` → "Non-closing issue references") — this PR fixes nothing yet, so no `Fixes`/`Closes`.
 - Title: `test: reproduce <short bug description> (failing) (#123)` — issue reference at the end (`CONVENTIONS.md` → "Trailing issue reference"). In a monorepo, apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix") with the package Step 4 identified — e.g. `[package-name] test: reproduce <short bug description> (failing) (#123)`.

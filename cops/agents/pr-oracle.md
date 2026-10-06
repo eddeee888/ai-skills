@@ -97,7 +97,7 @@ Where the repo's own `CLAUDE.md` or CONTRIBUTING states a fact differently from 
 Input: the PR's owner/repo/number, the user's login, whether the PR is the user's own, and the classification rules from `cops:pr-address` Step 3 (applied exactly as given — they're the source of truth, not you).
 
 1. Fetch the review threads with `pull_request_read` method `get_review_comments`, passing `after: <endCursor>` while `pageInfo.hasNextPage` is true; drop threads with `is_resolved: true`. Comments carry no `databaseId`: take it from the digits after `#discussion_r` in each comment's `html_url`. An outdated comment has no `line`; use `original_line`.
-2. Classify every unresolved thread per the rules: bucket on its last comment, nature from its opening one. Where a thread's ask matches a remembered rule, note it — context for the caller, not a change to the bucket.
+2. Classify every unresolved thread per the rules: bucket on its last comment, nature from its opening one. A comment ending in a skill signature (a `<sub>` line linking into `github.com/eddeee888/ai-skills`, before any host footer) was posted by a skill under the user's login: with an ask label it's the user's own ask; with no label it's a skill's reply, never a go-ahead and nothing to learn from. Where a thread's ask matches a remembered rule, note it — context for the caller, not a change to the bucket.
 3. Learn from the threads (see "Learning"): a reviewer repeating an ask you've seen before, or the user stating a preference in a reply.
 
 Return:

@@ -1,11 +1,11 @@
 ---
 name: issue-fix
-description: Turn an `issue-verify` checkpoint commit into a fix. Locates the failing test behind the `eddeee888:oss:issue-verify` marker (same branch or another), root-causes it, works out whether the bug lives in this library or a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements the one they pick — built directly on the checkpoint commit — commits it with the `eddeee888:oss:issue-fix` marker as the last commit-message line, and pushes. By default builds on the checkpoint's own branch and PR, checking that branch out if needed; pass `--new-pr` to open a separate fix PR instead. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction (`issue-verify` does), and does not require the checkpoint's PR to be merged — only for the commit to exist. It never runs `cops:pr-sync` itself; it suggests it after pushing when the `cops` plugin is installed.
+description: Turn an `issue-verify` checkpoint commit into a fix. Locates the failing test behind the `Skill: oss:issue-verify` checkpoint trailer (same branch or another), root-causes it, works out whether the bug lives in this library or a dependency, presents the user 2-3 concrete fix options with pros/cons, then implements the one they pick — built directly on the checkpoint commit — commits it with the `Skill: oss:issue-fix` and `Approved-by:` trailers, and pushes. By default builds on the checkpoint's own branch and PR, checking that branch out if needed; pass `--new-pr` to open a separate fix PR instead. Use when asked to "fix issue #123", "implement the fix for #123", or right after an `issue-verify` checkpoint commit exists. This skill does not write the reproduction (`issue-verify` does), and does not require the checkpoint's PR to be merged — only for the commit to exist. It never runs `cops:pr-sync` itself; it suggests it after pushing when the `cops` plugin is installed.
 ---
 
 # Fix a verified issue
 
-Second half of the TDD loop `issue-verify` started: a failing test, committed with an `eddeee888:oss:issue-verify` marker, proves the bug is real. This skill makes that test pass, and makes the fix decision *with* the user — a bug rooted in a dependency wants a different response than one in this repo's code, and the user should choose the trade-off before code gets written.
+Second half of the TDD loop `issue-verify` started: a failing test, committed with a `Skill: oss:issue-verify` trailer (`CONVENTIONS.md` → "Commit trailers"), proves the bug is real. This skill makes that test pass, and makes the fix decision *with* the user — a bug rooted in a dependency wants a different response than one in this repo's code, and the user should choose the trade-off before code gets written.
 
 **This skill never runs `cops:pr-sync` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS.md` → "Suggesting next steps", Step 7).
 
@@ -16,7 +16,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 The failing test may be on the current branch or a different one — look, don't assume. Cheap, exact checks first — the current branch's history, and a checkpoint branch by its conventional name:
 
 ```bash
-git log --oneline --grep="eddeee888:oss:issue-verify" HEAD | grep -E "#<issue-number>([^0-9]|$)"
+git log --oneline --grep='^Skill: oss:issue-verify$' HEAD | grep -E "#<issue-number>([^0-9]|$)"
 git ls-remote --heads origin "repro/<issue-number>"
 ```
 
@@ -24,7 +24,7 @@ Both empty → one wider sweep, since a checkpoint can sit on a differently name
 
 ```bash
 git fetch origin --quiet
-git log --all --oneline --grep="eddeee888:oss:issue-verify" | grep -E "#<issue-number>([^0-9]|$)"
+git log --all --oneline --grep='^Skill: oss:issue-verify$' | grep -E "#<issue-number>([^0-9]|$)"
 ```
 
 No issue number given → run the same commands without the `grep -E` filter (and skip the `ls-remote`), then ask the user which issue if more than one checkpoint turns up. The `([^0-9]|$)` keeps `#12` from matching `#123`.
@@ -69,7 +69,7 @@ Then hand the edit/test/commit loop to one subagent (`CONVENTIONS.md` → "Hand 
 
 ```text
 Repo <owner>/<repo>, branch <branch> (already checked out), on top of
-checkpoint commit <verify-commit-sha> (marked eddeee888:oss:issue-verify).
+checkpoint commit <verify-commit-sha> (the oss:issue-verify checkpoint).
 Failing test: <path> — run it with: <command from the profile, or "find out">
 Fix to make: <the chosen option, in two or three lines>
 Rules that apply: <the brief's lines, or "none">
@@ -80,10 +80,12 @@ Run the affected package's tests with a quiet or summary reporter, reading
 only failures, until the failing test passes for the right reason and
 nothing else regressed — at most 3 attempts. Still failing after the third
 → stop without committing and say what you tried and what's still failing.
-Then commit, with this message ending in the marker:
+Then commit with this message; any trailers your host adds go after these
+two, in the same paragraph:
   fix: <short description> (#<issue number>)
 
-  eddeee888:oss:issue-fix
+  Skill: oss:issue-fix
+  Approved-by: <user's GitHub login>
 Do not push. If the fix needs more than the chosen option, stop and say why.
 Return at most 5 lines: files changed, commit sha, tests run and result,
 or why you stopped.
@@ -116,6 +118,6 @@ Don't run `cops:pr-sync` or `cops:pr-note`; suggest them per `CONVENTIONS.md` �
 
 ## When to stop instead of proceeding
 
-- No `eddeee888:oss:issue-verify` commit found anywhere → stop at Step 1, say so, ask the user where it lives rather than guessing a base.
+- No `oss:issue-verify` checkpoint commit found anywhere → stop at Step 1, say so, ask the user where it lives rather than guessing a base.
 - Root cause still unclear after Step 2/3 → don't guess an option set; go back to the issue/reporter (or `issue-verify`) for more signal first.
 - User hasn't picked an option → don't implement a "likely" default; wait.

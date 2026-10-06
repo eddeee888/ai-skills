@@ -61,6 +61,7 @@ On the MCP route, use `pull_request_read` method `get_review_comments`, per the 
 
 - **Only the PR's author ever commented, and the opening comment starts with `Note:` or `Drive-by:`** (bold or not — `CONVENTIONS.md` → "Comment labels") → an author note explaining the change, not an ask (`CONVENTIONS.md` → "Author notes"). Already handled: don't implement or answer it. Someone else has replied → classify from the last comment, as below.
 - **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both ask and go-ahead. Not high risk → automatic; high risk → needs the user first. Several comments, all the user's → the later ones are replies already posted (this skill replies as the user), so it's handled — unless the last is a new ask rather than a reply, which then counts as the note.
+- **The last comment is signed and has no label** (`CONVENTIONS.md` → "Skill signature") → a skill's own reply, though posted under the user's login: handled, never a go-ahead. A signed comment with an ask label is the user's own ask: classify it as the user's comment.
 - **A reviewer commented** → automatic only when the last comment is the user's short go-ahead ("Ok", "let's do it", "let me check" — not a paragraph that already answers) and the ask isn't high risk. Last comment is the user's own full answer or instruction → already handled; note it, don't ask.
 
 Tag each automatic thread by the nature of the *original* comment, not the reply:
@@ -124,10 +125,10 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    ```
 
 3. **Check, before pushing.** Run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits (from the commit before the batch to `HEAD`). Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape; it commits the fixes, still without pushing.
-4. **Push and reply.** Use the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push or start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary, single-quoted (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
+4. **Push and reply.** Use the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push or start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary, signed with `cops:pr-address` and the `✓ <login>` approval (`CONVENTIONS.md` → "Skill signature"). The signed reply goes in a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
 
    ```bash
-   gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -f body='<summary>'
+   gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -F body=@<file>
    ```
 
    A skipped thread → bring it to the user with the reason, as in Step 4.
@@ -138,7 +139,7 @@ Do **not** resolve the thread — that's for the reviewer or the user.
 
 ### 5b. Why-question
 
-Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Drop any backing resource that's private or inaccessible to the PR's reviewers; surface it to the user in-session, never in the PR comment. Reply as in 5a — a multi-line answer goes in a file, `-F body=@<file>` (`CONVENTIONS.md` → "Passing drafted text to `gh`"). Do **not** resolve the thread.
+Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Drop any backing resource that's private or inaccessible to the PR's reviewers; surface it to the user in-session, never in the PR comment. Reply as in 5a — signed, from a file, `-F body=@<file>` (`CONVENTIONS.md` → "Skill signature", "Passing drafted text to `gh`"). Do **not** resolve the thread.
 
 Answer here only from what this chat already knows. Anything needing a web fetch or reading code (a docs page or source file can be thousands of tokens) goes to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
 
