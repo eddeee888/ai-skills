@@ -185,8 +185,13 @@ A skill that recognises a comment by its label matches it with or without
 the bold: `Note:` and `**Note:**` are the same label, so comments posted
 before this rule still count.
 
+A reply a skill posts in a thread (`cops:pr-address`'s summary or answer)
+never opens with a label, so a signed reply reads as a reply ("Skill
+signature").
+
 Used by: `cops:pr-review`, `cops:pr-note` (writing); `cops:pr-address`,
-`cops:pr-note`, "Author notes", "Suggesting next steps" (reading).
+`cops:pr-note`, "Author notes", "Skill signature", "Suggesting next steps"
+(reading).
 
 ## Skill signature: `<sub>[<plugin>:<skill>](…)</sub>`
 
@@ -210,7 +215,11 @@ When the user approved this post, add `✓` and their GitHub login (`gh api user
 - **Multi-line.** A signed body is never one line, so it goes through a file on the `gh` route ("Passing drafted text to `gh`").
 - PR titles and descriptions aren't signed.
 
-**Reading.** A comment whose last line (before any host footer) is a `<sub>` line linking into `github.com/eddeee888/ai-skills` was posted by a skill, even under the user's login: it's never the user's go-ahead, a new ask, or a stated preference. A thread whose last comment is signed is already handled.
+**Reading.** A comment whose last line (before any host footer) is a `<sub>` line linking into `github.com/eddeee888/ai-skills` was posted by a skill, even under the user's login. Its label, not the signature, says what it is ("Comment labels"):
+
+- **An ask label** (`Question:`, `Suggestion:`, `Issue:`, `Test:`) → the user's own ask, as if they'd typed it (e.g. `cops:pr-review` run on their own PR).
+- **`Note:` / `Drive-by:`** → an explanation ("Author notes").
+- **No label** → a skill's reply: never the user's go-ahead, a new ask, or a stated preference. A thread whose last comment is one is already handled.
 
 Used by: `cops:pr-review`, `cops:pr-note`, `cops:pr-address`,
 `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify` (writing);

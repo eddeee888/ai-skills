@@ -61,7 +61,7 @@ On the MCP route, use `pull_request_read` method `get_review_comments`, per the 
 
 - **Only the PR's author ever commented, and the opening comment starts with `Note:` or `Drive-by:`** (bold or not — `CONVENTIONS.md` → "Comment labels") → an author note explaining the change, not an ask (`CONVENTIONS.md` → "Author notes"). Already handled: don't implement or answer it. Someone else has replied → classify from the last comment, as below.
 - **Only the user ever commented** (a note on their own diff) → on the user's own PR, that comment is both ask and go-ahead. Not high risk → automatic; high risk → needs the user first. Several comments, all the user's → the later ones are replies already posted (this skill replies as the user), so it's handled — unless the last is a new ask rather than a reply, which then counts as the note.
-- **The last comment carries a skill signature** (`CONVENTIONS.md` → "Skill signature") → a skill's own reply, though posted under the user's login: handled, never a go-ahead.
+- **The last comment is signed and has no label** (`CONVENTIONS.md` → "Skill signature") → a skill's own reply, though posted under the user's login: handled, never a go-ahead. A signed comment with an ask label is the user's own ask: classify it as the user's comment.
 - **A reviewer commented** → automatic only when the last comment is the user's short go-ahead ("Ok", "let's do it", "let me check" — not a paragraph that already answers) and the ask isn't high risk. Last comment is the user's own full answer or instruction → already handled; note it, don't ask.
 
 Tag each automatic thread by the nature of the *original* comment, not the reply:
