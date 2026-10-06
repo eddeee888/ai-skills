@@ -92,6 +92,13 @@ available, and the skills call them.
 - `oss:issue-fix` — `scout-repo` before running the failing test,
   `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
   subagent commits.
+- **Any other coding task** ("implement this feature", "implement PR for
+  #123") — no skill runs, so the oracle's own description asks the main
+  chat to call it: `scout-repo` + `brief-task` before writing code, then
+  `sweep-diff` before committing or pushing. This is the model's call, so a
+  small change may skip it; for a guarantee, add the same line to your
+  `~/.claude/CLAUDE.md`. `CONVENTIONS.md` rules (title prefix, non-closing
+  issue references) and the `pr-note` suggestion only come with the skills.
 
 ### Syncing the oracle's memory
 
