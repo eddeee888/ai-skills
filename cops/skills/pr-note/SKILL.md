@@ -63,7 +63,7 @@ Draft every comment in the "Comment kinds" format: path, line (or start and end 
 
 ## Step 5: Post it as one review
 
-Sign every comment with `cops:pr-note`, without the `✅ Approved by <login>` approval — the user didn't see the draft (`CONVENTIONS.md` → "Skill signature"). Post every comment in a single `COMMENT` review on `headRefOid`, exactly as `cops:pr-review` Step 6 does: on the `gh` route, the payload goes in `$(git rev-parse --git-dir)/pr-note.json` (`CONVENTIONS.md` → "Passing drafted text to `gh`") and is sent with `gh api repos/<owner>/<repo>/pulls/<number>/reviews --input`, then removed; on the MCP route, a pending review, one `add_comment_to_pending_review` per comment, then `submit_pending` with `event: COMMENT`.
+Sign every comment with `cops:pr-note`, without the `Approved: <login>` part — the user didn't see the draft (`CONVENTIONS.md` → "Skill signature"). Post every comment in a single `COMMENT` review on `headRefOid`, exactly as `cops:pr-review` Step 6 does: on the `gh` route, the payload goes in `$(git rev-parse --git-dir)/pr-note.json` (`CONVENTIONS.md` → "Passing drafted text to `gh`") and is sent with `gh api repos/<owner>/<repo>/pulls/<number>/reviews --input`, then removed; on the MCP route, a pending review, one `add_comment_to_pending_review` per comment, then `submit_pending` with `event: COMMENT`.
 
 GitHub rejects a comment because its line isn't in the diff → move it to the nearest changed line in the same hunk. No such line → tell the user; never drop it silently. A failure partway through the MCP route leaves a pending review only the user can see → tell them; delete it with `delete_pending` only if they say to.
 

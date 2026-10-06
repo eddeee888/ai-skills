@@ -76,7 +76,7 @@ Show the full drafted title and body verbatim before touching GitHub. This is a 
 
 ## Step 7: Create it
 
-End the body with the `oss:issue-create` signature and the `✅ Approved by <login>` approval — the user confirmed it (`CONVENTIONS.md` → "Skill signature"). Write the confirmed title and body to files first — never inline them in `--title "…"`/`--body "…"`, where backticks in a bug report's code run as shell commands (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
+End the body with the `oss:issue-create` signature and the `Approved: <login>` part — the user confirmed it (`CONVENTIONS.md` → "Skill signature"). Write the confirmed title and body to files first — never inline them in `--title "…"`/`--body "…"`, where backticks in a bug report's code run as shell commands (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
 ```bash
 gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>
