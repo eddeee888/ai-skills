@@ -17,14 +17,14 @@ Cheap, exact checks first — a checkpoint branch by its conventional name, and 
 
 ```bash
 git ls-remote --heads origin "repro/<number>"
-git log --oneline --grep='^Skill: oss:issue-verify$' --grep='^eddeee888:oss:issue-verify$' HEAD | grep -E "#<number>([^0-9]|$)"
+git log --oneline --grep='^Skill: oss:issue-verify$' HEAD | grep -E "#<number>([^0-9]|$)"
 ```
 
 Both empty → one wider sweep, since a checkpoint can sit on a differently named branch:
 
 ```bash
 git fetch origin --quiet
-git log --all --oneline --grep='^Skill: oss:issue-verify$' --grep='^eddeee888:oss:issue-verify$' | grep -E "#<number>([^0-9]|$)"
+git log --all --oneline --grep='^Skill: oss:issue-verify$' | grep -E "#<number>([^0-9]|$)"
 ```
 
 The `([^0-9]|$)` keeps `#12` from matching `#123`.

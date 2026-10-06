@@ -16,7 +16,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 The failing test may be on the current branch or a different one — look, don't assume. Cheap, exact checks first — the current branch's history, and a checkpoint branch by its conventional name:
 
 ```bash
-git log --oneline --grep='^Skill: oss:issue-verify$' --grep='^eddeee888:oss:issue-verify$' HEAD | grep -E "#<issue-number>([^0-9]|$)"
+git log --oneline --grep='^Skill: oss:issue-verify$' HEAD | grep -E "#<issue-number>([^0-9]|$)"
 git ls-remote --heads origin "repro/<issue-number>"
 ```
 
@@ -24,7 +24,7 @@ Both empty → one wider sweep, since a checkpoint can sit on a differently name
 
 ```bash
 git fetch origin --quiet
-git log --all --oneline --grep='^Skill: oss:issue-verify$' --grep='^eddeee888:oss:issue-verify$' | grep -E "#<issue-number>([^0-9]|$)"
+git log --all --oneline --grep='^Skill: oss:issue-verify$' | grep -E "#<issue-number>([^0-9]|$)"
 ```
 
 No issue number given → run the same commands without the `grep -E` filter (and skip the `ls-remote`), then ask the user which issue if more than one checkpoint turns up. The `([^0-9]|$)` keeps `#12` from matching `#123`.

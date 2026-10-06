@@ -230,10 +230,10 @@ Approved-by: <login>
 - **`Skill: <plugin>:<skill>`** — always.
 - **`Approved-by: <login>`** — the user's GitHub login (`gh api user --jq .login`, or `get_me`), only when the user OK'd the change this commit makes (as "Skill signature" → "Approved"). A commit the skill makes without asking leaves it out.
 - **One trailer block.** Host-added trailers (`Co-Authored-By:`, `Claude-Session:`) join the same final paragraph, after these; no blank line between them. Never rely on any trailer being the message's last line.
-- **Finding one** — an anchored grep, so a commit that only mentions the skill doesn't match. Commits from before this rule end with a bare `eddeee888:<plugin>:<skill>` line instead; search for both (several `--grep`s match any of them):
+- **Finding one** — an anchored grep, so a commit that only mentions the skill doesn't match:
 
   ```bash
-  git log --oneline --grep='^Skill: oss:issue-verify$' --grep='^eddeee888:oss:issue-verify$' HEAD
+  git log --oneline --grep='^Skill: oss:issue-verify$' HEAD
   ```
 
 Used by: `oss:issue-verify` (writes `oss:issue-verify`, finds it),
