@@ -61,7 +61,7 @@ Point at what the template asks for, not a generic "please provide more info":
 - Template has a reproduction field → name it: *"Could you share a link to a minimal reproduction? This issue template asks for one under '\<field name\>' — a CodeSandbox/StackBlitz link or a small repo works best."*
 - No template → ask for exact package version(s), a minimal code sample, and expected vs. actual behavior.
 
-Show the draft to the user before posting — "confirmed" means they approved the wording, not that the reporter replied. Then write it to a file and post from there — never inline in `--body "…"` (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
+Show the draft to the user before posting — "confirmed" means they approved the wording, not that the reporter replied. End the body with the `oss:issue-verify` signature and `approved by @<login>` — the user confirmed it (`CONVENTIONS.md` → "Skill signature"). Then write it to a file and post from there — never inline in `--body "…"` (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
 ```bash
 gh issue comment <number> --body-file <file>
