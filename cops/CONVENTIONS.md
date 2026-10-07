@@ -206,6 +206,8 @@ say, so the reader gets each point without picking it out of a paragraph.
   answer, then a bullet list. One point per bullet, with its source at the
   end of that bullet ("Citing sources"), not woven into a sentence with the
   others.
+  A bullet may carry a code block under it when the point needs one, such
+  as the inputs that trigger a bug.
 - **Cut** what the reader already has: the question restated, what the diff
   or thread already shows, hedges, a closing line that repeats the bullets.
 - The label, when there is one, stays the first line and isn't repeated on
