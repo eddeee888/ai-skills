@@ -61,7 +61,7 @@ Point at what the template asks for, not a generic "please provide more info":
 - Template has a reproduction field → name it: *"Could you share a link to a minimal reproduction? This issue template asks for one under '\<field name\>' — a CodeSandbox/StackBlitz link or a small repo works best."*
 - No template → ask for exact package version(s), a minimal code sample, and expected vs. actual behavior.
 
-Show the draft to the user before posting — "confirmed" means they approved the wording, not that the reporter replied. End the body with the `oss:issue-verify` signature and the `Approved: <login>` part — the user confirmed it (`CONVENTIONS.md` → "Skill signature"). Then write it to a file and post from there — never inline in `--body "…"` (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
+Keep the request short (`CONVENTIONS.md` → "Comment body"). Show the draft to the user before posting — "confirmed" means they approved the wording, not that the reporter replied. End the body with the `oss:issue-verify` signature and the `Approved: <login>` part — the user confirmed it (`CONVENTIONS.md` → "Skill signature"). Then write it to a file and post from there — never inline in `--body "…"` (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
 ```bash
 gh issue comment <number> --body-file <file>
@@ -108,7 +108,7 @@ It doesn't fail the way the issue claims → that's a finding. Discard the test 
   ```
 - Push, then open the PR as a **draft**, referencing the issue with a non-closing keyword (`CONVENTIONS.md` → "Non-closing issue references") — this PR fixes nothing yet, so no `Fixes`/`Closes`.
 - Title: `test: reproduce <short bug description> (failing) (#123)` — issue reference at the end (`CONVENTIONS.md` → "Trailing issue reference"). In a monorepo, apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix") with the package Step 4 identified — e.g. `[package-name] test: reproduce <short bug description> (failing) (#123)`.
-- Body: state that this is a checkpoint proving the bug exists, quote the failure captured in Step 4 (test name and the one or two lines of assertion output — CI hasn't run yet, so there's no run to link), and note that `issue-fix` builds directly on this commit — this PR needn't merge, or go green, first.
+- Body: state that this is a checkpoint proving the bug exists, quote the failure captured in Step 4 (test name and the one or two lines of assertion output — CI hasn't run yet, so there's no run to link), and note that `issue-fix` builds directly on this commit — this PR needn't merge, or go green, first. Any source cited is linked (`CONVENTIONS.md` → "Citing sources").
 
 Write the title and body to files first, then (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 

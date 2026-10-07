@@ -193,6 +193,61 @@ Used by: `cops:pr-review`, `cops:pr-note` (writing); `cops:pr-address`,
 `cops:pr-note`, "Author notes", "Skill signature", "Suggesting next steps"
 (reading).
 
+## Comment body: short, one point per bullet
+
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
+
+Every comment a skill posts to GitHub — an inline comment, a thread reply,
+a review's top-level body, an issue comment — is as short as what it has to
+say, so the reader gets each point without picking it out of a paragraph.
+
+- **One point** → one or two sentences.
+- **More than one point, or more than one source** → one sentence with the
+  answer, then a bullet list. One point per bullet, with its source at the
+  end of that bullet ("Citing sources"), not woven into a sentence with the
+  others.
+  A bullet may carry a code block under it when the point needs one, such
+  as the inputs that trigger a bug.
+- **Cut** what the reader already has: the question restated, what the diff
+  or thread already shows, hedges, a closing line that repeats the bullets.
+- The label, when there is one, stays the first line and isn't repeated on
+  the bullets ("Comment labels"). The signature stays its own paragraph
+  after everything else ("Skill signature").
+
+Issues and PR descriptions follow their own templates, not this section.
+
+Used by: `cops:pr-review`, `cops:pr-note`, `cops:pr-address`,
+`oss:issue-analyze`, `oss:issue-verify`.
+
+## Citing sources: a link readers can open
+
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
+
+Every source a skill cites in text it posts to GitHub — an inline comment,
+a thread reply, a review body, an issue, an issue comment, a PR title or
+description — is a link, and one the post's readers can open.
+
+- **Code** → a GitHub permalink pinned to a commit
+  (`https://github.com/<owner>/<repo>/blob/<sha>/<path>#L<line>`), with
+  `` `<owner>/<repo>` `<path>:<line>` `` as the link text, so the line
+  stays right after the file changes. A path with no link isn't a source.
+- **Anything else** → its URL.
+- **Readers can open it.** A source counts only when it's in the PR's or
+  issue's own repo, a public repo, or at a public URL. Check a repo with
+  one call per distinct repo (`gh api repos/<owner>/<repo> --jq .private`,
+  or `get_file_contents` on the MCP route); judge any other URL by its host
+  without fetching it, and treat it as private when unsure. Anything else —
+  another private repo, an internal doc, a sign-in-only page — stays out of
+  the post and goes to the user in-session. Answer from what the public
+  sources show, or say plainly that the backing is private.
+- **Already referenced.** A link the PR or issue already carries — its
+  issue-tracker reference, a link in its existing body or commits — stays,
+  even if private: its readers already have it.
+
+Used by: `cops:pr-review`, `cops:pr-note`, `cops:pr-address`,
+`cops:pr-sync`, `oss:issue-analyze`, `oss:issue-create`,
+`oss:issue-verify`, `oss:issue-fix`.
+
 ## Skill signature: `<sub>_Skill: [<plugin>:<skill>](…)_</sub>`
 
 *Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces the writing rule; the reading rule always applies ("Defaults and contracts").
@@ -209,7 +264,7 @@ When the user approved this post, add `· Approved:` and their GitHub login (`gh
 <sub>_Skill: [cops:pr-review](https://github.com/eddeee888/ai-skills/tree/main/cops/skills/pr-review) · Approved: [<login>](https://github.com/<login>)_</sub>
 ```
 
-- **Approved** means the user OK'd this post or the work it reports: they confirmed the drafted text, or gave the go-ahead the skill acts on (`cops:pr-address`'s thread go-ahead, or a Step 4 answer). A skill that posts without asking (`cops:pr-note`) leaves the `Approved:` part out.
+- **Approved** means the user OK'd this post or the work it reports: they confirmed the drafted text, or gave the go-ahead the skill acts on (`cops:pr-address`'s thread go-ahead, or a Step 4 answer, for the work it reports). A skill that posts without asking (`cops:pr-note`), or a reply that is new text the user didn't see rather than a report of approved work (`cops:pr-address`'s why-answer), leaves the `Approved:` part out.
 - **Placement.** Its own paragraph, after everything else in the body, including a ```suggestion``` block (never inside one). The review body is empty → leave it empty; don't post a body just to sign it.
 - **A host footer goes last.** A host that requires its own footer on every post (Claude Code's `Generated by Claude Code` line) gets it after the signature, unchanged; never edit that footer or put text after it.
 - **Multi-line.** A signed body is never one line, so it goes through a file on the `gh` route ("Passing drafted text to `gh`").

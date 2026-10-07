@@ -11,7 +11,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 ## Comment kinds
 
-Every comment starts with exactly one of these prefixes, in bold (`**Question:**`, `CONVENTIONS.md` → "Comment labels"), then one or two sentences. The prefix tells the author what's expected: an answer, a decision, or a fix.
+Every comment starts with exactly one of these prefixes, in bold (`**Question:**`, `CONVENTIONS.md` → "Comment labels"), then the body (`CONVENTIONS.md` → "Comment body"), with any source linked (`CONVENTIONS.md` → "Citing sources"). The prefix tells the author what's expected: an answer, a decision, or a fix.
 
 - **`Question:`** — something about a change isn't clear from context: a runtime condition rewritten, a default changed, a check removed, code moved for no visible reason. The prefix only marks that an answer is expected. Open with `why` when the gap is motivation (`Question: why did this runtime check change?`), or `what` when the gap is the resulting behavior or condition (`Question: what does this guard cover now?`). `what` is only for a gap the diff doesn't answer — a restatement of what the code already shows isn't a comment. Ask only after Step 4 finds no answer in the PR description, the commit messages, the author's notes, or the surrounding code.
 - **`Suggestion:`** — there's a better way to write it, and you can say what: `Suggestion: use an IIFE to keep these in scope`. When the fix replaces only the commented lines, add a ```suggestion``` block with the exact replacement so the author can commit it from the PR page. Keep the original indentation and cover every line in the comment's range — the block replaces all of them. A fix spanning other lines or files gets a plain description, no block.
@@ -85,7 +85,7 @@ No candidate needs outside code → skip the subagent.
 
 Draft every comment in the "Comment kinds" format: path, line (or start and end line for a range), kind, and body, with the ```suggestion``` block where a `Suggestion:` or `Issue:` fix fits the lines. Follow the user's remembered rules in the fixes too: a suggested fix that adds a module-level helper when memory says to inline it is a comment the user would reject.
 
-Leave the review's top-level body empty unless something applies to the whole PR and has no line to sit on (e.g. "the changeset is missing"); then it's one or two sentences with the same kind prefix.
+Leave the review's top-level body empty unless something applies to the whole PR and has no line to sit on (e.g. "the changeset is missing"); then it takes the same kind prefix and the same body rules (`CONVENTIONS.md` → "Comment body", `CONVENTIONS.md` → "Citing sources").
 
 Show the draft to the user before posting anything — it posts under their name on someone's PR:
 
