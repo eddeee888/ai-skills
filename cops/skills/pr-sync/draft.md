@@ -75,7 +75,7 @@ One bullet per section is enough for a trivial PR; don't pad. In each section, b
 - The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is in use, closing or non-closing — never normalize one to the other while rewriting; whether the PR closes the issue on merge isn't a resync's call (`CONVENTIONS.md` → "Non-closing issue references").
 - External context that informed the fix — an upstream issue, a design doc, a blog post — only if one genuinely exists.
 
-Don't hunt for tangential links. One line per link. Neither an issue link nor external context → leave the section out.
+Don't hunt for tangential links. One line per link, each one readers can open (`CONVENTIONS.md` → "Citing sources"). Neither an issue link nor external context → leave the section out.
 
 ## Step 6: Fit the update into the existing template — don't replace it
 

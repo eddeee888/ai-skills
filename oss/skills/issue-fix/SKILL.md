@@ -104,7 +104,7 @@ gh pr view --json number,author 2>&1
 ```
 
 - **It has one** (normally the checkpoint's PR, continued in Step 1) → `git push` only. Never run `gh pr create` here — it either errors on a branch that already has an open PR, or opens a second PR for what should stay one. Its title and description still describe the checkpoint — keep its `author.login` for Step 7.
-- **It has none** (the `fix/<issue-number>` branch from Step 1) → `git push -u origin <branch>` and open a draft PR. In a monorepo, apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix") with the package Step 3's tracing pointed at, not the one the issue was filed under — e.g. `[package-name] fix: <short description of the fix> (#<issue number>)`, issue reference at the end (`CONVENTIONS.md` → "Trailing issue reference"). Write the title and body to files first (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
+- **It has none** (the `fix/<issue-number>` branch from Step 1) → `git push -u origin <branch>` and open a draft PR. In a monorepo, apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix") with the package Step 3's tracing pointed at, not the one the issue was filed under — e.g. `[package-name] fix: <short description of the fix> (#<issue number>)`, issue reference at the end (`CONVENTIONS.md` → "Trailing issue reference"). Any source the body cites is linked (`CONVENTIONS.md` → "Citing sources"). Write the title and body to files first (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
 
   ```bash
   gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>

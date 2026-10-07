@@ -46,6 +46,8 @@ From the conversation, asking the user for whatever's missing:
 - **Reproduction** — concrete steps, a minimal code sample, or a link to a live repro (CodeSandbox/StackBlitz/a small repo). Vague steps ("it breaks sometimes") aren't a reproduction — push for something concrete.
 - **Any specific environments** — versions, OS, browser, runtime, or "reproduces on all environments tested" if so.
 
+Every source cited — a linked upstream issue, a docs page, the code at fault — is a link readers can open (`CONVENTIONS.md` → "Citing sources").
+
 Don't fabricate detail for a section nobody provided — ask, or mark it explicitly as unknown.
 
 ## Step 5: Draft the issue, fitting the repo's template

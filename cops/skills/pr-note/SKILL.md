@@ -11,7 +11,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 
 ## Comment kinds
 
-Every comment starts with exactly one of these prefixes, in bold (`**Note:**`, `CONVENTIONS.md` → "Comment labels"), then one or two sentences on why. No ```suggestion``` blocks — these explain the code as it is. What `cops:pr-address` and `cops:pr-review` do with them is in `CONVENTIONS.md` → "Author notes".
+Every comment starts with exactly one of these prefixes, in bold (`**Note:**`, `CONVENTIONS.md` → "Comment labels"), then why (`CONVENTIONS.md` → "Comment body"), with any source linked (`CONVENTIONS.md` → "Citing sources"). No ```suggestion``` blocks — these explain the code as it is. What `cops:pr-address` and `cops:pr-review` do with them is in `CONVENTIONS.md` → "Author notes".
 
 - **`Note:`** — a choice the task didn't specify: one approach over another, where a helper lives, a default picked, an edge case handled a particular way. Give the reason in plain words: `Note: inlined the parser, since this is its only caller`. A choice that follows a remembered preference still gets its reason, not "per my preferences" — never cite memory or the oracle.
 - **`Drive-by:`** — a change the task doesn't need: a fix, rename, or cleanup made in passing. Leave the code in and say why it's here: `Drive-by: this guard threw on an empty list, which the new caller hits`. A drive-by with no reason worth stating is one to take out, not explain — don't comment on it; name it in the wrap-up instead.

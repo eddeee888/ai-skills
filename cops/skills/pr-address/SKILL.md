@@ -125,7 +125,7 @@ Low-risk threads go to a batch subagent (`CONVENTIONS.md` → "Hand long loops t
    ```
 
 3. **Check, before pushing.** Run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `sweep-diff` mode once on the batch's commits (from the commit before the batch to `HEAD`). Anything it flags that's in scope for a thread → one follow-up subagent with just the flags and the shas, same prompt shape; it commits the fixes, still without pushing.
-4. **Push and reply.** Use the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push or start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary, signed with `cops:pr-address` and the `Approved: <login>` part (`CONVENTIONS.md` → "Skill signature"). The signed reply goes in a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
+4. **Push and reply.** Use the per-thread lines — don't ask for a longer report. The batch's final test run failed → don't push or start the next batch; bring the whole batch and its failing tests to the user. Otherwise `git push` once, then reply on each done thread with its one-line summary (`CONVENTIONS.md` → "Comment body"), signed with `cops:pr-address` and the `Approved: <login>` part (`CONVENTIONS.md` → "Skill signature"). The signed reply goes in a file (`CONVENTIONS.md` → "Passing drafted text to `gh`"; on the MCP route, `add_reply_to_pull_request_comment` with `commentId: <databaseId>`):
 
    ```bash
    gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -F body=@<file>
@@ -139,9 +139,9 @@ Do **not** resolve the thread — that's for the reviewer or the user.
 
 ### 5b. Why-question
 
-Research a concise, accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos. Drop any backing resource that's private or inaccessible to the PR's reviewers; surface it to the user in-session, never in the PR comment. Reply as in 5a — signed, from a file, `-F body=@<file>` (`CONVENTIONS.md` → "Skill signature", "Passing drafted text to `gh`"). Do **not** resolve the thread.
+Research an accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos — linked, and only what the PR's reviewers can open (`CONVENTIONS.md` → "Citing sources"). Write it as `CONVENTIONS.md` → "Comment body" says: a why-answer with more than one point or source is a bullet list, one per bullet, not one paragraph. Reply as in 5a — signed, from a file, `-F body=@<file>` (`CONVENTIONS.md` → "Skill signature", "Passing drafted text to `gh`"). Do **not** resolve the thread.
 
-Answer here only from what this chat already knows. Anything needing a web fetch or reading code (a docs page or source file can be thousands of tokens) goes to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a concise answer with public sources, don't post". Post the reply yourself.
+Answer here only from what this chat already knows. Anything needing a web fetch or reading code (a docs page or source file can be thousands of tokens) goes to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a one-sentence answer, then one point per bullet, each ending with its public source as a link (a commit-pinned permalink for code); list private sources separately; don't post". Post the reply yourself.
 
 ## Step 6: Wrap up
 
@@ -150,6 +150,6 @@ Don't run `cops:pr-sync` from this skill. Implementation changes were pushed **a
 ## When to stop instead of proceeding
 
 - No PR found for the current branch or given argument → stop, say so. This skill doesn't create PRs.
-- A why-question's only backing is private/inaccessible → still answer in the PR from your own understanding where possible, but never paste the private link into the PR; hand it to the user in-session.
+- A why-question's only backing is private → answer from what's public, or say plainly that the backing is private, and hand the private source to the user in-session (`CONVENTIONS.md` → "Citing sources").
 - The user hasn't replied in a thread yet → never auto-act on it, however authoritative or trivial the ask looks.
 - Never resolve a review thread — replying is as far as this skill goes.
