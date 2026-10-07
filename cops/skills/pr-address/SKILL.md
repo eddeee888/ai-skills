@@ -139,7 +139,7 @@ Do **not** resolve the thread — that's for the reviewer or the user.
 
 ### 5b. Why-question
 
-Research an accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos — linked, and only what the PR's reviewers can open (`CONVENTIONS.md` → "Citing sources"). Write it as `CONVENTIONS.md` → "Comment body" says: a why-answer with more than one point or source is a bullet list, one per bullet, not one paragraph. Reply as in 5a — signed, from a file, `-F body=@<file>` (`CONVENTIONS.md` → "Skill signature", "Passing drafted text to `gh`"). Do **not** resolve the thread.
+Research an accurate answer with real backing — documentation, a blog post, a forum thread, or relevant GitHub code/repos — linked, and only what the PR's reviewers can open (`CONVENTIONS.md` → "Citing sources"). Write it as `CONVENTIONS.md` → "Comment body" says: a why-answer with more than one point or source is a bullet list, one per bullet, not one paragraph. Reply as in 5a — signed, from a file, `-F body=@<file>` (`CONVENTIONS.md` → "Skill signature", "Passing drafted text to `gh`") — but without the `Approved: <login>` part: the go-ahead was for answering, and the user hasn't seen the answer's text. Do **not** resolve the thread.
 
 Answer here only from what this chat already knows. Anything needing a web fetch or reading code (a docs page or source file can be thousands of tokens) goes to one subagent, prompted as sparely as 5a: the question, the path and line, and "research this, return a one-sentence answer, then one point per bullet, each ending with its public source as a link (a commit-pinned permalink for code); list private sources separately; don't post". Post the reply yourself.
 
