@@ -54,9 +54,10 @@ available, and the skills call them.
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your sidekick in the
   field. The skills hand it loops that edit, run, commit, or push
   (implementing review threads, a chosen fix, a failing test, a
-  rebase-and-draft), keeping them out of the main chat. It reads your
-  remembered preferences from `memory/` (never writes them), follows the
-  skill's prompt template, and returns a few lines. The calling skill
+  rebase-and-draft, drafting and posting author notes), keeping them out
+  of the main chat. It reads your remembered preferences from `memory/`
+  (never writes them), follows the skill's prompt template, and returns a
+  few lines. The calling skill
   picks its model per job — Haiku for mechanical edits, Sonnet for scoped
   changes, the main chat's model for anything needing more judgment. See
   [`CONVENTIONS.md`](CONVENTIONS.md#hand-long-loops-to-a-subagent).
@@ -81,8 +82,9 @@ available, and the skills call them.
   PR, before anyone else has commented, so the `Note:` comments it posts
   (no draft to confirm) give the reason for choices that follow a
   remembered rule, and `Drive-by:` comments say why an off-task change is
-  in the PR. `pr-sync` and `oss:issue-fix` suggest it on a PR that has
-  none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
+  in the PR. A subagent reads the diff, drafts and posts the notes, so the
+  main chat only checks the PR and relays the list. `pr-sync` and
+  `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
   `Question:` one of them already answers.
 - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
   its code survey starts from.
