@@ -133,8 +133,9 @@ An implement/test/commit loop, a write-and-run test loop, a code survey, researc
 - **No way to spawn a subagent** means the host has no subagent tool at all, not that one seems unnecessary → do the same steps in the main chat, and mark them `inline` on the handoffs list ("Handoffs in the final report").
 
 Used by: `cops:pr-address` (5a batches, 5b research), `cops:pr-sync` (Steps 2–6),
-`cops:pr-review` (context check), `oss:issue-fix` (root cause, implementation),
-`oss:issue-verify` (the failing test), `oss:issue-analyze` (code survey).
+`cops:pr-review` (context check), `cops:pr-note` (Steps 3–5), `oss:issue-fix`
+(root cause, implementation), `oss:issue-verify` (the failing test),
+`oss:issue-analyze` (code survey).
 `pr-sidekick` follows its model and retry rules.
 
 ## Handoffs in the final report
