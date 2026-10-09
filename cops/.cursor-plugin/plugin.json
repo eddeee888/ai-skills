@@ -10,10 +10,10 @@
   "variables": {
     "type": "object",
     "properties": {
-      "PR_MEMORY_REPO": {
+      "PR_MEMORY_PATH": {
         "type": "string",
-        "title": "PR memory repo",
-        "description": "Git remote identity (owner/repo or URL) of the memory repository already included in the workspace."
+        "title": "PR memory workspace path",
+        "description": "Path to the memory Git repository included in this workspace. Supports absolute paths, ~/..., and $HOME/...."
       }
     }
   }

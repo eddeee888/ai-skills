@@ -2,7 +2,7 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/hooks/memory-context.py\" cursor \"${PR_MEMORY_REPO}\"",
+        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/memory-context.sh\" cursor \"${PR_MEMORY_PATH}\"",
         "timeout": 10
       }
     ]

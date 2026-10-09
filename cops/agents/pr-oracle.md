@@ -41,6 +41,6 @@ Return mode output first, then applicable global lines:
 - `promote: <rule>` for repository-only rules; `learn-feedback` uses its section.
 - `conflict: <line> — contradicts <rule and location>`.
 - `login unknown — personal memory not written` if login and `get_me` fail; still read team memory and run.
-- `memory unavailable — attach exactly one matching repository to the workspace` when `memory.md` says to skip memory.
+- `memory unavailable — configure an attached workspace Git root` when `memory.md` says to skip memory.
 
 Suffixes are additive to literal sentinels. Add no commentary after required output.

@@ -13,10 +13,10 @@
   "icon": "./assets/logo.svg",
   "keywords": ["pr", "github", "review"],
   "userConfig": {
-    "memory_repo": {
+    "memory_path": {
       "type": "string",
-      "title": "PR memory repo",
-      "description": "Git remote identity (owner/repo or URL) of the memory repository already attached to the workspace."
+      "title": "PR memory workspace path",
+      "description": "Path to the memory Git repository attached to this workspace. Supports absolute paths, ~/..., and $HOME/...."
     }
   }
 }

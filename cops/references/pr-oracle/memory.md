@@ -1,6 +1,6 @@
 # Memory
 
-Root: the caller's `memory-root`, resolved from the configured remote among attached workspace repositories. Never search for another root; create, clone, or pull one; or fall back to a machine-local directory.
+Root: the caller's `memory-root`, verified from the configured workspace path. Never search for another root; create, clone, or pull one; or fall back to a machine-local directory.
 
 ```text
 memory/
@@ -19,4 +19,4 @@ Write personal data only under `memory/users/<github-login>/`. Team writes requi
 
 Before mode work, verify `memory-root` is an attached workspace Git root. Then read/apply only the first 200 lines of the current user's and team `MEMORY.md`. Never read another user's tree.
 
-If `memory-root` is absent, `unavailable`, outside the workspace, or not a Git root, do not read or write memory. Run the requested mode without memory and append `memory unavailable — attach exactly one matching repository to the workspace`. Never clone, pull, commit, or push the memory repository.
+If `memory-root` is absent, `unavailable`, outside the workspace, or not a Git root, do not read or write memory. Run the requested mode without memory and append `memory unavailable — configure an attached workspace Git root`. Never clone, pull, commit, or push the memory repository.
