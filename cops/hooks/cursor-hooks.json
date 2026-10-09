@@ -2,20 +2,8 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" pull \"${PR_MEMORY_REPO}\" \"${PR_MEMORY_LOGIN}\"",
-        "timeout": 30
-      }
-    ],
-    "stop": [
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" push \"${PR_MEMORY_REPO}\" \"${PR_MEMORY_LOGIN}\"",
-        "timeout": 30
-      }
-    ],
-    "sessionEnd": [
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-memory-sync.sh\" end \"${PR_MEMORY_REPO}\" \"${PR_MEMORY_LOGIN}\"",
-        "timeout": 30
+        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/memory-context.sh\" cursor \"${PR_MEMORY_PATH}\"",
+        "timeout": 10
       }
     ]
   }

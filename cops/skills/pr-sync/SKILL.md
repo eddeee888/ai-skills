@@ -67,7 +67,9 @@ Get the repo's profile and a brief for "PR description" in one call (`scout-repo
 
 ## Step 7: Apply it
 
-First, run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass owner/repo, PR number, base ref (`origin/<baseRefName>`), and the two draft file paths, not their text. User explicitly asked to remember something for the team → also pass `record-team: <one line>`. User stated a description preference in this conversation ("keep the Why to one sentence") → pass it in their words. It flags claims the diff doesn't back, changes the draft leaves out, shared-convention breaks, and misses against the user's remembered style, and remembers any preference passed. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it. Then apply:
+First, run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass owner/repo, PR number, base ref (`origin/<baseRefName>`), the two draft file paths rather than their text, and any description preference stated in this conversation. It flags claims the diff doesn't back, changes the draft leaves out, shared-convention breaks, and misses against active or relayed style without writing memory. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it.
+
+If the user explicitly asked to remember a concrete preference, call `learn-feedback` separately with the preference, provenance, and personal or `record-team:` intent. Show any other `memory-candidate:` result and ask for consent before a later `learn-feedback` call. Then apply:
 
 ```bash
 d="$(git rev-parse --git-dir)"
@@ -77,7 +79,7 @@ rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.
 
-Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. Don't run `cops:pr-note`; suggest it per `CONVENTIONS-orchestration.md` → "Suggesting next steps", using the PR's `author.login` from Step 1. End with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
+Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. Don't run `cops:pr-note`; suggest it per `CONVENTIONS-orchestration.md` → "Suggesting next steps", using the PR's `author.login` from Step 1. End with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task`, `draft`, `grill-description`, and `learn-feedback` when run.
 
 ## When to touch nothing
 

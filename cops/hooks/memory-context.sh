@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Identifies an attached COPS memory repository without modifying Git state.
+
+set -u
+
+mode="${1:-claude}"
+argument="${2:-}"
+case "$argument" in
+  '${'*'}') argument="" ;;
+esac
+memory_path="${PR_MEMORY_PATH:-${argument:-${CLAUDE_PLUGIN_OPTION_MEMORY_PATH:-}}}"
+
+# Expand portable home-relative configuration without evaluating arbitrary shell.
+expand_path() {
+  case "$1" in
+    "~") printf '%s' "$HOME" ;;
+    "~/"*) printf '%s/%s' "$HOME" "${1#\~/}" ;;
+    '$HOME') printf '%s' "$HOME" ;;
+    '$HOME/'*) printf '%s/%s' "$HOME" "${1#\$HOME/}" ;;
+    *) printf '%s' "$1" ;;
+  esac
+}
+
+# Resolve symlinks and relative segments; return nothing for a missing directory.
+canonical_path() {
+  [ -d "$1" ] && (cd "$1" 2>/dev/null && pwd -P)
+}
+
+# Cursor hook output is JSON, so escape context text before interpolation.
+json_escape() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\n'/\\n}"
+  value="${value//$'\r'/}"
+  value="${value//$'\t'/\\t}"
+  printf '%s' "$value"
+}
+
+context=""
+if [ -n "$memory_path" ]; then
+  configured="$(canonical_path "$(expand_path "$memory_path")" || true)"
+  git_root=""
+  [ -n "$configured" ] &&
+    git_root="$(GIT_TERMINAL_PROMPT=0 git -C "$configured" rev-parse --show-toplevel 2>/dev/null || true)"
+
+  if [ -n "$configured" ] && [ "$git_root" = "$configured" ]; then
+    context="COPS memory root: $configured
+Pass this exact path as \`memory-root\` to every pr-oracle and pr-sidekick call. COPS must not clone, pull, commit, or push it."
+  else
+    context="COPS memory unavailable: the configured path is not a Git root. Pass \`memory-root: unavailable\` to pr-oracle and pr-sidekick."
+  fi
+fi
+
+if [ "$mode" = cursor ]; then
+  if [ -n "$context" ]; then
+    printf '{"additional_context":"%s"}\n' "$(json_escape "$context")"
+  else
+    printf '{}\n'
+  fi
+elif [ -n "$context" ]; then
+  printf '%s\n' "$context"
+fi

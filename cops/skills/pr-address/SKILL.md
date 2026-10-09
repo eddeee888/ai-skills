@@ -20,7 +20,9 @@ Use the current branch's PR unless the user gave a PR number/URL. No PR found �
 
 ## Steps 2–3: Fetch and classify
 
-Read [classify.md](classify.md) now. Hand Steps 2–3 to `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `triage-threads` + `scout-repo` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo/number, login, whether the PR is the user's, and the entire contents of `classify.md` verbatim as the classification rules; do not pass a summary or the GraphQL query. If the user explicitly asked to remember something for the team, add `record-team: <one line>`. The oracle fetches threads through GitHub MCP and returns both buckets, remembered-rule matches, and the repo profile. Keep the profile's `tests` line and each thread's remembered rules for Step 5.
+Read [classify.md](classify.md) now. Hand Steps 2–3 to `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `triage-threads` + `scout-repo` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo/number, login, whether the PR is the user's, and the entire contents of `classify.md` verbatim as the classification rules; do not pass a summary or the GraphQL query. The oracle fetches threads through GitHub MCP and returns both buckets, remembered-rule matches, possible inactive memory candidates, and the repo profile. Keep the profile's `tests` line and each thread's remembered rules for Step 5.
+
+If the user explicitly asked to remember concrete feedback, call `learn-feedback` separately with their intent and the feedback's provenance; team intent must be a `record-team:` line. Never fold it into the combined operational call. Show any other `memory-candidate:` lines to the user and ask whether to save them as inactive candidates; do not persist them without that consent.
 
 Only if the oracle is unavailable, read [fetch-threads.md](fetch-threads.md) now, fetch every unresolved review thread, then apply `classify.md` inline exactly. Conversation-tab comments are out of scope.
 
@@ -44,7 +46,7 @@ Read [research.md](research.md) now, before researching or drafting any answer. 
 
 ## Step 6: Wrap up
 
-Never run `cops:pr-sync`. If implementation changes were pushed to the user's own PR, suggest `pr-sync` exactly as `CONVENTIONS-orchestration.md` → "Suggesting next steps" says. Report counts implemented/replied and still open for manual resolution. End with the `CONVENTIONS-orchestration.md` → "Handoffs in the final report" list, in execution order, using `triage-threads + scout-repo`, one `5a batch` per batch, `sweep-diff` per check, and `5b research` when applicable.
+Never run `cops:pr-sync`. If implementation changes were pushed to the user's own PR, suggest `pr-sync` exactly as `CONVENTIONS-orchestration.md` → "Suggesting next steps" says. Report counts implemented/replied and still open for manual resolution. End with the `CONVENTIONS-orchestration.md` → "Handoffs in the final report" list, in execution order, using `triage-threads + scout-repo`, `learn-feedback` when run, one `5a batch` per batch, `sweep-diff` per check, and `5b research` when applicable.
 
 ## When to stop instead of proceeding
 

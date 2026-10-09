@@ -4,10 +4,10 @@
 
 When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems pure overhead, say so and ask; never silently skip.
 
-- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
+- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Other read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
 - **The caller picks the model.** Where supported: `haiku` for mechanical work (also say "mechanical"), `sonnet` for a scoped change/survey, unset for cross-file judgment. Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
-- **It can't consult the oracle.** Main chat calls `pr-oracle` first and includes needed output.
+- **An editing subagent can't consult the oracle.** Main chat calls `pr-oracle` first and includes needed output.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
 - **Short results.** Return only requested lines; return a question rather than guess. Main chat asks the user, then respawns with the answer.
 - **Every spawn/check is a main-chat step.** Batch as instructed.
@@ -15,7 +15,7 @@ When a skill names a handoff and the host can spawn a subagent, make it every ti
 - **Resume, don't restart.** After a question, carry question+answer and resume at that step, checking completed rebase/commit/push work.
 - **No way to spawn** means no subagent tool at all, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
 
-Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-sync` (Steps 2–6); `cops:pr-review` (context check); `cops:pr-note` (Steps 3–5); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
+Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-sync` (Steps 2–6); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
 
 ## Handoffs in the final report
 
@@ -28,10 +28,12 @@ Handoffs:
 ```
 
 - `✓`: ran as specified.
-- `inline (<reason>)`: main chat did it only because no subagent tool exists, or `cops` is absent so the oracle does not exist.
+- `fallback (pr-oracle unavailable; general read-only subagent)`: valid only for labels `review-pr` and `draft-author-notes`, after applying the oracle mode contract to that subagent.
+- `inline (no subagent capability)`: valid for a named subagent handoff only when no subagent tool exists.
+- `inline (cops plugin isn't installed)`: valid for an oracle handoff only when `cops` is absent.
 - `✗ (<reason>)`: skipped only with user agreement.
 
-Omit inapplicable handoffs. If an honest mark would be unauthorized `✗` or invalid `inline`, perform the handoff before reporting.
+Oracle labels use the named mode(s), joined with ` + ` for a combined call. Other labels are the skill's named handoff. Omit inapplicable handoffs. If an honest mark would be unauthorized `✗`, invalid `inline`, invalid `fallback`, or an invented label, perform the handoff before reporting.
 
 Final-report users: `cops:pr-address`, `cops:pr-sync`, `cops:pr-review`, `cops:pr-note`, `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`, and `oss:issue-fix`.
 
@@ -54,13 +56,17 @@ If `cops` is absent, replace the first with manual-update wording and omit `pr-n
 
 ## Consulting the `pr-oracle` agent
 
-Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`. At one point combine required modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`.
+Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
 - Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle`, waits, and supplies the mode plus every listed input because it starts blank.
 - **Optional only when missing.** If `cops` is absent, perform the exact step inline, continue, and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
-- **Pass what you have.** Include `login: <github-login>` if known. Oracle uses GitHub MCP only; never give it a route or `gh` commands.
-- **Team memory.** Only for an explicit team-memory request, add `record-team: <one line>`; oracle appends only to `memory/team/MEMORY.md` in the memory repo.
+- **Pass what you have.** Include `login: <github-login>` if known. Review modes also receive the selected GitHub route, owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
+- **Pass memory context.** Session context supplies the verified COPS memory root or says it is unavailable. Pass `memory-root: <absolute path | unavailable>` to every `pr-oracle` and `pr-sidekick` call because agents start blank.
+- **Graduated memory consent.** Operational modes never write memory. Show `memory-candidate:` to the user; only explicit remember or promotion intent permits a separate `learn-feedback` call. Reviewer-derived rules stay inactive candidates until explicitly promoted.
+- **Team memory.** Only a separate `learn-feedback` call for an explicit team-memory request receives `record-team: <one line>`.
 
-Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-sync` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`scout-repo` + `sweep-diff`); `cops:pr-note` (`scout-repo` + `brief-task`); `oss:issue-analyze`, `oss:issue-create`, and `oss:issue-verify` (`scout-repo`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).
+Review modes scout repository context, read complete PR evidence, verify new-side changed-line anchors, return structured YAML, and never write GitHub or memory. If the oracle is unavailable but a subagent tool exists, run one general read-only subagent with the oracle mode contract. No subagent capability → run it inline. Never replace review with `sweep-diff`.
+
+Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-sync` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `oss:issue-analyze`, `oss:issue-create`, and `oss:issue-verify` (`scout-repo`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).

@@ -9,7 +9,7 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 `cops` also ships two agents, used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
 
-- [`pr-oracle`](cops/agents/pr-oracle.md) — remembers your recurring review themes, and profiles a repo's setup (tests, monorepo layout, templates).
+- [`pr-oracle`](cops/agents/pr-oracle.md) — remembers recurring review themes, profiles repository setup, and drafts complete PR reviews and author notes.
 - [`pr-sidekick`](cops/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying those remembered preferences.
 
 `oss` works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
@@ -22,11 +22,15 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ## Development
 
-Run the dependency-free repository checks with `python3 scripts/validate.py`.
+Run the repository checks (requires Bash, `jq`, and Perl):
+
+```bash
+bash scripts/validate.sh
+```
 
 ## Install
 
-After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally sync its memory.
+After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally attach a memory repository to the workspace.
 
 ### Claude Code
 
