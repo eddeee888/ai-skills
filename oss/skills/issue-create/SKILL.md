@@ -1,13 +1,13 @@
 ---
 name: issue-create
-description: Draft and file a well-formed bug-report issue on a GitHub repo, covering Context, Problem, Reproduction, and any specific environments — mapped onto the repo's own issue template where one exists. Use when asked to "file an issue", "open an issue on <repo>", "report this bug upstream", "draft a bug report for <repo>", or when a bug surfaces mid-conversation that belongs on a repo the user doesn't maintain here. Always asks for the target repo first and always shows the drafted issue for confirmation before creating it — never posts to GitHub without that confirmation. Pairs with the `issue-verify` skill, which can pick up the issue once it's filed.
+description: 'Draft and file a GitHub bug report covering Context, Problem, Reproduction, and environments, mapped to repo templates. Always ask for the target repo and show the draft for confirmation before posting. Use for “file an issue,” “open an issue on <repo>,” “report this bug upstream,” “draft a bug report for <repo>,” or an upstream bug found mid-conversation. Pairs with `issue-verify`.'
 ---
 
 # Create a GitHub issue
 
 A bug report missing context, a clear problem statement, a reproduction, or its environment bounces back with "can you provide more details", costing a round trip. This skill drafts a complete report against four sections before anything is posted, and never files anything the user hasn't seen.
 
-GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## Step 1: Ask for the repo
 
@@ -23,7 +23,7 @@ Close match → show it and ask whether to proceed anyway. Nothing close → con
 
 ## Step 3: Fetch that repo's issue template, if it has one
 
-`cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, available (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent") → get the target repo's profile (`scout-repo`); it doesn't need to be checked out. It names the bug-report template and its required fields, and flags contribution rules that bind an issue — fetch only that template's full text. It couldn't tell which template is the bug report → handle it as below. Not available → look it up inline:
+`cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, available (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent") → get the target repo's profile (`scout-repo`); it doesn't need to be checked out. It names the bug-report template and its required fields, and flags contribution rules that bind an issue — fetch only that template's full text. It couldn't tell which template is the bug report → handle it as below. Not available → look it up inline:
 
 ```bash
 gh api repos/<owner>/<repo>/contents/.github/ISSUE_TEMPLATE --jq '.[].name' 2>/dev/null
@@ -46,7 +46,7 @@ From the conversation, asking the user for whatever's missing:
 - **Reproduction** — concrete steps, a minimal code sample, or a link to a live repro (CodeSandbox/StackBlitz/a small repo). Vague steps ("it breaks sometimes") aren't a reproduction — push for something concrete.
 - **Any specific environments** — versions, OS, browser, runtime, or "reproduces on all environments tested" if so.
 
-Every source cited — a linked upstream issue, a docs page, the code at fault — is a link readers can open (`CONVENTIONS.md` → "Citing sources").
+Every source cited — a linked upstream issue, a docs page, the code at fault — is a link readers can open (`CONVENTIONS-posts.md` → "Citing sources").
 
 Don't fabricate detail for a section nobody provided — ask, or mark it explicitly as unknown.
 
@@ -78,13 +78,13 @@ Show the full drafted title and body verbatim before touching GitHub. This is a 
 
 ## Step 7: Create it
 
-End the body with the `oss:issue-create` signature and the `Approved: <login>` part — the user confirmed it (`CONVENTIONS.md` → "Skill signature"). Write the confirmed title and body to files first — never inline them in `--title "…"`/`--body "…"`, where backticks in a bug report's code run as shell commands (`CONVENTIONS.md` → "Passing drafted text to `gh`"):
+End the body with the `oss:issue-create` signature and the `Approved: <login>` part — the user confirmed it (`CONVENTIONS-posts.md` → "Skill signature"). Write the confirmed title and body to files first — never inline them in `--title "…"`/`--body "…"`, where backticks in a bug report's code run as shell commands (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
 ```bash
 gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>
 ```
 
-Report the issue URL, and end with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with the label `scout-repo`. Verifying the issue (writing a failing test against it) is `issue-verify`'s job, if the user wants to go further. If the user doesn't maintain `<owner>/<repo>` or have a local checkout, say so plainly — `issue-verify` assumes write access and a local checkout; without them, the issue waits on its own maintainers.
+Report the issue URL, and end with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with the label `scout-repo`. Verifying the issue (writing a failing test against it) is `issue-verify`'s job, if the user wants to go further. If the user doesn't maintain `<owner>/<repo>` or have a local checkout, say so plainly — `issue-verify` assumes write access and a local checkout; without them, the issue waits on its own maintainers.
 
 ## When to stop instead of proceeding
 

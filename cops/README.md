@@ -30,11 +30,7 @@ available, and the skills call them.
 
 ## Agents
 
-- [`agents/pr-oracle.md`](agents/pr-oracle.md) — remembers, briefs, and
-  checks, but never edits code or a PR. It holds your review themes and preferences
-  (rules that apply in every repo) and profiles a repo's setup (test
-  runner, monorepo layout, changesets, PR/issue templates, contribution
-  rules) on each call.
+- [`agents/pr-oracle.md`](agents/pr-oracle.md) — remembers, briefs, and checks, but never edits code or a PR. It holds your review themes and preferences (rules that apply in every repo) and profiles a repo's setup (test runner, monorepo layout, changesets, PR/issue templates, contribution rules) on each call. The agent file is the only entrypoint; it lazy-loads common memory/GitHub rules and only the requested mode details from `references/pr-oracle/`.
   - **Memory:** `memory: user`, in the checkout at `~/.claude/agent-memory/`.
     Every oracle file lives under `memory/`: `memory/users/<github-login>/`
     for one person's rules, `memory/team/` for rules someone explicitly
@@ -49,7 +45,7 @@ available, and the skills call them.
   - **Cursor:** the same file is the `pr-oracle` subagent; it reads and
     writes `memory/` itself.
   - **Without `cops` installed,** the skills do each oracle step themselves
-    ([`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-cops)).
+    ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
 
 - [`agents/pr-sidekick.md`](agents/pr-sidekick.md) — your sidekick in the
   field. The skills hand it loops that edit, run, commit, or push
@@ -60,7 +56,7 @@ available, and the skills call them.
   few lines. The calling skill
   picks its model per job — Haiku for mechanical edits, Sonnet for scoped
   changes, the main chat's model for anything needing more judgment. See
-  [`CONVENTIONS.md`](CONVENTIONS.md#hand-long-loops-to-a-subagent).
+  [`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#hand-long-loops-to-a-subagent).
 
 ### When the skills consult the oracle
 
@@ -99,7 +95,7 @@ available, and the skills call them.
   chat to call it: `scout-repo` + `brief-task` before writing code, then
   `sweep-diff` before committing or pushing. This is the model's call, so a
   small change may skip it; for a guarantee, add the same line to your
-  `~/.claude/CLAUDE.md`. `CONVENTIONS.md` rules (title prefix, non-closing
+  `~/.claude/CLAUDE.md`. Shared convention rules (title prefix, non-closing
   issue references) and the `pr-note` suggestion only come with the skills.
 
 ### Syncing the oracle's memory

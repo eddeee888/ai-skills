@@ -1,20 +1,20 @@
 ---
 name: pr-note
-description: Leave the author's reasoning on their own PR's first implementation, as inline comments on its changed lines. `Note:` explains a choice the task didn't specify — especially one that follows the user's remembered preferences; `Drive-by:` explains a change the task doesn't need, which stays in the PR. Skips anything the PR body or commit messages already explain, and posts the comments straight away as a single `COMMENT` review — no draft to confirm, since they're the user's own reasoning on their own PR — then lists what it posted. Only on the user's own open PR, before anyone else has commented on its lines. Use when asked to "leave notes on my PR", "explain the choices in this PR", "annotate my PR", or when finishing an implementation PR.
+description: 'Leave reasoning as inline comments on the user’s own open PR before others comment. `Note:` explains unspecified choices; `Drive-by:` explains retained out-of-scope changes. Skips reasoning already in the PR or commits, posts one `COMMENT` review immediately, then lists comments. Use for “leave notes on my PR,” “explain choices in this PR,” “annotate my PR,” or when finishing an implementation PR.'
 ---
 
 # Leave author notes on a first implementation
 
 A reviewer reading a fresh PR sees what changed, not why the author picked one way over another, or why a line unrelated to the task is in there. This skill leaves that reasoning on the lines themselves, once, before the first review — so the review spends its questions on what's actually unclear.
 
-GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## How this runs
 
-Only the short ends run here. Steps 3–5 — reading the change, drafting, and posting — live in `draft.md` next to this file and run in one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"). The diff and one posting call per comment are most of this skill's work, and in the main chat each of those steps re-reads the whole conversation.
+Only the short ends run here. Steps 3–5 — reading the change, drafting, and posting — live in `draft.md` next to this file and run in one subagent (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"). The diff and one posting call per comment are most of this skill's work, and in the main chat each of those steps re-reads the whole conversation.
 
 1. **Here:** Steps 1–2, including the oracle call.
-2. **Subagent:** Steps 3–5, on `sonnet` (scoped drafting; `CONVENTIONS.md` → "Hand long loops to a subagent"), with this prompt:
+2. **Subagent:** Steps 3–5, on `sonnet` (scoped drafting; `CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"), with this prompt:
 
    ```text
    Repo <owner>/<repo>, PR #<number>, head commit <headRefOid>, by the user
@@ -53,13 +53,13 @@ Use the PR the user named, else the current branch's PR. Stop (see "When to stop
 
 - there's no PR, or it's closed or merged;
 - its `author.login` isn't the user's login — the reasoning is the author's to give;
-- its review threads (the review-threads row in `CONVENTIONS.md` → "GitHub access") hold a comment from anyone but the user — review has started, and `/cops:pr-address` (`/pr-address` on Cursor) owns the threads from here.
+- its review threads (the review-threads row in `CONVENTIONS-github.md` → "GitHub access") hold a comment from anyone but the user — review has started, and `/cops:pr-address` (`/pr-address` on Cursor) owns the threads from here.
 
-Keep the changed files (`files`; MCP: `pull_request_read` method `get_files`) for Step 2, and `headRefOid` for the subagent's prompt — every comment anchors to that commit. Don't read the diff here — the subagent does. The user's own `Note:` or `Drive-by:` comments already on the PR (bold or not — `CONVENTIONS.md` → "Comment labels") → this is a re-run; pass the lines they cover as `Already noted:`.
+Keep the changed files (`files`; MCP: `pull_request_read` method `get_files`) for Step 2, and `headRefOid` for the subagent's prompt — every comment anchors to that commit. Don't read the diff here — the subagent does. The user's own `Note:` or `Drive-by:` comments already on the PR (bold or not — `CONVENTIONS-posts.md` → "Comment labels") → this is a re-run; pass the lines they cover as `Already noted:`.
 
 ## Step 2: Consult the oracle
 
-Make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `brief-task` mode (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `login: <login>`, and for `brief-task` the changed files from Step 1 plus the PR's title as the task. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team. Its output goes into the subagent's prompt.
+Make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `brief-task` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass the owner/repo, whether it's checked out locally, `login: <login>`, and for `brief-task` the changed files from Step 1 plus the PR's title as the task. Also pass `record-team: <one line>`, but only when the user explicitly asked to remember something for the team. Its output goes into the subagent's prompt.
 
 ## Step 6: Wrap up
 
@@ -71,7 +71,7 @@ Notes on <owner>/<repo>#<number> — <review link> (<m> dropped as lower priorit
 2. <path>:<start>-<end>  Drive-by: <body>
 ```
 
-Then name any comment it couldn't post, and any drive-by with no reason worth stating, as a change the user may want to take out. End with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task` and `draft and post`.
+Then name any comment it couldn't post, and any drive-by with no reason worth stating, as a change the user may want to take out. End with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task` and `draft and post`.
 
 ## When to stop instead of proceeding
 

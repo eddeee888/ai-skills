@@ -1,8 +1,8 @@
 # pr-sync: Steps 2–6
 
-Read by the subagent `SKILL.md` hands these steps to (or the main chat when there's no subagent). The oracle's profile (`scout-repo`) and brief (`brief-task`) come in your prompt — don't call the oracle yourself. Where a step says to ask the user or hand something to them, return it as your question instead.
+The `SKILL.md` subagent (or main chat without one) reads this. The prompt supplies the oracle profile (`scout-repo`) and brief (`brief-task`), so don't call the oracle. Return anything that needs the user as your question.
 
-`Resuming:` not `no` → it carries your earlier question and the user's answer. Check what's done — `git status -sb` against `origin/<headRefName>`, whether the changeset commit exists — and pick up at the step that asked, using the answer. Don't rebase, commit or push again what's already on origin.
+`Resuming:` not `no` carries your earlier question and the user's answer. Check `git status -sb` against `origin/<headRefName>` and whether the changeset commit exists, then resume at that step. Don't repeat work already on origin.
 
 ## Step 2: Rebase onto the base branch
 
@@ -27,7 +27,7 @@ gh pr view <number> --json body --jq .body
 
 Your prompt says `GitHub: MCP` → read the body with `pull_request_read` method `get` instead.
 
-Start from the file list, commit messages, and current PR body — they often state the *why*; use them rather than guessing from the diff. Then diff only the files needed to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR: the full diff can run to tens of thousands of tokens that stay in context for every later step, and Step 7's `grill-description` reads all of it anyway.
+Use the file list, commits, and PR body for the *why*, rather than guessing from the diff. Diff only files needed to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR; Step 7's `grill-description` reads it all.
 
 Empty diff → the PR is already current; say so and stop.
 
@@ -35,7 +35,7 @@ Empty diff → the PR is already current; say so and stop.
 
 Use the profile: its `changesets` line answers this step, its monorepo line Step 5's title prefix, its template line Step 6's headers. No profile → check each inline as written.
 
-Without a profile, look for `.changeset/config.json` or an equivalent in use. Neither → skip the changeset (still push, below); don't introduce a changelog convention as a side effect of a sync.
+Without a profile, look for `.changeset/config.json` or an equivalent in use. Neither → skip it (still push below); don't introduce a changelog convention.
 
 If present:
 - A changeset for this branch exists → update its summary to match the current diff.
@@ -58,24 +58,24 @@ git push --force-with-lease
 
 ## Step 5: Draft the title and description
 
-The brief says how the user likes descriptions written and what their reviewers keep asking for. Draft to it; where it conflicts with the rules below, the rules win — except a rule pointing to a *Default* section of `CONVENTIONS.md`, which the profile's `overrides:` line and the brief can override (`CONVENTIONS.md` → "Defaults and contracts").
+Draft to the brief's description preferences and recurring review asks. The rules below win conflicts, except shared-convention *Defaults* overridden by the profile's `overrides:` or brief (`CONVENTIONS.md` → "Defaults and contracts").
 
-**Title** — one line naming the net effect of the change, imperative after any type prefix. Keep an existing conventional-commit prefix (`fix:`, `test:`, …), updating it when the change's kind changed: a checkpoint PR that now carries its fix goes from `test: reproduce … (failing)` to `fix: …`, dropping `(failing)`. Diff bundles unrelated things → name the most user-visible one, don't cram. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS.md` → "Monorepo title prefix"). Title ends in a `(#123)`-style issue reference → keep it in the same form (`CONVENTIONS.md` → "Trailing issue reference"); a resync must not silently drop it.
+**Title** — one line naming the net effect of the change, imperative after any type prefix. Keep an existing conventional-commit prefix (`fix:`, `test:`, …), updating it when the change's kind changed: a checkpoint PR that now carries its fix goes from `test: reproduce … (failing)` to `fix: …`, dropping `(failing)`. Diff bundles unrelated things → name the most user-visible one, don't cram. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). Title ends in a `(#123)`-style issue reference → keep it in the same form (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference"); a resync must not silently drop it.
 
 **Description** — three required sections, in this order, kept tight — a PR body a reviewer skims, not a design doc:
 
 - **Why** — the reason this change exists, not a rephrasing of What. Pull it from commit messages, a linked issue, or the existing description; ask the user only if nothing indicates the motivation. Must open with a paragraph starting `This PR ...` stating the mechanism by which it solves the issue, not just what the issue was — motivation bullets can follow.
-- **What** — the concrete change in a few short bullets: files, behavior, APIs touched — specific enough that a reviewer needn't open the diff to know what they're looking at. The diff carries a drive-by → split What into `### Main` and `### Drive-by` (`CONVENTIONS.md` → "Split What into Main and Drive-by").
-- **Verification** — how a reader can trust the change works: tests added/updated, commands run and their result, manual steps (with observed outcome), or covering CI checks. Pull it from commit messages, test files, and the diff; ask the user only if the branch gives no indication. No "should work" padding — nothing verified → say so plainly. A check that already ran in CI gets named by test type, not the literal command (`CONVENTIONS.md` → "Verification checklist"). Tests failing on purpose — a checkpoint commit with no fix yet — get stated plainly, never checklisted as passing (`CONVENTIONS.md` → "Don't checklist an intentionally-failing check as done").
+- **What** — the concrete change in a few short bullets: files, behavior, APIs touched — specific enough that a reviewer needn't open the diff to know what they're looking at. The diff carries a drive-by → split What into `### Main` and `### Drive-by` (`CONVENTIONS-pr-metadata.md` → "Split What into Main and Drive-by").
+- **Verification** — how a reader can trust the change works: tests added/updated, commands run and their result, manual steps (with observed outcome), or covering CI checks. Pull it from commit messages, test files, and the diff; ask the user only if the branch gives no indication. No "should work" padding — nothing verified → say so plainly. A check that already ran in CI gets named by test type, not the literal command (`CONVENTIONS-pr-metadata.md` → "Verification checklist"). Tests failing on purpose — a checkpoint commit with no fix yet — get stated plainly, never checklisted as passing (`CONVENTIONS-pr-metadata.md` → "Don't checklist an intentionally-failing check as done").
 
-One bullet per section is enough for a trivial PR; don't pad. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS.md` → "Bold the critical claim"); skip a bullet with nothing critical enough to call out.
+One bullet per section is enough for a trivial PR; don't pad. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS-pr-metadata.md` → "Bold the critical claim"); skip a bullet with nothing critical enough to call out.
 
 **Resources** — one more section, only when there's something to put in it:
 
-- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is in use, closing or non-closing — never normalize one to the other while rewriting; whether the PR closes the issue on merge isn't a resync's call (`CONVENTIONS.md` → "Non-closing issue references").
+- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is in use, closing or non-closing — never normalize one to the other while rewriting; whether the PR closes the issue on merge isn't a resync's call (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references").
 - External context that informed the fix — an upstream issue, a design doc, a blog post — only if one genuinely exists.
 
-Don't hunt for tangential links. One line per link, each one readers can open (`CONVENTIONS.md` → "Citing sources"). Neither an issue link nor external context → leave the section out.
+Don't hunt for tangential links. Use one openable link per line (`CONVENTIONS-posts.md` → "Citing sources"). No issue or external context → omit the section.
 
 ## Step 6: Fit the update into the existing template — don't replace it
 
