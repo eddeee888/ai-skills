@@ -1,6 +1,6 @@
 {
   "name": "cops",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.",
   "author": { "name": "eddeee888" },
   "license": "MIT",
@@ -14,6 +14,11 @@
         "type": "string",
         "title": "PR memory workspace path",
         "description": "Path to the memory Git repository included in this workspace. Supports absolute paths, ~/..., and $HOME/...."
+      },
+      "PR_MEMORY_LOGIN": {
+        "type": "string",
+        "title": "PR memory GitHub login",
+        "description": "Your GitHub login. Names your personal tree, memory/users/<login>/. Required for personal memory; COPS never derives it from gh, GitHub MCP, Git, or the machine."
       }
     }
   }

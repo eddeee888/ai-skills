@@ -28,6 +28,7 @@ Handoffs:
 ```
 
 - `✓`: ran as specified.
+- `✓ (incomplete load: <files>)`: oracle ran but its `loaded:` still lacked required files after one retry.
 - `fallback (pr-oracle unavailable; general read-only subagent)`: valid only for labels `review-pr` and `draft-author-notes`, after applying the oracle mode contract to that subagent.
 - `inline (no subagent capability)`: valid for a named subagent handoff only when no subagent tool exists.
 - `inline (cops plugin isn't installed)`: valid for an oracle handoff only when `cops` is absent.
@@ -63,8 +64,9 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known. Review modes also receive the selected GitHub route, owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
-- **Pass memory context.** Session context supplies the verified COPS memory root or says it is unavailable. Pass `memory-root: <absolute path | unavailable>` to every `pr-oracle` and `pr-sidekick` call because agents start blank.
-- **Graduated memory consent.** Operational modes never write memory. Show `memory-candidate:` to the user; only explicit remember or promotion intent permits a separate `learn-feedback` call. Reviewer-derived rules stay inactive candidates until explicitly promoted.
+- **Check what it loaded.** Every oracle reply lists `loaded:`. It must include `memory.md` and `modes/<mode>.md` for each named mode. Missing or no `loaded:` → call again once, naming the missing files to read first. Still missing → use the reply and mark the handoff `✓ (incomplete load: <files>)`.
+- **Pass memory context.** Session context supplies the verified COPS memory root and configured memory login, or says each is unavailable/unset. Pass `memory-root: <absolute path | unavailable>` and `memory-login: <login | unset>` to every `pr-oracle` and `pr-sidekick` call because agents start blank. Never fill `memory-login` from `gh`, `get_me`, or `login:`.
+- **Graduated memory consent.** Operational modes never write memory. Show `memory-candidate:` to the user; only explicit remember or promotion intent permits a separate `learn-feedback` call. On `not concrete:`, ask the user to restate the rule and call again with their wording; never rephrase it for them. Reviewer-derived rules stay inactive candidates until explicitly promoted.
 - **Team memory.** Only a separate `learn-feedback` call for an explicit team-memory request receives `record-team: <one line>`.
 
 Review modes scout repository context, read complete PR evidence, verify new-side changed-line anchors, return structured YAML, and never write GitHub or memory. If the oracle is unavailable but a subagent tool exists, run one general read-only subagent with the oracle mode contract. No subagent capability → run it inline. Never replace review with `sweep-diff`.

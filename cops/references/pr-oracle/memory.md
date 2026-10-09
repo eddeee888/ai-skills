@@ -13,7 +13,7 @@ memory/
 
 Write only these files. Store only cross-repository rules; never name a repository or link its PR.
 
-`<github-login>` is caller-supplied or from `get_me`; never use Git/machine identity. If unknown, skip personal writes, still read team memory, and return `login unknown — personal memory not written`.
+`<github-login>` is exactly the caller's `memory-login`, which comes only from the configured `PR_MEMORY_LOGIN`. Never derive it from `login:`, `gh`, `get_me`, Git, the machine, or the directories under `memory/users/`. If `memory-login` is absent or `unset`, skip personal reads and writes, still read team memory, and return `memory login unset — configure PR_MEMORY_LOGIN; personal memory skipped`.
 
 Write personal data only under `memory/users/<github-login>/`. Team writes require `learn-feedback` with `record-team:`. Never store repository-only rules.
 

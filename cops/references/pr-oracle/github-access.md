@@ -4,11 +4,10 @@ Read GitHub only through this read-only allowlist. On a host that loads tools on
 
 | Read | GitHub MCP route |
 |---|---|
-| Authenticated login | `get_me` |
 | Default branch | `search_repositories` with query `repo:<owner>/<repo>`; use `default_branch` |
 | File or directory | `get_file_contents`; for a directory request `fields: ["name", "type"]` |
 | Review threads | `pull_request_read` method `get_review_comments`; follow the pagination and ID rules in `modes/triage-threads.md` |
 | PR body | `pull_request_read` method `get` |
 | PR diff | `pull_request_read` method `get_diff` |
 
-The frontmatter tool names are `mcp__github__get_me`, `mcp__github__get_file_contents`, `mcp__github__search_repositories`, and `mcp__github__pull_request_read`. No other GitHub MCP tool is permitted.
+The frontmatter tool names are `mcp__github__get_file_contents`, `mcp__github__search_repositories`, and `mcp__github__pull_request_read`. No other GitHub MCP tool is permitted.

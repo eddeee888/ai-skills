@@ -28,4 +28,6 @@ remove-instead:
     reason: <why this unexplained drive-by should be removed>
 unverified:
   - <unverified evidence or rejected candidate, or omit list items>
+loaded:
+  - <each reference file read, relative to references/pr-oracle/>
 ```

@@ -2,7 +2,7 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/memory-context.sh\" cursor \"${PR_MEMORY_PATH}\"",
+        "command": "bash \"${CURSOR_PLUGIN_ROOT}/hooks/memory-context.sh\" cursor \"${PR_MEMORY_PATH}\" \"${PR_MEMORY_LOGIN}\"",
         "timeout": 10
       }
     ]
