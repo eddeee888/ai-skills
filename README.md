@@ -22,7 +22,12 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ## Development
 
-Run the dependency-free repository checks with `python3 scripts/validate.py`.
+Run the dependency-free repository checks:
+
+```bash
+python3 scripts/validate.py
+scripts/test-memory-sync.sh
+```
 
 ## Install
 

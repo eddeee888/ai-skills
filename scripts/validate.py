@@ -22,6 +22,17 @@ CONVENTION_BUDGETS = {
     "CONVENTIONS-pr-metadata.md": 700,
 }
 
+REVIEW_BUDGETS = {
+    "cops/skills/pr-review/SKILL.md": 350,
+    "cops/agents/pr-reviewer.md": 650,
+    "cops/skills/pr-review/post-review.md": 220,
+    "cops/agents/pr-oracle.md": 350,
+    "cops/references/pr-oracle/memory.md": 220,
+    "cops/references/pr-oracle/modes/brief-task.md": 60,
+}
+REVIEW_WORKFLOW_LIMIT = 1800
+REVIEW_WORKFLOW_WORDS = 0
+
 POINTER_RE = re.compile(
     r"`(?P<file>CONVENTIONS[^`]*\.md)`\s*→\s*[\"“](?P<section>[^\"”]+)[\"”]"
 )
@@ -239,6 +250,8 @@ def check_budget(path: Path, limit: int, label: str) -> None:
 
 
 def validate_budgets() -> None:
+    global REVIEW_WORKFLOW_WORDS
+
     for filename, limit in CONVENTION_BUDGETS.items():
         check_budget(ROOT / filename, limit, "convention file")
 
@@ -258,6 +271,19 @@ def validate_budgets() -> None:
     for path in sorted(lazy_paths):
         check_budget(path, 1200, "lazy instruction")
 
+    for filename, limit in REVIEW_BUDGETS.items():
+        check_budget(ROOT / filename, limit, "normal review instruction")
+    REVIEW_WORKFLOW_WORDS = sum(
+        words((ROOT / filename).read_text(encoding="utf-8"))
+        for filename in REVIEW_BUDGETS
+    )
+    if REVIEW_WORKFLOW_WORDS > REVIEW_WORKFLOW_LIMIT:
+        fail(
+            "normal review workflow",
+            f"instructions are {REVIEW_WORKFLOW_WORDS} words; "
+            f"limit is {REVIEW_WORKFLOW_LIMIT}",
+        )
+
 
 def require_markers(path: str, groups: dict[str, tuple[str, ...]]) -> None:
     target = ROOT / path
@@ -272,18 +298,87 @@ def require_markers(path: str, groups: dict[str, tuple[str, ...]]) -> None:
             )
 
 
+def require_order(path: str, contract: str, markers: tuple[str, ...]) -> None:
+    target = ROOT / path
+    text = target.read_text(encoding="utf-8")
+    positions = [text.find(marker) for marker in markers]
+    if -1 in positions:
+        fail(target, f"{contract} order marker missing")
+    elif positions != sorted(positions):
+        fail(target, f"{contract} markers are out of order")
+
+
+def forbid_markers(path: str, contract: str, markers: tuple[str, ...]) -> None:
+    target = ROOT / path
+    text = target.read_text(encoding="utf-8")
+    present = [marker for marker in markers if marker in text]
+    if present:
+        fail(
+            target,
+            f"{contract} forbidden marker(s) present: "
+            + ", ".join(repr(marker) for marker in present),
+        )
+
+
+def validate_review_dry_runs() -> None:
+    path = "cops/skills/pr-review/post-review.md"
+    require_order(
+        path,
+        "stale-head before gh write",
+        ("Immediately before writing, re-read full `headRefOid`", "gh api repos/"),
+    )
+    require_order(
+        path,
+        "stale-head before MCP write",
+        (
+            "Immediately before writing, re-read full `headRefOid`",
+            "`pull_request_review_write` `create`",
+        ),
+    )
+    require_order(
+        path,
+        "gh review JSON",
+        ('"commit_id"', '"event"', '"comments"'),
+    )
+    require_order(
+        path,
+        "MCP pending review sequence",
+        (
+            "`pull_request_review_write` `create`",
+            "`add_comment_to_pending_review`",
+            "`pull_request_review_write` `submit_pending`",
+        ),
+    )
+    require_markers(
+        path,
+        {
+            "pending failure preservation": (
+                "pending review left:",
+                "Never auto-delete/submit/replace.",
+                "Delete only on explicit request",
+            )
+        },
+    )
+
+
 def validate_behavioral_contracts() -> None:
     require_markers(
         "cops/agents/pr-oracle.md",
         {
-            "five modes": (
+            "six modes": (
                 "`scout-repo`",
                 "`triage-threads`",
                 "`brief-task`",
                 "`sweep-diff`",
                 "`grill-description`",
+                "`learn-feedback`",
             ),
             "no-mode response": ("return exactly `no mode given`",),
+            "active mode reads": ("Read the active `<mode>.md` file(s)",),
+            "explicit-only learning": (
+                "`learn-feedback` alone writes memory",
+                "explicit intent",
+            ),
         },
     )
     require_markers(
@@ -300,11 +395,94 @@ def validate_behavioral_contracts() -> None:
             "confirmation gate": ("Never post without confirmation.",),
             "COMMENT default": ("the event is always `COMMENT`",),
             "head anchoring": ("Keep `headRefOid`",),
+            "changed files brief": (
+                ",files",
+                "equivalent `files` through the shared route contract",
+                "with login, title/body, and changed files",
+            ),
+            "review body confirmation": ("Body: <kind>:", "non-empty `review_body`"),
+            "unverified exclusion": (
+                "Never post `unverified`; valid verified comments may continue.",
+            ),
+            "reviewer fallback": (
+                "Reviewer unavailable but subagents exist",
+                "No subagent capability",
+            ),
+        },
+    )
+    require_order(
+        "cops/skills/pr-review/SKILL.md",
+        "review confirmation before posting",
+        ("## 3. Confirm", "Never post without confirmation.", "## 4. Post and report"),
+    )
+    require_markers(
+        "cops/agents/pr-reviewer.md",
+        {
+            "reviewer modes": (
+                "mode must be `review-pr` or `draft-author-notes`",
+                "mode: review-pr",
+                "mode: draft-author-notes",
+            ),
+            "review YAML": (
+                "review_body:",
+                "comments:",
+                "dropped:",
+                "unverified:",
+            ),
+            "strict anchors": (
+                "Anchors must be added/modified new-side lines",
+                "Never move an inline candidate there because its anchor is invalid",
+            ),
         },
     )
     require_markers(
         "cops/skills/pr-review/post-review.md",
-        {"headRefOid posting": ("saved `headRefOid`", "`COMMENT` by default")},
+        {
+            "headRefOid posting": ("saved `headRefOid`", "`COMMENT` by default"),
+            "strict rejection": ("Never relocate, fold, or silently drop invalid anchors.",),
+        },
+    )
+    require_markers(
+        "cops/references/pr-oracle/memory.md",
+        {
+            "dedicated memory root": (
+                "${PR_MEMORY_DIR:-${CLAUDE_PLUGIN_OPTION_MEMORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cops-memory}}",
+            ),
+            "legacy inactive migration": (
+                "inactive `candidates.md`",
+                "never active memory",
+                "only after an actual structured or stub import",
+            ),
+        },
+    )
+    require_markers(
+        "cops/references/pr-oracle/modes/learn-feedback.md",
+        {
+            "explicit-only learning": (
+                "explicit user intent",
+                "Never treat running another mode",
+                "remains inactive",
+            )
+        },
+    )
+    require_markers(
+        "cops/hooks/memory-sync.sh",
+        {
+            "allowlisted staging": (
+                "g add -- memory/team",
+                'g add -- "memory/users/$login"',
+            ),
+            "legacy migration": (
+                "legacy_stub=",
+                "candidates.md",
+                "legacy cops-pr-oracle/MEMORY.md",
+            ),
+        },
+    )
+    forbid_markers(
+        "cops/hooks/memory-sync.sh",
+        "broad staging",
+        ("git add -A", "g add -A"),
     )
     require_markers(
         "oss/skills/issue-verify/SKILL.md",
@@ -350,6 +528,7 @@ def main() -> int:
         validate_descriptions,
         validate_budgets,
         validate_behavioral_contracts,
+        validate_review_dry_runs,
     )
     for check in checks:
         check()
@@ -363,7 +542,8 @@ def main() -> int:
     print(
         "Validation passed: JSON, shell syntax, convention copies, Markdown "
         "links/pointers, frontmatter descriptions, word budgets, and behavioral "
-        "contract markers."
+        f"contract markers. Normal review workflow: {REVIEW_WORKFLOW_WORDS}/"
+        f"{REVIEW_WORKFLOW_LIMIT} words."
     )
     return 0
 
