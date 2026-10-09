@@ -42,7 +42,7 @@ json_escape() {
   printf '%s' "$value"
 }
 
-context=""
+context="COPS memory not configured: PR_MEMORY_PATH is unset, so pr-oracle and pr-sidekick run without memory. Pass \`memory-root: unavailable\` and \`memory-login: unset\` to them. At the first COPS skill or agent call this session, tell the user once that memory is off and that setting PR_MEMORY_PATH and PR_MEMORY_LOGIN enables it."
 if [ -n "$memory_path" ]; then
   configured="$(canonical_path "$(expand_path "$memory_path")" || true)"
   git_root=""

@@ -429,6 +429,16 @@ validate_behavioral_contracts() {
   require_markers "cops/hooks/memory-context.sh" "read-only path validation" \
     "expand_path()" 'git -C "$configured" rev-parse --show-toplevel' \
     "COPS memory root:" "memory-root: unavailable"
+  require_markers "cops/hooks/memory-context.sh" "unconfigured memory notice" \
+    "COPS memory not configured:"
+  require_markers "cops/agents/pr-oracle.md" "loaded files report" \
+    '`loaded: <files actually read'
+  for path in cops/references/pr-oracle/modes/review-pr.md \
+    cops/references/pr-oracle/modes/draft-author-notes.md; do
+    require_markers "$path" "loaded files report" "loaded:"
+  done
+  require_markers "CONVENTIONS-orchestration.md" "loaded files check" \
+    "**Check what it loaded.**" "incomplete load"
   require_markers "cops/hooks/memory-context.sh" "explicit memory login" \
     'PR_MEMORY_LOGIN' "COPS memory login:" "memory-login: unset"
   forbid_markers "cops/hooks/memory-context.sh" "derived memory login" \

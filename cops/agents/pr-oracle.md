@@ -37,11 +37,12 @@ Never broaden modes. Modes except `learn-feedback` may emit `memory-candidate: <
 
 ## Output suffixes
 
-Return mode output first, then applicable global lines:
+Return mode output, then applicable lines:
 
+- `loaded: <files actually read from ../references/pr-oracle/, comma-separated>` — always.
 - `promote: <rule>` for repository-only rules; `learn-feedback` uses its section.
 - `conflict: <line> — contradicts <rule and location>`.
 - `memory login unset — configure PR_MEMORY_LOGIN; personal memory skipped` when `memory-login` is absent or `unset`; still read team memory and run.
 - `memory unavailable — configure an attached workspace Git root` when `memory.md` says to skip memory.
 
-Suffixes are additive to literal sentinels. In review-mode YAML, put login/memory suffix text under `unverified` instead of after the document. Add no other commentary.
+Suffixes are additive to literal sentinels. Review-mode YAML lists files under `loaded:` and login/memory text under `unverified`. Add no other commentary.
