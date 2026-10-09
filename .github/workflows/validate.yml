@@ -15,4 +15,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate repository instructions
-        run: python3 scripts/validate.py
+        run: bash scripts/validate.sh
