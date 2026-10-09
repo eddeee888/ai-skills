@@ -19,6 +19,11 @@
         "type": "string",
         "title": "GitHub login",
         "description": "Your GitHub username. Memory sync pushes what you learn to the memory/<login> branch of the memory repo. Leave unset only if the memory repo holds no one else's memory/users/ tree."
+      },
+      "PR_MEMORY_DIR": {
+        "type": "string",
+        "title": "PR memory directory",
+        "description": "Optional dedicated local directory for pr-oracle memory. Defaults to $XDG_DATA_HOME/cops-memory or ~/.local/share/cops-memory."
       }
     }
   }

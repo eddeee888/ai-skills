@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Syncs agent memory (~/.claude/agent-memory, where pr-oracle keeps what
-# it learns — memory/ inside that directory) with a private git repo,
+# Syncs the dedicated pr-oracle memory directory with a private git repo,
 # so it survives machines and short-lived cloud containers. Claude Code calls
 # this script directly; Cursor calls it through cursor-memory-sync.sh.
 #
@@ -28,9 +27,10 @@
 set -u
 
 repo="${PR_MEMORY_REPO:-${CLAUDE_PLUGIN_OPTION_MEMORY_REPO:-}}"
-[ -n "$repo" ] || exit 0
-
-dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory"
+dir="${PR_MEMORY_DIR:-${CLAUDE_PLUGIN_OPTION_MEMORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cops-memory}}"
+login="${PR_MEMORY_LOGIN:-${CLAUDE_PLUGIN_OPTION_GITHUB_LOGIN:-}}"
+legacy="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory/memory"
+legacy_stub="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory/cops-pr-oracle/MEMORY.md"
 branch=main
 branch_prefix=memory/
 case "$repo" in
@@ -43,6 +43,103 @@ unreachable="$dir.unreachable"
 RETRY_MINUTES=10
 
 warn() { echo "pr-oracle memory sync: $*" >&2; }
+
+valid_login() {
+  case "$1" in
+    "" | *[!A-Za-z0-9-]* | -* | *-) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+resolve_login() {
+  local users
+  valid_login "$login" && return 0
+  users="$(ls "$dir/memory/users" 2>/dev/null)"
+  [ "$(printf '%s\n' "$users" | grep -c .)" = 1 ] && login="$users"
+  if ! valid_login "$login"; then
+    users="$(ls "$legacy/users" 2>/dev/null)"
+    [ "$(printf '%s\n' "$users" | grep -c .)" = 1 ] && login="$users"
+  fi
+  valid_login "$login"
+}
+
+merge_file() {
+  local src=$1 dest=$2 line
+  [ -f "$src" ] || return 0
+  mkdir -p "$(dirname "$dest")"
+  touch "$dest"
+  while IFS= read -r line || [ -n "$line" ]; do
+    grep -qxF -- "$line" "$dest" 2>/dev/null || printf '%s\n' "$line" >> "$dest"
+  done < "$src"
+}
+
+merge_legacy_stub() {
+  local line candidate dest="$dir/memory/users/$login/candidates.md" imported=1
+  [ -f "$legacy_stub" ] || return 1
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"
+    case "$line" in
+      "" | "# Index" | 'Rules live under `memory/`, not in this file. Read `memory/users/<github-login>/MEMORY.md` and `memory/team/MEMORY.md`.' | \#* | '```'*) continue ;;
+    esac
+    candidate="${line#- }"
+    [ -n "$candidate" ] || continue
+    candidate="- $candidate  (legacy cops-pr-oracle/MEMORY.md)"
+    if [ "$imported" = 1 ]; then
+      mkdir -p "$(dirname "$dest")"
+      [ -s "$dest" ] || printf '## Everywhere\n' > "$dest"
+      imported=0
+    fi
+    grep -qxF -- "$candidate" "$dest" 2>/dev/null || printf '%s\n' "$candidate" >> "$dest"
+  done < "$legacy_stub"
+  return "$imported"
+}
+
+marker_path() {
+  if [ -d "$dir/.git" ]; then
+    printf '%s' "$dir/.git/cops-legacy-import-v1"
+  else
+    printf '%s' "$dir/.cops-legacy-import-v1"
+  fi
+}
+
+legacy_import() {
+  local marker src rel backup imported=0
+  valid_login "$login" || return 0
+  marker="$(marker_path)"
+  [ -e "$marker" ] && return 0
+  if [ -d "$legacy/users/$login" ] || [ -d "$legacy/team" ] || [ -f "$legacy_stub" ]; then
+    backup="${dir}.legacy-import-backup-$(date +%Y%m%d%H%M%S)"
+    mkdir -p "$backup"
+    [ -d "$legacy/users/$login" ] && cp -R "$legacy/users/$login" "$backup/user"
+    [ -d "$legacy/team" ] && cp -R "$legacy/team" "$backup/team"
+    if [ -d "$legacy/users/$login" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#"$legacy/users/$login/"}"
+        merge_file "$src" "$dir/memory/users/$login/$rel"
+        imported=1
+      done < <(find "$legacy/users/$login" -type f -print0)
+    fi
+    if [ -d "$legacy/team" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#"$legacy/team/"}"
+        merge_file "$src" "$dir/memory/team/$rel"
+        imported=1
+      done < <(find "$legacy/team" -type f -print0)
+    fi
+    if [ -f "$legacy_stub" ]; then
+      mkdir -p "$backup/cops-pr-oracle"
+      cp "$legacy_stub" "$backup/cops-pr-oracle/MEMORY.md"
+      merge_legacy_stub && imported=1
+    fi
+    if [ "$imported" = 1 ]; then
+      mkdir -p "$(dirname "$marker")"
+      touch "$marker"
+      warn "imported legacy memory; source preserved and backed up at $backup"
+    else
+      rm -rf "$backup"
+    fi
+  fi
+}
 
 # SessionStart stdout goes into Claude's context: when the memory repo can't
 # be reached, ask Claude to attach it (a cloud session only reaches repos
@@ -73,7 +170,7 @@ union_merge() {
 }
 
 clone() {
-  local tmp
+  local tmp imported_marker=""
   tmp="$(mktemp -d)" || return 1
   if ! GIT_TERMINAL_PROMPT=0 git clone -q "$url" "$tmp/memory" 2>/dev/null; then
     warn "can't clone $repo — check it exists and this session can reach it"
@@ -92,28 +189,52 @@ clone() {
     # a cloud session that couldn't reach the repo at start): keep a backup,
     # copy over files the repo lacks, and append local lines the repo's copy
     # of a shared file doesn't have — the same keep-both rule as union_merge.
-    local backup f
+    local backup src rel suffix=0
     backup="$dir.bak-$(date +%Y%m%d%H%M%S)"
-    cp -R "$dir" "$backup"
-    (cd "$dir" && find . -type f ! -path './.git/*') | while IFS= read -r f; do
-      if [ -e "$tmp/memory/$f" ]; then
-        grep -vxFf "$tmp/memory/$f" "$dir/$f" >> "$tmp/memory/$f"
-      else
-        mkdir -p "$(dirname "$tmp/memory/$f")"
-        cp "$dir/$f" "$tmp/memory/$f"
-      fi
+    while [ -e "$backup" ]; do
+      suffix=$((suffix + 1))
+      backup="$dir.bak-$(date +%Y%m%d%H%M%S)-$suffix"
     done
-    rm -rf "$dir"
+    [ -e "$dir/.cops-legacy-import-v1" ] && imported_marker=1
+    if valid_login "$login" && [ -d "$dir/memory/users/$login" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#"$dir/memory/users/$login/"}"
+        merge_file "$src" "$tmp/memory/memory/users/$login/$rel"
+      done < <(find "$dir/memory/users/$login" -type f -print0)
+    fi
+    if [ -d "$dir/memory/team" ]; then
+      while IFS= read -r -d '' src; do
+        rel="${src#"$dir/memory/team/"}"
+        merge_file "$src" "$tmp/memory/memory/team/$rel"
+      done < <(find "$dir/memory/team" -type f -print0)
+    fi
+    if ! mv "$dir" "$backup"; then
+      warn "couldn't move existing memory to $backup; sync clone not installed"
+      rm -rf "$tmp"
+      return 1
+    fi
     warn "merged existing memory into the sync repo; backup at $backup"
   fi
   mkdir -p "$(dirname "$dir")"
-  mv "$tmp/memory" "$dir"
+  if ! mv "$tmp/memory" "$dir"; then
+    warn "couldn't install sync clone at $dir"
+    if [ -n "${backup:-}" ] && mv "$backup" "$dir"; then
+      warn "restored existing memory after install failure"
+      rm -rf "$tmp"
+    else
+      warn "existing memory remains intact at ${backup:-<no backup>}; merged clone remains at $tmp/memory"
+    fi
+    return 1
+  fi
   rm -rf "$tmp"
+  [ -n "$imported_marker" ] && touch "$dir/.git/cops-legacy-import-v1"
   union_merge
 }
 
 commit_changes() {
-  g add -A
+  g reset -q 2>/dev/null || true
+  g add -- memory/team 2>/dev/null || true
+  valid_login "$login" && g add -- "memory/users/$login" 2>/dev/null || true
   g diff --cached --quiet || g commit -q -m "sync from $(hostname)"
 }
 
@@ -122,12 +243,8 @@ commit_changes() {
 #   neither set, one tree memory/users/alice/          → memory/alice
 #   neither set, trees memory/users/alice/ and bob/    → (empty)
 user_branch() {
-  local login="${PR_MEMORY_LOGIN:-${CLAUDE_PLUGIN_OPTION_GITHUB_LOGIN:-}}" users
-  if [ -z "$login" ]; then
-    users="$(ls "$dir/memory/users" 2>/dev/null)"
-    [ "$(printf '%s\n' "$users" | grep -c .)" = 1 ] && login="$users"
-  fi
-  [ -n "$login" ] && printf '%s%s' "$branch_prefix" "$login"
+  resolve_login >/dev/null 2>&1 || true
+  valid_login "$login" && printf '%s%s' "$branch_prefix" "$login"
 }
 
 # Fetch a remote branch and merge it in; false when it isn't on the remote.
@@ -191,6 +308,9 @@ push() {
 }
 
 mode="${1:-}"
+resolve_login >/dev/null 2>&1 || true
+legacy_import
+[ -n "$repo" ] || exit 0
 case "$mode" in
   pull) pull ;;
   push | end) push ;;
