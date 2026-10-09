@@ -1,17 +1,17 @@
 ---
 name: pr-sync
-description: Sync an open pull request with what's on its branch — rebase onto its current base, then re-derive the title, description, and changeset from what's left, including the issue-tracker link and any external context that genuinely exists. Use when the user asks to "update the PR description", "sync the PR with my changes", "rebase and update the PR", "the PR is stale", or "make the changeset match my changes". Run it only when asked — other skills suggest it rather than run it. Only applies to an existing PR; with no open PR on the branch, skip rather than open one.
+description: 'Sync an existing open PR with its branch: rebase onto the current base, then update title, description, and changeset from the remaining diff, preserving genuine issue links and external context. Run only when asked: “update the PR description,” “sync the PR with my changes,” “rebase and update the PR,” “the PR is stale,” or “make the changeset match my changes.”'
 ---
 
 # Sync PR with branch changes
 
 A PR description is a snapshot of intent from when the PR opened; the branch keeps moving — new commits, scope changes, an advancing base. This skill rebases the branch onto its base, then re-derives the title, description, and changeset from what's there, so a reviewer never reads a stale summary or a diff cluttered with already-merged commits.
 
-GitHub steps are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS.md` → "GitHub access").
+GitHub steps are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## How this runs
 
-Only the short ends run here. Steps 2–6 — rebase, reading the branch, changeset, drafting — live in `draft.md` next to this file and run in one subagent (`CONVENTIONS.md` → "Hand long loops to a subagent"):
+Only the short ends run here. Steps 2–6 — rebase, reading the branch, changeset, drafting — live in `draft.md` next to this file and run in one subagent (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"):
 
 1. **Here:** Step 1, including the oracle call.
 2. **Subagent:** Steps 2–6, with this prompt:
@@ -37,7 +37,7 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    moved — or the question, or "already current".
    ```
 
-   "Already current" → say so and stop. A question → ask the user, then spawn it again with `Resuming:` filled in (`CONVENTIONS.md` → "Hand long loops to a subagent").
+   "Already current" → say so and stop. A question → ask the user, then spawn it again with `Resuming:` filled in (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent").
 3. **Here:** Step 7, on the draft files.
 
 No way to spawn a subagent → read `draft.md` and run Steps 2–6 here.
@@ -63,11 +63,11 @@ git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 
 `no diff` → say the PR is already current and stop.
 
-Get the repo's profile and a brief for "PR description" in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS.md` → "Consulting the `pr-oracle` agent"). Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
+Get the repo's profile and a brief for "PR description" in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
 
 ## Step 7: Apply it
 
-First, run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass owner/repo, PR number, base ref (`origin/<baseRefName>`), and the two draft file paths, not their text. User explicitly asked to remember something for the team → also pass `record-team: <one line>`. User stated a description preference in this conversation ("keep the Why to one sentence") → pass it in their words. It flags claims the diff doesn't back, changes the draft leaves out, `CONVENTIONS.md` breaks, and misses against the user's remembered style, and remembers any preference passed. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it. Then apply:
+First, run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass owner/repo, PR number, base ref (`origin/<baseRefName>`), and the two draft file paths, not their text. User explicitly asked to remember something for the team → also pass `record-team: <one line>`. User stated a description preference in this conversation ("keep the Why to one sentence") → pass it in their words. It flags claims the diff doesn't back, changes the draft leaves out, shared-convention breaks, and misses against the user's remembered style, and remembers any preference passed. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it. Then apply:
 
 ```bash
 d="$(git rev-parse --git-dir)"
@@ -77,7 +77,7 @@ rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.
 
-Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. Don't run `cops:pr-note`; suggest it per `CONVENTIONS.md` → "Suggesting next steps", using the PR's `author.login` from Step 1. End with the handoffs list (`CONVENTIONS.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
+Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. Don't run `cops:pr-note`; suggest it per `CONVENTIONS-orchestration.md` → "Suggesting next steps", using the PR's `author.login` from Step 1. End with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task`, `draft`, and `grill-description`.
 
 ## When to touch nothing
 

@@ -6,7 +6,7 @@ Read by the subagent `SKILL.md` hands these steps to (or the main chat when ther
 
 ## Comment kinds
 
-Every comment starts with exactly one of these prefixes, in bold (`**Note:**`, `CONVENTIONS.md` → "Comment labels"), then why (`CONVENTIONS.md` → "Comment body"), with any source linked (`CONVENTIONS.md` → "Citing sources"). No ```suggestion``` blocks — these explain the code as it is. What `cops:pr-address` and `cops:pr-review` do with them is in `CONVENTIONS.md` → "Author notes".
+Every comment starts with exactly one of these prefixes, in bold (`**Note:**`, `CONVENTIONS-posts.md` → "Comment labels"), then why (`CONVENTIONS-posts.md` → "Comment body"), with any source linked (`CONVENTIONS-posts.md` → "Citing sources"). No ```suggestion``` blocks — these explain the code as it is. What `cops:pr-address` and `cops:pr-review` do with them is in `CONVENTIONS-posts.md` → "Author notes".
 
 - **`Note:`** — a choice the task didn't specify: one approach over another, where a helper lives, a default picked, an edge case handled a particular way. Give the reason in plain words: `Note: inlined the parser, since this is its only caller`. A choice that follows a remembered preference still gets its reason, not "per my preferences" — never cite memory or the oracle.
 - **`Drive-by:`** — a change the task doesn't need: a fix, rename, or cleanup made in passing. Leave the code in and say why it's here: `Drive-by: this guard threw on an empty list, which the new caller hits`. A drive-by with no reason worth stating is one to take out, not explain — don't comment on it; return it under `unexplained drive-bys` instead.
@@ -42,6 +42,6 @@ Draft every comment in the "Comment kinds" format: path, line (or start and end 
 
 ## Step 5: Post it as one review
 
-Sign every comment with `cops:pr-note`, without the `Approved: <login>` part — the user didn't see the draft (`CONVENTIONS.md` → "Skill signature"). Post every comment in a single `COMMENT` review on the head commit your prompt names, exactly as `cops:pr-review` Step 6 does (`../pr-review/SKILL.md` from this file): on the `gh` route, the payload goes in `$(git rev-parse --git-dir)/pr-note.json` (`CONVENTIONS.md` → "Passing drafted text to `gh`") and is sent with `gh api repos/<owner>/<repo>/pulls/<number>/reviews --input`, then removed; on the MCP route, a pending review, one `add_comment_to_pending_review` per comment, then `submit_pending` with `event: COMMENT`.
+Do not ask for confirmation: these are the author's own notes on their own PR. Sign every comment with `cops:pr-note`, without the `Approved: <login>` part because the user did not see the draft (`CONVENTIONS-posts.md` → "Skill signature"). Post every comment in one `COMMENT` review anchored to the head commit named in your prompt, following [post-review.md](../pr-review/post-review.md). Use `pr-note.json` on the `gh` route.
 
 GitHub rejects a comment because its line isn't in the diff → move it to the nearest changed line in the same hunk. No such line → leave it out and return it under `not posted`; never drop it silently. A failure partway through the MCP route leaves a pending review only the user can see → stop and return `pending review left: <what failed>`; never delete it yourself.

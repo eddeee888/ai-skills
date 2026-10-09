@@ -12,13 +12,17 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 - [`pr-oracle`](cops/agents/pr-oracle.md) — remembers your recurring review themes, and profiles a repo's setup (tests, monorepo layout, templates).
 - [`pr-sidekick`](cops/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying those remembered preferences.
 
-`oss` works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS.md`](CONVENTIONS.md#companion-plugin-cops)).
+`oss` works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
 
 ## Layout
 
 - Catalogs: [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) (Claude Code), [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) (Cursor).
 - Each plugin: `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests; skills in `skills/<skill-name>/SKILL.md`.
-- [`CONVENTIONS.md`](CONVENTIONS.md) holds rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to it instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `cops/` each carry an identical copy — edit the root file, then copy it over both.
+- [`CONVENTIONS.md`](CONVENTIONS.md) and its four indexed reference files hold rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to them instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `cops/` each carry identical copies of all five files — edit the root set, then copy it over both.
+
+## Development
+
+Run the dependency-free repository checks with `python3 scripts/validate.py`.
 
 ## Install
 
