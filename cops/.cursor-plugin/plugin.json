@@ -1,6 +1,6 @@
 {
   "name": "cops",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.",
   "author": { "name": "eddeee888" },
   "license": "MIT",

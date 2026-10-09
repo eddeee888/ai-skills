@@ -1,7 +1,7 @@
 {
   "name": "oss",
   "displayName": "OSS",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Skills for maintaining and contributing to open source projects — sizing, filing, verifying, and fixing issues.",
   "author": { "name": "eddeee888" },
   "license": "MIT",
