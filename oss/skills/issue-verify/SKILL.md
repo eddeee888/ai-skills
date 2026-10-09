@@ -60,7 +60,7 @@ Follow `./draft.md`: leave the matching test red, create `repro/<issue-number>`,
 
 ## Step 6: Wrap up
 
-Never run or suggest `cops:pr-sync`; the new PR already matches its branch. Report the PR URL and end with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo` and `test loop`.
+Never run or suggest `cops:pr-sync`; the new PR already matches its branch. Report the PR URL and end with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo`, `brief-task`, and `test loop`.
 
 ## When to stop instead of proceeding
 

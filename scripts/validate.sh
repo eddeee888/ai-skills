@@ -446,10 +446,19 @@ validate_behavioral_contracts() {
     'PR_MEMORY_LOGIN' "COPS memory login:" "memory-login: unset"
   forbid_markers "cops/hooks/memory-context.sh" "derived memory login" \
     "gh api user" "get_me" "git config"
-  for path in cops/agents/pr-oracle.md cops/agents/pr-sidekick.md \
-    cops/references/pr-oracle/memory.md; do
+  for path in cops/agents/pr-oracle.md cops/references/pr-oracle/memory.md; do
     require_markers "$path" "explicit memory login" "memory-login"
     forbid_markers "$path" "derived memory login" "mcp__github__get_me" "None → call \`get_me\`"
+  done
+  require_markers "cops/agents/pr-sidekick.md" "oracle-only memory" \
+    "You never read or write memory."
+  forbid_markers "cops/agents/pr-sidekick.md" "sidekick memory reads" \
+    "memory-root" "memory-login" "MEMORY.md"
+  forbid_markers "cops/hooks/memory-context.sh" "sidekick memory context" \
+    "pr-oracle and pr-sidekick"
+  for path in cops/references/pr-oracle/modes/brief-task.md \
+    cops/references/pr-oracle/modes/triage-threads.md; do
+    require_markers "$path" "editing-subagent rules" "caller can act on"
   done
   require_markers "cops/hooks/memory-context.sh" "no synchronization" \
     "COPS must not clone, pull, commit, or push it."

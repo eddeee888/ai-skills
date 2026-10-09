@@ -23,4 +23,9 @@ needs-user:
     remembered: <matching rule (you | team), or "none">
 already-handled:
   - thread: <id>  at: <path>:<line>  note: <one line>
+edit-rules:
+  - <rule>  (<evidence>, from you | team)
 ```
+
+`edit-rules:` lists every active rule on how code, tests, or commits are written. The caller pastes it into editing handoffs, which have no other source of memory. Leave out rules only the caller can act on (consulting the oracle, asking the user, when to push or squash). None → `edit-rules: none`.
+

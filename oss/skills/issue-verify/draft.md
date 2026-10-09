@@ -4,6 +4,8 @@ Read this file only after `SKILL.md` has established that the issue contains a u
 
 ## Delegate the failing test
 
+First ask the oracle for `brief-task`, passing the package, the test location, a one-line summary of the repro, and `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Apply any `caller only:` lines yourself. If unavailable, use `none` for rules.
+
 Use the `scout-repo` package map, test location, and one-test command when available. Delegate per `CONVENTIONS-orchestration.md` → "Hand long loops to a subagent":
 
 ```text
@@ -11,6 +13,7 @@ Repo <owner>/<repo> (checked out). Package: <package the repro exercises>.
 Tests live: <from the profile>; run one with: <command, or "find out">.
 Repro (from issue #<number>): <the repro, verbatim — code, steps or link>
 Expected: <expected behavior>. Actual: <what the issue reports>.
+Rules that apply: <the brief's lines, or "none">
 
 Write a test that mirrors the repro as closely as possible, asserting the
 expected/correct behavior, not the buggy one. Run just that test with a quiet

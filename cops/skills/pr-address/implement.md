@@ -11,7 +11,7 @@ Use this exact prompt shape; it intentionally carries no full comment bodies:
 ```text
 Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
 login: <the user's login from Step 1>
-Rules that apply: <the threads' "remembered" lines from triage-threads, or "none">
+Rules that apply: <the threads' "remembered" lines and the "edit-rules" lines from triage-threads, or "none">
 Tests: <the profile's tests line, or "find out">
 GitHub: <"gh" | "MCP — use the GitHub MCP tools named below instead of gh; load each with ToolSearch first if needed">
 Threads:

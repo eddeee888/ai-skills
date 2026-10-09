@@ -63,7 +63,7 @@ git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 
 `no diff` → say the PR is already current and stop.
 
-Get the repo's profile and a brief for "PR description" in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Not available → pass "none"; the steps check inline.
+Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline.
 
 ## Step 7: Apply it
 
