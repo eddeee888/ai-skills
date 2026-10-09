@@ -26,12 +26,11 @@ Run the dependency-free repository checks:
 
 ```bash
 python3 scripts/validate.py
-scripts/test-memory-sync.sh
 ```
 
 ## Install
 
-After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally sync its memory.
+After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally attach a memory repository to the workspace.
 
 ### Claude Code
 

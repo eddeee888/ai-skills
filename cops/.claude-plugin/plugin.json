@@ -11,22 +11,5 @@
   "supportUrl": "https://github.com/eddeee888/ai-skills/issues",
   "termsOfServiceUrl": "https://github.com/eddeee888/ai-skills/blob/main/LICENSE",
   "icon": "./assets/logo.svg",
-  "keywords": ["pr", "github", "review"],
-  "userConfig": {
-    "memory_repo": {
-      "type": "string",
-      "title": "PR memory repo",
-      "description": "Private git repo (owner/repo or a git URL) that syncs pr-oracle memory across machines. Leave empty to keep memory on this machine only."
-    },
-    "github_login": {
-      "type": "string",
-      "title": "GitHub login",
-      "description": "Your GitHub username. Memory sync pushes what you learn to the memory/<login> branch of the memory repo. Leave empty only if the memory repo holds no one else's memory/users/ tree."
-    },
-    "memory_dir": {
-      "type": "string",
-      "title": "PR memory directory",
-      "description": "Optional dedicated local directory for pr-oracle memory. Defaults to $XDG_DATA_HOME/cops-memory or ~/.local/share/cops-memory."
-    }
-  }
+  "keywords": ["pr", "github", "review"]
 }

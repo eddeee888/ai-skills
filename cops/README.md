@@ -14,7 +14,7 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 2. **Connect GitHub.** The skills use `gh` when it's logged in, and the
    GitHub MCP server otherwise. The `pr-oracle` agent reads GitHub only
    through the GitHub MCP server, so connect it even if you have `gh`.
-3. **Memory — nothing to do on one machine.** The oracle keeps active rules and inactive candidates in `${XDG_DATA_HOME:-$HOME/.local/share}/cops-memory` by default. A direct rule is remembered only when you explicitly ask; reviewer feedback stays inactive until you explicitly promote it. To change the directory or share memory across machines, cloud sessions, or a team, see [Syncing the oracle's memory](#syncing-the-oracles-memory).
+3. **Attach memory when wanted.** Keep memory in its own marked Git repository and attach it to the workspace as described in [Workspace memory](#workspace-memory). With no attached repository, COPS runs without memory and never creates a machine-local store. A direct rule is remembered only when you explicitly ask; reviewer feedback stays inactive until you explicitly promote it.
 4. **Check it.** Run a skill, e.g. `/cops:pr-review <PR URL>`. Its report
    ends with a `Handoffs:` list. `✓` on each line means the agents ran;
    `inline (…)` means one wasn't available and the skill did that step
@@ -26,13 +26,13 @@ available, and the skills call them.
 ## Agents
 
 - [`agents/pr-oracle.md`](agents/pr-oracle.md) — briefs and checks without editing code or PRs. Its six modes lazy-load only their dependencies: active-memory modes load `memory.md`, GitHub modes load `github-access.md`, and only `learn-feedback` loads `learning.md` or writes memory.
-  - **Memory:** the dedicated root is `${PR_MEMORY_DIR:-${CLAUDE_PLUGIN_OPTION_MEMORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cops-memory}}`. Personal active rules are in `memory/users/<github-login>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
+  - **Memory:** COPS uses the sole attached workspace Git repository with a root `.cops-memory` marker. Personal active rules are in `memory/users/<github-login>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
   - **Consent:** operational modes may suggest `memory-candidate:` but never persist it. Skills call `learn-feedback` separately only after explicit user intent. Direct user rules may become active immediately; reviewer candidates require explicit promotion; team writes require `record-team:`.
   - **One-repo rules aren't remembered.** The oracle suggests that repo's
     `CLAUDE.md` instead, so teammates and CI see it too.
   - **It only advises.** The skills still do every push, reply, and PR edit.
   - **Whole session with its memory:** `claude --agent cops:pr-oracle`.
-  - **Cursor:** the same file is the `pr-oracle` subagent and uses the same dedicated root.
+  - **Cursor:** the same file is the `pr-oracle` subagent and uses the same attached repository.
   - **Without `cops` installed,** the skills do each oracle step themselves
     ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
 
@@ -85,45 +85,15 @@ available, and the skills call them.
   `~/.claude/CLAUDE.md`. Shared convention rules (title prefix, non-closing
   issue references) and the `pr-note` suggestion only come with the skills.
 
-### Syncing the oracle's memory
+### Workspace memory
 
-The dedicated root is `${PR_MEMORY_DIR:-${CLAUDE_PLUGIN_OPTION_MEMORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cops-memory}}`; direct local memory works there without a sync repository. Cursor and Claude Code use the same root. Optional hooks ([`hooks/hooks.json`](hooks/hooks.json) → [`hooks/memory-sync.sh`](hooks/memory-sync.sh) on Claude Code; [`hooks/cursor-hooks.json`](hooks/cursor-hooks.json) → [`hooks/cursor-memory-sync.sh`](hooks/cursor-memory-sync.sh) on Cursor) sync only `memory/users/<github-login>/` and `memory/team/`: pull `main` and your branch at session start, then commit and push at turn and session end. A turn with no memory changes makes no network call.
+COPS never creates or synchronizes a machine-local memory store. Memory is optional and must be a Git repository already attached to the current workspace.
 
-1. Create a repo the team can push to, e.g. `<you>/agent-memory`. It can stay private. Oracle files committed there live under `memory/`.
-2. Point the plugin at it (`owner/repo` for GitHub over HTTPS, or a full
-   git URL), and give it your GitHub login — what you learn is pushed to
-   `memory/<login>`:
-   - **Locally, Claude Code** — the `cops` plugin's **PR memory repo** and
-     **GitHub login** options, asked for when you enable the plugin (or in
-     `/plugin` → `cops` → Configure). The `PR_MEMORY_REPO`, `PR_MEMORY_LOGIN`, and optional `PR_MEMORY_DIR` environment variables work too and win over options. Your git credentials need push access to the repo.
-   - **Locally, Cursor** — the `PR_MEMORY_REPO`, `PR_MEMORY_LOGIN`, and optional `PR_MEMORY_DIR` plugin variables (Plugins → Configure) or the same names in the hooks' environment. Git credentials need push access to the repo.
-   - **Claude Code on the web** — add `PR_MEMORY_REPO`, `PR_MEMORY_LOGIN`, and optionally `PR_MEMORY_DIR` to the cloud environment's environment variables, and make sure the Claude GitHub
-     App can access the repo (github.com/settings/installations → the
-     Claude app → Repository access). A cloud session reaches a repo only
-     once it's attached. You can add the memory repo in the repository
-     selector when starting a session, but needn't: when the startup pull
-     can't reach it, the hook asks Claude (via the `SessionStart` context)
-     to attach the repo and pull again. If that fails, the next push picks
-     the repo up once attached, keeping anything learned meanwhile.
+1. Create a memory Git repository with a root-level `.cops-memory` marker.
+2. Store oracle files under `memory/users/<github-login>/` and `memory/team/`.
+3. Clone or attach that repository using the host's normal workspace controls. Attach only one marked memory repository.
+4. Use normal Git review, commit, pull, and push operations in that repository. COPS does none of them automatically.
 
-How it behaves:
+If no marked repository—or more than one—is attached, operational modes continue without memory and `learn-feedback` performs no write. COPS never falls back to `~/.claude`, `$XDG_DATA_HOME`, or another hidden directory.
 
-- **Opt-in and never blocking.** No memory repo set → the hooks do nothing. A
-  failed push is reported on stderr and retried on the next push. A repo
-  that can't be cloned is retried at most every 10 minutes, and once more
-  when the session ends — not on every turn. Neither ever stops the session.
-- **A branch per person, merged by you.** What someone's sessions learn is
-  pushed to `memory/<github-login>`, never to `main`, so it can be
-  reviewed and merged as a PR. Sessions pull `main` and their own branch,
-  so a person's unmerged memory follows them across machines and reaches
-  everyone once merged. The branch is only merged into, never rewritten.
-  Neither a turn with nothing new nor bringing in a newer `main` pushes
-  anything. The login is the one you set — the hooks never
-  read a token or `gh` to look it up — else the one person with a
-  `memory/users/` tree in the checkout. Neither → memory stays local,
-  with a warning.
-- **Existing memory is kept.** The first sync carries allowlisted local dedicated memory into the repo, merges exact missing lines, and backs up the old dedicated root. A one-time legacy import copies only the current login's user tree and the team tree from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory/memory`. It also converts non-boilerplate, safe line-oriented text from legacy `agent-memory/cops-pr-oracle/MEMORY.md` into that user's inactive `candidates.md`, retaining source provenance rather than activating it. Sources are preserved and backed up; the completion marker is written only after content is actually imported.
-- **Concurrent edits merge.** Two machines changing the same entry keep
-  both lines (git's `union` merge) instead of stopping on a conflict; the
-  oracle merges the duplicate on its next write.
-- **It syncs only oracle memory.** Staging is restricted to `memory/users/<github-login>/` and `memory/team/`; unrelated agent data and plugin files are never staged.
+When upgrading from local or hook-managed memory, copy only your `memory/users/<github-login>/` tree and the shared `memory/team/` tree into the attached repository, review the diff, and commit it normally. COPS does not migrate or publish those files automatically.

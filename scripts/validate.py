@@ -445,13 +445,14 @@ def validate_behavioral_contracts() -> None:
     require_markers(
         "cops/references/pr-oracle/memory.md",
         {
-            "dedicated memory root": (
-                "${PR_MEMORY_DIR:-${CLAUDE_PLUGIN_OPTION_MEMORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cops-memory}}",
+            "workspace memory root": (
+                "sole Git repository among the attached workspace roots",
+                "root-level `.cops-memory` marker",
             ),
-            "legacy inactive migration": (
-                "inactive `candidates.md`",
-                "never active memory",
-                "only after an actual structured or stub import",
+            "no local fallback": (
+                "Never create, clone, pull, or fall back to a machine-local memory directory.",
+                "do not read or write memory",
+                "Never create, clone, pull, commit, or push the memory repository.",
             ),
         },
     )
@@ -465,25 +466,26 @@ def validate_behavioral_contracts() -> None:
             )
         },
     )
-    require_markers(
-        "cops/hooks/memory-sync.sh",
-        {
-            "allowlisted staging": (
-                "g add -- memory/team",
-                'g add -- "memory/users/$login"',
+    for path in (
+        "cops/agents/pr-oracle.md",
+        "cops/agents/pr-sidekick.md",
+        "cops/README.md",
+        "cops/.claude-plugin/plugin.json",
+        "cops/.cursor-plugin/plugin.json",
+    ):
+        forbid_markers(
+            path,
+            "local or synchronized memory",
+            (
+                "PR_MEMORY_DIR",
+                "PR_MEMORY_REPO",
+                "PR_MEMORY_PATH",
+                "PLUGIN_OPTION_MEMORY",
+                "memory-sync.sh",
+                "/cops-memory",
+                "/agent-memory",
             ),
-            "legacy migration": (
-                "legacy_stub=",
-                "candidates.md",
-                "legacy cops-pr-oracle/MEMORY.md",
-            ),
-        },
-    )
-    forbid_markers(
-        "cops/hooks/memory-sync.sh",
-        "broad staging",
-        ("git add -A", "g add -A"),
-    )
+        )
     require_markers(
         "oss/skills/issue-verify/SKILL.md",
         {
