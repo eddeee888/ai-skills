@@ -28,6 +28,8 @@ Run the repository checks (requires Bash, `jq`, and Perl):
 bash scripts/validate.sh
 ```
 
+[`docs/memory-flow.png`](docs/memory-flow.png) shows how skills, agents, and memory connect. Edit its source, [`docs/memory-flow.html`](docs/memory-flow.html), when that changes, then run `bash scripts/render-memory-flow.sh` (needs `jq` and `npx`); plugin versions are stamped from the manifests.
+
 ## Install
 
 After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally attach a memory repository to the workspace.
