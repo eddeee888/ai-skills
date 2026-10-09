@@ -4,11 +4,11 @@ This is the only mode that may write curated memory. It is always a separate cal
 
 Input must contain:
 
-- concrete feedback or a complete rule;
+- a concrete rule, as `learning.md` defines it;
 - provenance: direct user statement or reviewer-derived feedback with concise evidence;
 - explicit user intent: remember personally, `record-team: <one line>`, or promote a named candidate.
 
-Reject missing or ambiguous consent without writing. Never treat running another mode, accepting feedback, or repeated reviewer comments as consent.
+Reject missing or ambiguous consent without writing. Reject a rule that is not concrete without writing, and return only `not concrete: <what the user must specify>`. Never treat running another mode, accepting feedback, or repeated reviewer comments as consent.
 
 Apply `learning.md`:
 

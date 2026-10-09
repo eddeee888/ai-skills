@@ -417,7 +417,10 @@ validate_behavioral_contracts() {
     "fall back to a machine-local directory" "do not read or write memory" \
     "Never clone, pull, commit, or push the memory repository."
   require_markers "cops/references/pr-oracle/modes/learn-feedback.md" "explicit-only learning" \
-    "explicit user intent" "Never treat running another mode" "remains inactive"
+    "explicit user intent" "Never treat running another mode" "remains inactive" \
+    "not concrete:"
+  require_markers "cops/references/pr-oracle/learning.md" "concrete rule definition" \
+    "A rule is **concrete** when" "Never turn vague input into a rule"
 
   local path
   for path in cops/agents/pr-oracle.md cops/agents/pr-sidekick.md cops/README.md \

@@ -4,7 +4,9 @@ Only `learn-feedback` follows this file. Personal active rules live in `memory/u
 
 ## Consent gate
 
-Input must include concrete feedback or a rule, its provenance, and explicit user intent to remember, record for the team, or promote a named candidate. Missing any input means no write.
+Input must include a concrete rule, its provenance, and explicit user intent to remember, record for the team, or promote a named candidate. Missing any input means no write.
+
+A rule is **concrete** when it names a specific behavior and someone could check a diff or draft against it with a yes or no. "Always add a test for a fixed bug" and "Keep the Why to one sentence" are concrete. "Be less verbose", "remember that", or a fix for one PR are not. Never turn vague input into a rule by guessing what was meant.
 
 - A direct user rule may be written immediately to personal `MEMORY.md`.
 - Reviewer-derived feedback is written only to `candidates.md`, regardless of repetition. It becomes active only when the user explicitly asks to promote that candidate.
