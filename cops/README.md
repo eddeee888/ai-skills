@@ -14,7 +14,7 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 2. **Connect GitHub.** The skills use `gh` when it's logged in, and the
    GitHub MCP server otherwise. The `pr-oracle` agent reads GitHub only
    through the GitHub MCP server, so connect it even if you have `gh`.
-3. **Attach memory when wanted.** Keep memory in its own marked Git repository and attach it to the workspace as described in [Workspace memory](#workspace-memory). With no attached repository, COPS runs without memory and never creates a machine-local store. A direct rule is remembered only when you explicitly ask; reviewer feedback stays inactive until you explicitly promote it.
+3. **Attach memory when wanted.** Keep memory in its own Git repository, configure its remote identity, and attach it to the workspace as described in [Workspace memory](#workspace-memory). With no matching repository, COPS runs without memory and never creates a machine-local store. A direct rule is remembered only when you explicitly ask; reviewer feedback stays inactive until you explicitly promote it.
 4. **Check it.** Run a skill, e.g. `/cops:pr-review <PR URL>`. Its report
    ends with a `Handoffs:` list. `✓` on each line means the agents ran;
    `inline (…)` means one wasn't available and the skill did that step
@@ -26,7 +26,7 @@ available, and the skills call them.
 ## Agents
 
 - [`agents/pr-oracle.md`](agents/pr-oracle.md) — briefs and checks without editing code or PRs. Its six modes lazy-load only their dependencies: active-memory modes load `memory.md`, GitHub modes load `github-access.md`, and only `learn-feedback` loads `learning.md` or writes memory.
-  - **Memory:** COPS uses the sole attached workspace Git repository with a root `.cops-memory` marker. Personal active rules are in `memory/users/<github-login>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
+  - **Memory:** a session-start hook matches the configured remote to an attached workspace Git root and passes that path into agent calls. Personal active rules are in `memory/users/<github-login>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
   - **Consent:** operational modes may suggest `memory-candidate:` but never persist it. Skills call `learn-feedback` separately only after explicit user intent. Direct user rules may become active immediately; reviewer candidates require explicit promotion; team writes require `record-team:`.
   - **One-repo rules aren't remembered.** The oracle suggests that repo's
     `CLAUDE.md` instead, so teammates and CI see it too.
@@ -89,11 +89,15 @@ available, and the skills call them.
 
 COPS never creates or synchronizes a machine-local memory store. Memory is optional and must be a Git repository already attached to the current workspace.
 
-1. Create a memory Git repository with a root-level `.cops-memory` marker.
-2. Store oracle files under `memory/users/<github-login>/` and `memory/team/`.
-3. Clone or attach that repository using the host's normal workspace controls. Attach only one marked memory repository.
+1. Create a memory Git repository and store oracle files under `memory/users/<github-login>/` and `memory/team/`.
+2. Configure its remote identity as `owner/repo` or a full Git URL:
+   - **Claude Code:** plugin option `memory_repo` or environment variable `PR_MEMORY_REPO`.
+   - **Cursor:** plugin variable `PR_MEMORY_REPO`.
+3. Clone or attach that repository using the host's normal workspace controls. Include only one workspace root with the configured origin.
 4. Use normal Git review, commit, pull, and push operations in that repository. COPS does none of them automatically.
 
-If no marked repository—or more than one—is attached, operational modes continue without memory and `learn-feedback` performs no write. COPS never falls back to `~/.claude`, `$XDG_DATA_HOME`, or another hidden directory.
+The session-start hook only reads workspace roots and their `origin` remotes. It injects the unique matching root into context; it never modifies Git or memory. On hosts that do not supply workspace roots to hooks, it injects the configured remote identity so the caller can locate the attached checkout before the first agent handoff.
+
+If no matching repository—or more than one—is attached, operational modes continue without memory and `learn-feedback` performs no write. COPS never falls back to `~/.claude`, `$XDG_DATA_HOME`, or another hidden directory.
 
 When upgrading from local or hook-managed memory, copy only your `memory/users/<github-login>/` tree and the shared `memory/team/` tree into the attached repository, review the diff, and commit it normally. COPS does not migrate or publish those files automatically.

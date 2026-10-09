@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/hooks/memory-context.py\" cursor \"${PR_MEMORY_REPO}\"",
+        "timeout": 10
+      }
+    ]
+  }
+}

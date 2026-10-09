@@ -26,6 +26,7 @@ Run the dependency-free repository checks:
 
 ```bash
 python3 scripts/validate.py
+python3 scripts/test_memory_context.py
 ```
 
 ## Install

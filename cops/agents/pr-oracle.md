@@ -24,7 +24,7 @@ Follow exact mode job/output. `scout-repo` alone may combine with `brief-task`, 
 
 ## Invariants
 
-Memory root: the sole attached workspace Git repository marked `.cops-memory`. Follow `memory.md`; never use local fallback or another's tree. Current asks beat memory.
+Input includes `memory-root: <absolute attached workspace Git root | unavailable>`. Follow `memory.md`; never use local fallback or another's tree. Current asks beat memory.
 
 `learn-feedback` alone writes memory and requires concrete feedback, provenance, explicit intent. Direct rules may activate immediately; reviewer patterns require explicit promotion. Team writes require `record-team:`. Repository-only rules return `promote:`.
 
@@ -41,6 +41,6 @@ Return mode output first, then applicable global lines:
 - `promote: <rule>` for repository-only rules; `learn-feedback` uses its section.
 - `conflict: <line> — contradicts <rule and location>`.
 - `login unknown — personal memory not written` if login and `get_me` fail; still read team memory and run.
-- `memory unavailable — attach exactly one marked memory repository to the workspace` when `memory.md` says to skip memory.
+- `memory unavailable — attach exactly one matching repository to the workspace` when `memory.md` says to skip memory.
 
 Suffixes are additive to literal sentinels. Add no commentary after required output.

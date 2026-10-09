@@ -11,5 +11,12 @@
   "supportUrl": "https://github.com/eddeee888/ai-skills/issues",
   "termsOfServiceUrl": "https://github.com/eddeee888/ai-skills/blob/main/LICENSE",
   "icon": "./assets/logo.svg",
-  "keywords": ["pr", "github", "review"]
+  "keywords": ["pr", "github", "review"],
+  "userConfig": {
+    "memory_repo": {
+      "type": "string",
+      "title": "PR memory repo",
+      "description": "Git remote identity (owner/repo or URL) of the memory repository already attached to the workspace."
+    }
+  }
 }

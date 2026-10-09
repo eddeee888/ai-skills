@@ -446,13 +446,13 @@ def validate_behavioral_contracts() -> None:
         "cops/references/pr-oracle/memory.md",
         {
             "workspace memory root": (
-                "sole Git repository among the attached workspace roots",
-                "root-level `.cops-memory` marker",
+                "caller's `memory-root`",
+                "configured remote among attached workspace repositories",
             ),
             "no local fallback": (
-                "Never create, clone, pull, or fall back to a machine-local memory directory.",
+                "fall back to a machine-local directory",
                 "do not read or write memory",
-                "Never create, clone, pull, commit, or push the memory repository.",
+                "Never clone, pull, commit, or push the memory repository.",
             ),
         },
     )
@@ -478,7 +478,6 @@ def validate_behavioral_contracts() -> None:
             "local or synchronized memory",
             (
                 "PR_MEMORY_DIR",
-                "PR_MEMORY_REPO",
                 "PR_MEMORY_PATH",
                 "PLUGIN_OPTION_MEMORY",
                 "memory-sync.sh",
@@ -486,6 +485,25 @@ def validate_behavioral_contracts() -> None:
                 "/agent-memory",
             ),
         )
+    require_markers(
+        "cops/hooks/memory-context.py",
+        {
+            "read-only remote matching": (
+                '"git", "-C", path, "remote", "get-url", "--all", "origin"',
+                '"workspace_roots"',
+                "COPS memory root:",
+                "memory-root: unavailable",
+            ),
+            "no synchronization": (
+                "COPS must not clone, pull, commit, or push it.",
+            ),
+        },
+    )
+    forbid_markers(
+        "cops/hooks/memory-context.py",
+        "Git writes",
+        ('"clone"', '"pull"', '"commit"', '"push"', '"add"'),
+    )
     require_markers(
         "oss/skills/issue-verify/SKILL.md",
         {

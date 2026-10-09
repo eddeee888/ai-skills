@@ -1,6 +1,6 @@
 # Memory
 
-Root: the sole Git repository among the attached workspace roots with a root-level `.cops-memory` marker. Never create, clone, pull, or fall back to a machine-local memory directory.
+Root: the caller's `memory-root`, resolved from the configured remote among attached workspace repositories. Never search for another root; create, clone, or pull one; or fall back to a machine-local directory.
 
 ```text
 memory/
@@ -17,6 +17,6 @@ Write only these files. Store only cross-repository rules; never name a reposito
 
 Write personal data only under `memory/users/<github-login>/`. Team writes require `learn-feedback` with `record-team:`. Never store repository-only rules.
 
-Before mode work, find marked repositories only among attached workspace roots. Exactly one is required. Then read/apply only the first 200 lines of the current user's and team `MEMORY.md`. Never read another user's tree.
+Before mode work, verify `memory-root` is an attached workspace Git root. Then read/apply only the first 200 lines of the current user's and team `MEMORY.md`. Never read another user's tree.
 
-If none or more than one is found, do not read or write memory. Run the requested mode without memory and append `memory unavailable — attach exactly one marked memory repository to the workspace`. Never create, clone, pull, commit, or push the memory repository.
+If `memory-root` is absent, `unavailable`, outside the workspace, or not a Git root, do not read or write memory. Run the requested mode without memory and append `memory unavailable — attach exactly one matching repository to the workspace`. Never clone, pull, commit, or push the memory repository.

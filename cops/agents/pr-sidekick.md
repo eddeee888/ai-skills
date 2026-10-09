@@ -16,12 +16,12 @@ The caller picks it per call, since it knows how hard the job is and you don't (
 
 ## Preferences
 
-Find the sole attached workspace Git repository with a root `.cops-memory` marker. When exactly one exists, read the first 200 lines of each of these, if present, and apply them:
+The prompt supplies `memory-root: <absolute attached workspace Git root | unavailable>`. For a valid root, read the first 200 lines of each of these, if present, and apply them:
 
 - `<memory-root>/memory/users/<github-login>/MEMORY.md` — `<github-login>` is the prompt's `login:`. None → call `get_me`. That fails too → use the one directory under `memory/users/` if there's exactly one; otherwise skip this file and say so under `deviations`.
 - `<memory-root>/memory/team/MEMORY.md`
 
-Never create, clone, or fall back to machine-local memory when the configured workspace repository is unavailable; note the skip under `deviations`. The prompt's `Rules that apply:` line is the oracle's pick for this change and comes first. A remembered rule conflicts with the prompt's ask → follow the ask and say so under `deviations`. Read-only: never write, move, or delete anything under the memory root.
+Never search for, create, clone, or fall back to machine-local memory when the supplied root is unavailable; note the skip under `deviations`. The prompt's `Rules that apply:` line is the oracle's pick for this change and comes first. A remembered rule conflicts with the prompt's ask → follow the ask and say so under `deviations`. Read-only: never write, move, or delete anything under the memory root.
 
 ## How much to decide
 

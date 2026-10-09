@@ -5,5 +5,16 @@
   "author": { "name": "eddeee888" },
   "license": "MIT",
   "logo": "assets/logo.svg",
-  "keywords": ["pr", "github", "review"]
+  "keywords": ["pr", "github", "review"],
+  "hooks": "./hooks/cursor-hooks.json",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "PR_MEMORY_REPO": {
+        "type": "string",
+        "title": "PR memory repo",
+        "description": "Git remote identity (owner/repo or URL) of the memory repository already included in the workspace."
+      }
+    }
+  }
 }
