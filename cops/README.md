@@ -26,7 +26,7 @@ available, and the skills call them.
 ## Agents
 
 - [`agents/pr-oracle.md`](agents/pr-oracle.md) — briefs, checks, reviews, and drafts author notes without editing code or GitHub. Its eight modes lazy-load only their dependencies: active-memory modes load `memory.md`, operational GitHub modes load `github-access.md`, review modes load `review-evidence.md`, and only `learn-feedback` loads `learning.md` or writes memory.
-  - **Memory:** a session-start hook resolves the configured path, verifies it is a Git root, and passes it into agent calls. Personal active rules are in `memory/users/<github-login>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
+  - **Memory:** a session-start hook resolves the configured path, verifies it is a Git root, and passes it and the configured `PR_MEMORY_LOGIN` into agent calls. Personal active rules are in `memory/users/<PR_MEMORY_LOGIN>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
   - **Consent:** operational modes may suggest `memory-candidate:` but never persist it. Skills call `learn-feedback` separately only after explicit user intent. Direct user rules may become active immediately; reviewer candidates require explicit promotion; team writes require `record-team:`.
   - **One-repo rules aren't remembered.** The oracle suggests that repo's
     `CLAUDE.md` instead, so teammates and CI see it too.
@@ -60,7 +60,7 @@ available, and the skills call them.
   draft before applying it (flagging claims the diff doesn't back without
   writing memory).
 - `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review.
-- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill posts at most one review. `pr-sync` and
+- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
   `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
   `Question:` one of them already answers.
 - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
@@ -85,22 +85,25 @@ COPS never creates or synchronizes a machine-local memory store. Memory is optio
 
 1. Create a memory Git repository and store oracle files under `memory/users/<github-login>/` and `memory/team/`.
 2. Clone or attach that repository using the host's normal workspace controls.
-3. Configure its workspace path:
-   - **Claude Code:** plugin option `memory_path` or environment variable `PR_MEMORY_PATH`.
-   - **Cursor:** plugin variable `PR_MEMORY_PATH`.
+3. Configure its workspace path and your GitHub login:
+   - **Claude Code:** plugin options `memory_path` and `memory_login`, or environment variables `PR_MEMORY_PATH` and `PR_MEMORY_LOGIN`.
+   - **Cursor:** plugin variables `PR_MEMORY_PATH` and `PR_MEMORY_LOGIN`.
+   - `PR_MEMORY_LOGIN` names your personal tree, `memory/users/<login>/`. COPS never guesses it from `gh`, the GitHub MCP server, Git, or the folders already in the repo. Unset → team memory only; nothing personal is read or written.
    - Use an absolute path locally. In a cloud workspace where attached repositories are checked out directly under the home directory, use a portable home-relative path such as `~/agent-memory`.
 
    ```text
    # Local workspace
    PR_MEMORY_PATH=/path/to/agent-memory
+   PR_MEMORY_LOGIN=<your-github-login>
 
    # Cloud workspace
    PR_MEMORY_PATH=~/agent-memory
+   PR_MEMORY_LOGIN=<your-github-login>
    ```
 
 4. Use normal Git review, commit, pull, and push operations in that repository. COPS does none of them automatically.
 
-The session-start hook trusts the configured location, expands `~/` or `$HOME/`, verifies that it is a Git root, and injects it into context. It does not parse workspace metadata or modify Git or memory.
+The session-start hook trusts the configured location, expands `~/` or `$HOME/`, verifies that it is a Git root, checks that `PR_MEMORY_LOGIN` looks like a GitHub login, and injects both into context. It does not parse workspace metadata or modify Git or memory.
 
 If the path is missing or not a Git root, operational modes continue without memory and `learn-feedback` performs no write. COPS never falls back to `~/.claude`, `$XDG_DATA_HOME`, or another hidden directory.
 

@@ -8,7 +8,12 @@ argument="${2:-}"
 case "$argument" in
   '${'*'}') argument="" ;;
 esac
+login_argument="${3:-}"
+case "$login_argument" in
+  '${'*'}') login_argument="" ;;
+esac
 memory_path="${PR_MEMORY_PATH:-${argument:-${CLAUDE_PLUGIN_OPTION_MEMORY_PATH:-}}}"
+memory_login="${PR_MEMORY_LOGIN:-${login_argument:-${CLAUDE_PLUGIN_OPTION_MEMORY_LOGIN:-}}}"
 
 # Expand portable home-relative configuration without evaluating arbitrary shell.
 expand_path() {
@@ -47,6 +52,15 @@ if [ -n "$memory_path" ]; then
   if [ -n "$configured" ] && [ "$git_root" = "$configured" ]; then
     context="COPS memory root: $configured
 Pass this exact path as \`memory-root\` to every pr-oracle and pr-sidekick call. COPS must not clone, pull, commit, or push it."
+    # Only an explicitly configured GitHub login names the personal tree; never derive it.
+    if printf '%s' "$memory_login" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9-]{0,38})$'; then
+      context="$context
+COPS memory login: $memory_login
+Pass \`memory-login: $memory_login\` to every pr-oracle and pr-sidekick call."
+    else
+      context="$context
+COPS memory login unset: PR_MEMORY_LOGIN is missing or not a GitHub login. Pass \`memory-login: unset\` to pr-oracle and pr-sidekick."
+    fi
   else
     context="COPS memory unavailable: the configured path is not a Git root. Pass \`memory-root: unavailable\` to pr-oracle and pr-sidekick."
   fi

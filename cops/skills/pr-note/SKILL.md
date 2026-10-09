@@ -1,6 +1,6 @@
 ---
 name: pr-note
-description: 'Leave reasoning as inline comments on the user’s own open PR before others comment. `Note:` explains unspecified choices; `Drive-by:` explains retained out-of-scope changes. Skips reasoning already in the PR or commits, posts one `COMMENT` review immediately, then lists comments. Use for “leave notes on my PR,” “explain choices in this PR,” “annotate my PR,” or when finishing an implementation PR.'
+description: 'Leave reasoning as inline comments on the user’s own open PR before others comment. `Note:` explains unspecified choices; `Drive-by:` explains retained out-of-scope changes. Skips reasoning already in the PR or commits, posts one `COMMENT` review after confirmation. Use for “leave notes on my PR,” “explain choices in this PR,” “annotate my PR,” or when finishing an implementation PR.'
 ---
 
 # Leave author notes on a first implementation
@@ -26,20 +26,29 @@ Fetch all review comments per `CONVENTIONS-github.md` → "GitHub access". Keep 
 
 The drafting mode applies active memory itself. Do not call `brief-task` or `scout-repo`. If the user explicitly asked to remember concrete feedback, call `learn-feedback` separately with provenance and personal or `record-team:` intent.
 
-## 3. Draft and post
+## 3. Draft
 
-Read [draft.md](draft.md) and follow it. Drafting must run through `pr-oracle` mode `draft-author-notes`; its fallback rules preserve the same contract. If it reports `task source required`, ask what the PR is for and rerun with that answer. Do not ask for confirmation before posting author notes.
+Read [draft.md](draft.md) and follow its "Draft" section. Drafting must run through `pr-oracle` mode `draft-author-notes`; its fallback rules preserve the same contract. If it reports `task source required`, ask what the PR is for and rerun with that answer.
 
-No comments → post nothing. Otherwise add the `cops:pr-note` signature without `Approved:` and post at most 10 comments as exactly one `COMMENT` review, with an empty top-level body.
+No comments → post nothing; report `nothing unexplained` or the `remove-instead` entries.
 
-## 4. Report
+## 4. Confirm
 
-The user did not see the draft, so list every posted note:
+Before writing, show:
 
 ```text
-Notes on <owner>/<repo>#<number> — <review link> (<m> dropped as lower priority)
+Notes for <owner>/<repo>#<number> — <n> comments (<m> dropped as lower priority)
 1. <path>:<line>  Note: <body>
 2. <path>:<start>-<end>  Drive-by: <body>
+...
+Unexplained drive-bys you may want to remove: <path:line — reason, or "none">
+Post as COMMENT? (drop/edit by number, or "post")
 ```
 
-Report `dropped`, rejected/not-posted anchors, `unverified`, and every `remove-instead` entry as an unexplained drive-by the user may want to remove. A pending-review failure is reported and left untouched. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `draft-author-notes` and `learn-feedback` when run.
+Apply edits/drops. Never post without confirmation.
+
+## 5. Post and report
+
+After confirmation, follow draft.md's "Post" section: sign each comment with `cops:pr-note` and `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature") and post at most 10 comments as exactly one `COMMENT` review, with an empty top-level body.
+
+Report the review link, kind counts, `dropped`, rejected/not-posted anchors, and `unverified`; don't repeat the comments. A pending-review failure is reported and left untouched. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `draft-author-notes` and `learn-feedback` when run.

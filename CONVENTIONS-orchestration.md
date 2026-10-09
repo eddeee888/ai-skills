@@ -63,7 +63,7 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known. Review modes also receive the selected GitHub route, owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
-- **Pass memory context.** Session context supplies the verified COPS memory root or says it is unavailable. Pass `memory-root: <absolute path | unavailable>` to every `pr-oracle` and `pr-sidekick` call because agents start blank.
+- **Pass memory context.** Session context supplies the verified COPS memory root and configured memory login, or says each is unavailable/unset. Pass `memory-root: <absolute path | unavailable>` and `memory-login: <login | unset>` to every `pr-oracle` and `pr-sidekick` call because agents start blank. Never fill `memory-login` from `gh`, `get_me`, or `login:`.
 - **Graduated memory consent.** Operational modes never write memory. Show `memory-candidate:` to the user; only explicit remember or promotion intent permits a separate `learn-feedback` call. Reviewer-derived rules stay inactive candidates until explicitly promoted.
 - **Team memory.** Only a separate `learn-feedback` call for an explicit team-memory request receives `record-team: <one line>`.
 

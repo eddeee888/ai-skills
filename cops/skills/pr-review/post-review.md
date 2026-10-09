@@ -1,6 +1,6 @@
 # Shared review posting mechanics
 
-`pr-review` reads this after confirmation; `pr-note` posts without confirmation or `Approved:`. The caller supplies signed bodies and event (`COMMENT` by default).
+`pr-review` and `pr-note` read this only after the user confirms the draft. The caller supplies signed bodies and event (`COMMENT` by default).
 
 Immediately before writing, re-read full `headRefOid` (`gh pr view <number> --json headRefOid --jq .headRefOid`; MCP `pull_request_read` `get`). Saved-head mismatch → stop, post nothing, offer a fresh review.
 

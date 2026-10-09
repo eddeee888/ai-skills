@@ -1,4 +1,4 @@
-# pr-note: Steps 3–5
+# pr-note: drafting and posting
 
 The caller has already enforced the author-only, open-PR, and pre-review gates.
 
@@ -21,8 +21,8 @@ The mode's semantics are authoritative: `Note:` explains an otherwise unexplaine
 
 ## Post
 
-Do not ask for confirmation. These are the author's own notes on their own PR. Reject any comment missing a bold `**Note:**`/`**Drive-by:**` label, exceeding the 10-comment cap, or lacking a verified new-side changed-line anchor.
+Run only after the user confirmed the draft in SKILL.md Step 4. Reject any comment missing a bold `**Note:**`/`**Drive-by:**` label, exceeding the 10-comment cap, or lacking a verified new-side changed-line anchor.
 
-Sign each accepted comment with `cops:pr-note`, without `Approved:` because the user did not see the draft (`CONVENTIONS-posts.md` → "Skill signature"). Keep the top-level body empty. Follow [post-review.md](../pr-review/post-review.md), using `pr-note.json` on the `gh` route, to post exactly one `COMMENT` review. If no accepted comments remain, post nothing.
+Sign each accepted comment with `cops:pr-note` and `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"). Keep the top-level body empty. Follow [post-review.md](../pr-review/post-review.md), using `pr-note.json` on the `gh` route, to post exactly one `COMMENT` review. If no accepted comments remain, post nothing.
 
-Return the review link; each posted path/range, kind, and body; `dropped`; rejected/not-posted anchors; `remove-instead`; and `unverified`. Report `pending review left: <what failed>` exactly when applicable. Never post a second review for the same notes.
+Report `pending review left: <what failed>` exactly when applicable. Never post a second review for the same notes.

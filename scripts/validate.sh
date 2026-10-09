@@ -401,6 +401,9 @@ validate_behavioral_contracts() {
     "review_body:" "comments:" "dropped:" "unverified:"
   require_markers "cops/references/pr-oracle/review-evidence.md" "strict anchors" \
     "Anchors must be added/modified new-side lines" "Never relocate an invalid anchor"
+  require_order "cops/skills/pr-note/SKILL.md" "note confirmation before posting" \
+    "## 4. Confirm" "Never post without confirmation." "## 5. Post and report"
+
   require_markers "cops/references/pr-oracle/modes/draft-author-notes.md" "author note YAML" \
     "mode: draft-author-notes" "remove-instead:" "task source required"
   require_markers "cops/skills/pr-review/post-review.md" "headRefOid posting" \
@@ -426,6 +429,15 @@ validate_behavioral_contracts() {
   require_markers "cops/hooks/memory-context.sh" "read-only path validation" \
     "expand_path()" 'git -C "$configured" rev-parse --show-toplevel' \
     "COPS memory root:" "memory-root: unavailable"
+  require_markers "cops/hooks/memory-context.sh" "explicit memory login" \
+    'PR_MEMORY_LOGIN' "COPS memory login:" "memory-login: unset"
+  forbid_markers "cops/hooks/memory-context.sh" "derived memory login" \
+    "gh api user" "get_me" "git config"
+  for path in cops/agents/pr-oracle.md cops/agents/pr-sidekick.md \
+    cops/references/pr-oracle/memory.md; do
+    require_markers "$path" "explicit memory login" "memory-login"
+    forbid_markers "$path" "derived memory login" "mcp__github__get_me" "None → call \`get_me\`"
+  done
   require_markers "cops/hooks/memory-context.sh" "no synchronization" \
     "COPS must not clone, pull, commit, or push it."
   forbid_markers "cops/hooks/memory-context.sh" "discovery or Git writes" \
