@@ -22,10 +22,10 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ## Development
 
-Run the dependency-free repository checks:
+Run the repository checks (requires Bash, `jq`, and Perl):
 
 ```bash
-python3 scripts/validate.py
+bash scripts/validate.sh
 ```
 
 ## Install
