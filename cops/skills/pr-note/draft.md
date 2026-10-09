@@ -1,24 +1,23 @@
 # pr-note: Steps 3–5
 
-The caller has already enforced the author-only, open-PR, pre-review gates and supplied the `pr-oracle` brief. Do not call the oracle.
+The caller has already enforced the author-only, open-PR, and pre-review gates.
 
 ## Draft
 
-Call `pr-reviewer` in `draft-author-notes` mode with:
+Call `pr-oracle` in `draft-author-notes` mode with:
 
 - owner/repo, PR number and URL;
 - the full saved `headRefOid`, login, selected GitHub route, and checkout path/status;
-- applicable rules from the oracle brief;
 - the user's stated task, or PR title/body/linked issue as task sources;
 - every line already covered by the author's `Note:`/`Drive-by:`.
 
-The reviewer reads the complete diff, commits, task evidence, existing comments, and repository context itself. Use only its structured YAML. It must return at most 10 verified new-side comments, `dropped`, `remove-instead`, and `unverified`.
+The oracle applies active memory and reads the complete diff, commits, task evidence, existing comments, and repository context itself. Use only its structured YAML. It must return at most 10 verified new-side comments, `dropped`, `remove-instead`, and `unverified`.
 
-If the named reviewer is unavailable but subagents exist, read `../../agents/pr-reviewer.md` and give that contract and the filled prompt to one general read-only subagent. If no subagent capability exists, run the same reviewer contract inline and mark Handoffs accordingly.
+If the oracle is unavailable but subagents exist, read `../../agents/pr-oracle.md`, its `draft-author-notes` mode and review-evidence references, and give that contract and the filled prompt to one general read-only subagent. If no subagent capability exists, run the same contract inline and mark Handoffs accordingly.
 
 `unverified: ["task source required"]` means ask the user what the PR is for, then rerun with the answer. Never guess or classify the whole diff as drive-bys. No comments and no `remove-instead` means `nothing unexplained`.
 
-The reviewer's semantics are authoritative: `Note:` explains an otherwise unexplained non-obvious in-task choice; `Drive-by:` explains a justified out-of-task change even when PR prose already does; an unjustified drive-by appears only under `remove-instead`. Existing notes, standard choices, generated/lock/snapshot/vendored files, and already-explained in-task choices are skipped. No suggestion blocks or memory references.
+The mode's semantics are authoritative: `Note:` explains an otherwise unexplained non-obvious in-task choice; `Drive-by:` explains a justified out-of-task change even when PR prose already does; an unjustified drive-by appears only under `remove-instead`. Existing notes, standard choices, generated/lock/snapshot/vendored files, and already-explained in-task choices are skipped. No suggestion blocks or memory references.
 
 ## Post
 

@@ -24,11 +24,11 @@ CONVENTION_BUDGETS = {
 
 REVIEW_BUDGETS = {
     "cops/skills/pr-review/SKILL.md": 350,
-    "cops/agents/pr-reviewer.md": 650,
     "cops/skills/pr-review/post-review.md": 220,
-    "cops/agents/pr-oracle.md": 350,
+    "cops/agents/pr-oracle.md": 400,
     "cops/references/pr-oracle/memory.md": 220,
-    "cops/references/pr-oracle/modes/brief-task.md": 60,
+    "cops/references/pr-oracle/review-evidence.md": 260,
+    "cops/references/pr-oracle/modes/review-pr.md": 420,
 }
 REVIEW_WORKFLOW_LIMIT = 1800
 REVIEW_WORKFLOW_WORDS = 0
@@ -365,12 +365,14 @@ def validate_behavioral_contracts() -> None:
     require_markers(
         "cops/agents/pr-oracle.md",
         {
-            "six modes": (
+            "eight modes": (
                 "`scout-repo`",
                 "`triage-threads`",
                 "`brief-task`",
                 "`sweep-diff`",
                 "`grill-description`",
+                "`review-pr`",
+                "`draft-author-notes`",
                 "`learn-feedback`",
             ),
             "no-mode response": ("return exactly `no mode given`",),
@@ -398,14 +400,14 @@ def validate_behavioral_contracts() -> None:
             "changed files brief": (
                 ",files",
                 "equivalent `files` through the shared route contract",
-                "with login, title/body, and changed files",
+                "title/body, and changed files",
             ),
             "review body confirmation": ("Body: <kind>:", "non-empty `review_body`"),
             "unverified exclusion": (
                 "Never post `unverified`; valid verified comments may continue.",
             ),
             "reviewer fallback": (
-                "Reviewer unavailable but subagents exist",
+                "Oracle unavailable but subagents exist",
                 "No subagent capability",
             ),
         },
@@ -416,22 +418,32 @@ def validate_behavioral_contracts() -> None:
         ("## 3. Confirm", "Never post without confirmation.", "## 4. Post and report"),
     )
     require_markers(
-        "cops/agents/pr-reviewer.md",
+        "cops/references/pr-oracle/modes/review-pr.md",
         {
-            "reviewer modes": (
-                "mode must be `review-pr` or `draft-author-notes`",
-                "mode: review-pr",
-                "mode: draft-author-notes",
-            ),
             "review YAML": (
                 "review_body:",
                 "comments:",
                 "dropped:",
                 "unverified:",
             ),
+        },
+    )
+    require_markers(
+        "cops/references/pr-oracle/review-evidence.md",
+        {
             "strict anchors": (
                 "Anchors must be added/modified new-side lines",
-                "Never move an inline candidate there because its anchor is invalid",
+                "Never relocate an invalid anchor",
+            ),
+        },
+    )
+    require_markers(
+        "cops/references/pr-oracle/modes/draft-author-notes.md",
+        {
+            "author note YAML": (
+                "mode: draft-author-notes",
+                "remove-instead:",
+                "task source required",
             ),
         },
     )
@@ -447,7 +459,7 @@ def validate_behavioral_contracts() -> None:
         {
             "workspace memory root": (
                 "caller's `memory-root`",
-                "configured remote among attached workspace repositories",
+                "configured workspace path",
             ),
             "no local fallback": (
                 "fall back to a machine-local directory",
@@ -478,19 +490,19 @@ def validate_behavioral_contracts() -> None:
             "local or synchronized memory",
             (
                 "PR_MEMORY_DIR",
-                "PR_MEMORY_PATH",
+                "PR_MEMORY_REPO",
                 "PLUGIN_OPTION_MEMORY",
                 "memory-sync.sh",
-                "/cops-memory",
-                "/agent-memory",
+                "/.local/share/cops-memory",
+                "~/.claude/agent-memory",
             ),
         )
     require_markers(
-        "cops/hooks/memory-context.py",
+        "cops/hooks/memory-context.sh",
         {
-            "read-only remote matching": (
-                '"git", "-C", path, "remote", "get-url", "--all", "origin"',
-                '"workspace_roots"',
+            "read-only path validation": (
+                'expand_path()',
+                'git -C "$configured" rev-parse --show-toplevel',
                 "COPS memory root:",
                 "memory-root: unavailable",
             ),
@@ -500,9 +512,17 @@ def validate_behavioral_contracts() -> None:
         },
     )
     forbid_markers(
-        "cops/hooks/memory-context.py",
-        "Git writes",
-        ('"clone"', '"pull"', '"commit"', '"push"', '"add"'),
+        "cops/hooks/memory-context.sh",
+        "discovery or Git writes",
+        (
+            "workspace_roots",
+            "remote get-url",
+            "git clone",
+            "git pull",
+            "git commit",
+            "git push",
+            "git add",
+        ),
     )
     require_markers(
         "oss/skills/issue-verify/SKILL.md",

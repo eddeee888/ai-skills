@@ -22,13 +22,13 @@ Use the named PR, else the current branch's. Stop when:
 
 Fetch all review comments per `CONVENTIONS-github.md` → "GitHub access". Keep the full `headRefOid`, changed files, task sources, and lines covered by the user's existing `Note:`/`Drive-by:` comments. Never edit code, metadata, or threads.
 
-## 2. Brief
+## 2. Memory consent
 
-Call `pr-oracle` once in `brief-task` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass login, changed files, and PR title/task source. This supplies applicable active memory only; do not call `scout-repo`. If the user explicitly asked to remember concrete feedback, call `learn-feedback` separately with provenance and personal or `record-team:` intent.
+The drafting mode applies active memory itself. Do not call `brief-task` or `scout-repo`. If the user explicitly asked to remember concrete feedback, call `learn-feedback` separately with provenance and personal or `record-team:` intent.
 
 ## 3. Draft and post
 
-Read [draft.md](draft.md) and follow it. Drafting must run through `pr-reviewer` mode `draft-author-notes`; its fallback rules preserve the same contract. If it reports `task source required`, ask what the PR is for and rerun with that answer. Do not ask for confirmation before posting author notes.
+Read [draft.md](draft.md) and follow it. Drafting must run through `pr-oracle` mode `draft-author-notes`; its fallback rules preserve the same contract. If it reports `task source required`, ask what the PR is for and rerun with that answer. Do not ask for confirmation before posting author notes.
 
 No comments → post nothing. Otherwise add the `cops:pr-note` signature without `Approved:` and post at most 10 comments as exactly one `COMMENT` review, with an empty top-level body.
 
@@ -42,4 +42,4 @@ Notes on <owner>/<repo>#<number> — <review link> (<m> dropped as lower priorit
 2. <path>:<start>-<end>  Drive-by: <body>
 ```
 
-Report `dropped`, rejected/not-posted anchors, `unverified`, and every `remove-instead` entry as an unexplained drive-by the user may want to remove. A pending-review failure is reported and left untouched. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `brief-task`, `learn-feedback` when run, and `draft-author-notes`.
+Report `dropped`, rejected/not-posted anchors, `unverified`, and every `remove-instead` entry as an unexplained drive-by the user may want to remove. A pending-review failure is reported and left untouched. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `draft-author-notes` and `learn-feedback` when run.
