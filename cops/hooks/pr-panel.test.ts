@@ -276,13 +276,16 @@ describe('descriptions', () => {
   })
 
   test('calls', () => {
-    expect(describeCall('cops:pr-oracle', 'Run `review-pr`.\nmemory-root: `/m`\nmemory-login: unset')).toEqual({
-      mode: 'review-pr', memoryRoot: '/m', memoryLogin: 'unset', isLeak: false,
+    expect(describeCall({ agent: 'cops:pr-oracle', prompt: 'Run `review-pr`.\nmemory-root: `/m`\nmemory-login: unset' })).toEqual({
+      modes: ['review-pr'], memoryRoot: '/m', memoryLogin: 'unset', isLeak: false,
     })
-    expect(describeCall('cops:pr-sidekick', 'Rules that apply: none')).toEqual({ rules: 0, isLeak: false })
-    expect(describeCall('cops:pr-sidekick', 'Fix it.')).toEqual({ rules: 0, isLeak: false })
-    expect(describeCall('cops:pr-sidekick', 'Rules that apply: keep tests beside code')).toEqual({ rules: 1, isLeak: false })
-    expect(describeCall('cops:pr-sidekick', 'Rules that apply:\n- a\n- b\n- c\n\nTests: x\n- not a rule')).toEqual({ rules: 3, isLeak: false })
+    expect(describeCall({ agent: 'cops:pr-oracle', prompt: 'Mode: triage-threads + scout-repo' }).modes).toEqual(['triage-threads', 'scout-repo'])
+    expect(describeCall({ agent: 'cops:pr-oracle', prompt: 'mode: scout-repo + triage-threads' }).modes).toEqual(['scout-repo', 'triage-threads'])
+    expect(describeCall({ agent: 'cops:pr-oracle', prompt: 'Run it.' }).modes).toEqual([])
+    expect(describeCall({ agent: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })).toEqual({ rules: 0, isLeak: false })
+    expect(describeCall({ agent: 'cops:pr-sidekick', prompt: 'Fix it.' })).toEqual({ rules: 0, isLeak: false })
+    expect(describeCall({ agent: 'cops:pr-sidekick', prompt: 'Rules that apply: keep tests beside code' })).toEqual({ rules: 1, isLeak: false })
+    expect(describeCall({ agent: 'cops:pr-sidekick', prompt: 'Rules that apply:\n- a\n- b\n- c\n\nTests: x\n- not a rule' })).toEqual({ rules: 3, isLeak: false })
   })
 
   test('outcomes', () => {

@@ -54,17 +54,18 @@ You edit and send the filled prompt yourself; the band never writes memory or ca
 
 ## COPS HQ pane
 
-In Claude Code, a pane with two sections opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.
+In Claude Code, a pane with two sections, three while the memory inbox holds lines, opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.
 
 - **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. The `PR #<n>` heading links to the PR, and each thread's `path:line` links to its last comment. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out, and so are your own `Note:` / `Drive-by:` threads once you 👍 them (they return if someone replies). It needs `gh` logged in; without it, the section says so.
 - **Agents:** each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call this session, with what it was given and what it returned:
   - Oracle: its mode;
   - Sidekick: how many rules its `Rules that apply:` line carried and how many deviations it reported (`6 rules · 1 deviation`), and a red warning if its prompt carried `memory-root`, which it must never get;
   - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Each row starts with its status: a spinner while the call runs, `✓` when it's done, `✗` when it failed. Background calls show as running in the background.
+- **Inbox:** while memory is on, the `memory-candidate:`, `promote:`, `conflict:` and `open:` lines cops agents return, each once, with the repository and PR they came from (e.g. `· ai-skills#59`). `open:` lines stay for the session; the rest are kept across sessions. **Park as candidate** (a `triage-threads` candidate) or **Remember** (a `grill-description` one) puts the matching request in the prompt box and clears the line; **Drop** clears it, and the same line isn't collected again, even in later sessions. It never writes memory.
 
 The threads refresh at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes. No model is called; the grouping comes from who commented last.
 
-All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts), [`hooks/pr-panel.ts`](hooks/pr-panel.ts) and [`hooks/rule-band.ts`](hooks/rule-band.ts). Cursor doesn't load the module.
+All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts), [`hooks/pr-panel.ts`](hooks/pr-panel.ts), [`hooks/memory-inbox.ts`](hooks/memory-inbox.ts) and [`hooks/rule-band.ts`](hooks/rule-band.ts). Cursor doesn't load the module.
 
 ## Agents
 

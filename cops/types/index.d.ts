@@ -25,8 +25,8 @@ export type Threads =
 export type AgentCall = {
   id: string
   agent: string
-  /** The pr-oracle mode the prompt names. */
-  mode?: string
+  /** The pr-oracle modes the prompt names, in order. */
+  modes?: string[]
   memoryRoot?: string
   memoryLogin?: string
   /** How many rules the `Rules that apply:` label of a pr-sidekick prompt carries. */
@@ -43,6 +43,22 @@ export type AgentCall = {
   tokens?: number
 }
 
+/**
+ * One memory line from a cops agent's result, in the COPS HQ memory inbox.
+ * The inbox is kept across sessions in `$.store` under the key `inbox`, except
+ * `open:` lines, which stay for the session in `openItems`.
+ */
+export type InboxItem = {
+  kind: 'memory-candidate' | 'promote' | 'conflict' | 'open'
+  text: string
+  /** The pr-oracle modes of the call that returned the line; none for pr-sidekick. */
+  modes?: string[]
+  /** The repository's name, from its `origin` remote. */
+  repo?: string
+  /** The branch's PR number, once its threads have loaded. */
+  pr?: number
+}
+
 declare module 'claude-code' {
   interface PluginState {
     cops: {
@@ -54,6 +70,10 @@ declare module 'claude-code' {
       isDismissed: boolean
       /** A rule-like sentence from the person's last prompt, offered above the prompt; null when there is none. */
       ruleOffer: string | null
+      /** What the status line's last run of memory-context.sh said: memory is configured and its root found. */
+      isMemoryOn: boolean
+      /** This session's `open:` lines, shown in the inbox. */
+      openItems: InboxItem[]
     }
   }
 }

@@ -1,15 +1,17 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { AgentCall, Thread, Threads } from '../types'
+import type { AgentCall, InboxItem, Thread, Threads } from '../types'
+import { parseSuffixes } from './memory-inbox.ts'
 import { describeAgent, describeCall, describeOutcome, snippet, SPINNER_MS, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 
-// The plugin's one hooks module: the status line, the COPS HQ pane of threads
-// and agents, and the band offering to remember a rule the person typed. What each
-// says is worked out in status-line.ts, pr-panel.ts and rule-band.ts.
+// The plugin's one hooks module: the status line, the COPS HQ pane of threads,
+// agents and the memory inbox, and the band offering to remember a rule the person
+// typed. What each says is worked out in status-line.ts, pr-panel.ts, memory-inbox.ts
+// and rule-band.ts.
 
 const REFRESH_MS = 120_000
 // Bash commands that can change the branch or its PR.
@@ -17,12 +19,20 @@ const BRANCH_COMMAND = /\b(git\s+(checkout|switch|commit|push|pull|merge|rebase|
 const PUSH = /\bgit\s+push\b/
 const PANE = 'cops-hq'
 const TITLE = 'COPS HQ'
+// The `$.store` key of the memory inbox, kept across sessions.
+const INBOX = 'inbox'
+const INBOX_LIMIT = 50
+// The `$.store` key of the `kind: text` lines dropped from the inbox, kept so they aren't collected again.
+const DROPPED = 'dropped'
+const DROPPED_LIMIT = 200
 
 const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' })
 const handled = atom({ plugin: 'cops', key: 'handled' } as const, [])
 const agents = atom({ plugin: 'cops', key: 'agents' } as const, [])
 const isDismissed = atom({ plugin: 'cops', key: 'isDismissed' } as const, false)
 const ruleOffer = atom({ plugin: 'cops', key: 'ruleOffer' } as const, null)
+const isMemoryOn = atom({ plugin: 'cops', key: 'isMemoryOn' } as const, false)
+const openItems = atom({ plugin: 'cops', key: 'openItems' } as const, [])
 
 const run = async ($: EngineInterface, argv: readonly string[]) => {
   try {
@@ -38,6 +48,12 @@ let hasWarnedCapacity = false
 
 const memoryPart = async ($: EngineInterface, { path, login }: { path: string; login: string }): Promise<string | undefined> => {
   const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', path, login])
+  const isOn = ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')
+  if ((await read($, isMemoryOn)) !== isOn) {
+    await update($, isMemoryOn, () => isOn)
+    // The pane shows the memory inbox only while memory is on.
+    $.ui.invalidate('ui.render')
+  }
   if (ran?.exitCode !== 0) return undefined
   const lineCount = async ({ file }: { file: string }): Promise<number | undefined> => {
     try {
@@ -76,6 +92,26 @@ const refreshStatus = async ($: EngineInterface, memory: Memory) => {
   } finally {
     isStatusRefreshing = false
   }
+}
+
+// Memory inbox
+
+let hasToastedInbox = false
+
+// What the store holds under INBOX; anything there that isn't an item is left out.
+const readInbox = async ($: EngineInterface): Promise<InboxItem[]> => {
+  const isItem = (value: unknown): value is InboxItem =>
+    typeof value === 'object' && value !== null
+    && 'kind' in value && typeof value.kind === 'string' && ['memory-candidate', 'promote', 'conflict', 'open'].includes(value.kind)
+    && 'text' in value && typeof value.text === 'string'
+  const stored = await $.store.get(INBOX)
+  return Array.isArray(stored) ? stored.filter(isItem) : []
+}
+
+// What the store holds under DROPPED; anything there that isn't a string is left out.
+const readDropped = async ($: EngineInterface): Promise<string[]> => {
+  const stored = await $.store.get(DROPPED)
+  return Array.isArray(stored) ? stored.filter(one => typeof one === 'string') : []
 }
 
 // Threads
@@ -230,7 +266,7 @@ export const register: Register = (on, options) => {
     const agent = e.subagent_type ?? ''
     if (!agent.startsWith('cops:')) return next(e)
     const startedAt = await $.clock.now()
-    const call: AgentCall = { id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall(agent, e.prompt) }
+    const call: AgentCall = { id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall({ agent, prompt: e.prompt }) }
     await update($, agents, list => [...list, call].slice(-50))
     void autoOpen($)
     // Redraws the pane so the running call's spinner moves.
@@ -258,6 +294,37 @@ export const register: Register = (on, options) => {
       const entries = /^deviations:[ \t]*(.*)$/mi.exec(ran.text ?? '')?.[1]?.split(';').map(one => one.trim()).filter(Boolean) || []
       const deviations = entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
       await setCall($, call.id, { state: 'done', ...totals, deviations, outcome: describeOutcome(ran.text ?? '') })
+      // Keeps the result's memory lines in the inbox while memory is on.
+      try {
+        const found = parseSuffixes({ text: ran.text ?? '', modes: call.modes })
+        const context = found.length > 0 ? await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login]) : undefined
+        if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
+          const inbox = await readInbox($)
+          const asked = await read($, openItems)
+          const dropped = await readDropped($)
+          const view = await read($, threads)
+          const remote = await run($, ['git', 'remote', 'get-url', 'origin'])
+          // The repository's name from its remote URL:
+          //   'git@github.com:eddeee888/ai-skills.git' → 'ai-skills'
+          //   'https://github.com/eddeee888/ai-skills' → 'ai-skills'
+          const repo = remote?.exitCode === 0 ? /([^/:]+?)(?:\.git)?\/?$/.exec(remote.stdout.trim())?.[1] : undefined
+          const added = found
+            .filter(item => ![...inbox, ...asked].some(one => one.kind === item.kind && one.text === item.text) && !dropped.includes(`${item.kind}: ${item.text}`))
+            .map(item => ({ ...item, repo, pr: view.status === 'ready' ? view.pr : undefined }))
+          if (added.length > 0) {
+            // An `open:` question goes back to the main chat right away, so it's kept for this session only.
+            const kept = added.filter(one => one.kind !== 'open')
+            if (kept.length > 0) await $.store.set(INBOX, [...inbox, ...kept].slice(-INBOX_LIMIT))
+            await update($, openItems, list => [...list, ...added.filter(one => one.kind === 'open')])
+            $.ui.invalidate('ui.render')
+            if (!hasToastedInbox) {
+              hasToastedInbox = true
+              $.ui.toast(`COPS memory inbox: ${added.length} new in the COPS HQ pane.`)
+            }
+            for (const item of added.filter(one => one.kind === 'conflict')) $.ui.toast(`COPS memory conflict: ${item.text}`)
+          }
+        }
+      } catch {}
     }
     return ran
   }).catch(($, e, next) => next(e))
@@ -268,6 +335,9 @@ export const register: Register = (on, options) => {
     const view = await read($, threads)
     const done = await read($, handled)
     const calls = await read($, agents)
+    // A store that can't be read hides the inbox, not the pane.
+    // The inbox stays in the store while memory is off, and shows again once it's on.
+    const inbox = (await read($, isMemoryOn)) ? [...(await readInbox($).catch(() => [])), ...(await read($, openItems))] : []
 
     const row = (thread: Thread) => {
       const isHandled = done.includes(thread.id)
@@ -299,6 +369,12 @@ export const register: Register = (on, options) => {
       </Box>
     )
 
+    const clear = async ({ item }: { item: InboxItem }): Promise<void> => {
+      if (item.kind === 'open') await update($, openItems, list => list.filter(one => one.text !== item.text))
+      else await $.store.set(INBOX, (await readInbox($)).filter(one => one.kind !== item.kind || one.text !== item.text))
+      $.ui.invalidate('ui.render')
+    }
+
     const waiting = {
       loading: 'Threads: loading…',
       'no-repo': 'Threads: not in a Git repository.',
@@ -327,6 +403,48 @@ export const register: Register = (on, options) => {
             </Box>
           ))}
         </Box>
+        {inbox.length > 0 && (
+          <Box flexDirection="column">
+            <Text bold>Inbox ({inbox.length})</Text>
+            {inbox.map((item, index) => {
+              // A candidate from a call that ran triage-threads can be parked, one from grill-description
+              // remembered; every line can be dropped.
+              const take = item.kind !== 'memory-candidate' ? undefined
+                : item.modes?.includes('triage-threads') ? { key: 'park', label: 'Park as candidate', text: `Park this as a memory candidate: ${item.text}` }
+                : item.modes?.includes('grill-description') ? { key: 'remember', label: 'Remember', text: `Remember this rule: ${item.text}` }
+                : undefined
+              // Where the line came from: 'ai-skills#59', 'ai-skills' outside a PR, '' when unknown.
+              const source = `${item.repo || ''}${item.pr ? `#${item.pr}` : ''}`
+              return (
+                <Box key={`inbox-${index}`} flexDirection="row" gap={1}>
+                  <Text color={item.kind === 'conflict' ? 'warning' : undefined} wrap="truncate-end">
+                    {item.kind}: {item.text}
+                    {source && <Text dimColor> · {source}</Text>}
+                  </Text>
+                  {take && (
+                    <Button
+                      key={`${take.key}-${index}`}
+                      label={take.label}
+                      onPress={async () => {
+                        if ((await $.prompt.fill({ text: take.text })).isFilled) await clear({ item })
+                      }}
+                    />
+                  )}
+                  <Button
+                    key={`drop-${index}`}
+                    label="Drop"
+                    role="dismiss"
+                    onPress={async () => {
+                      const line = `${item.kind}: ${item.text}`
+                      await $.store.set(DROPPED, [...(await readDropped($)).filter(one => one !== line), line].slice(-DROPPED_LIMIT))
+                      await clear({ item })
+                    }}
+                  />
+                </Box>
+              )
+            })}
+          </Box>
+        )}
       </Box>
     )
   })

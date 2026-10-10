@@ -74,12 +74,23 @@ export const toThreads = (response: ThreadsResponse): Thread[] => {
 
 const field = (prompt: string, name: string) => new RegExp(`${name}:\\s*\`?([^\\s\`]+)`).exec(prompt)?.[1]
 
-// What a cops subagent call was given, read from its prompt.
-export const describeCall = (agent: string, prompt: string): Pick<AgentCall, 'mode' | 'memoryRoot' | 'memoryLogin' | 'rules' | 'isLeak'> => {
+// What a cops subagent call was given, read from its prompt. A pr-oracle call keeps
+// every mode its `mode` line names, in order, any case:
+//   'Mode: triage-threads + scout-repo' → modes ['triage-threads', 'scout-repo']
+//   'mode: scout-repo + triage-threads' → modes ['scout-repo', 'triage-threads']
+//   'Run `review-pr`.' (no mode line)    → modes ['review-pr'], the first of MODES the prompt names
+//   'Run it.'                            → modes []
+export const describeCall = ({ agent, prompt }: { agent: string; prompt: string }): Pick<AgentCall, 'modes' | 'memoryRoot' | 'memoryLogin' | 'rules' | 'isLeak'> => {
   if (agent.endsWith('pr-oracle')) {
-    const named = /\bmode:?\s*`?([a-z-]+)/.exec(prompt)?.[1]
+    const line = /\bmode\b:?(.*)$/im.exec(prompt)?.[1] || ''
+    const named = MODES
+      .map(one => ({ one, at: line.search(new RegExp(`\\b${one}\\b`, 'i')) }))
+      .filter(found => found.at !== -1)
+      .sort((a, b) => a.at - b.at)
+      .map(found => found.one)
+    const fallback = MODES.find(one => new RegExp(`\\b${one}\\b`, 'i').test(prompt))
     return {
-      mode: named && MODES.includes(named) ? named : MODES.find(one => new RegExp(`\\b${one}\\b`).test(prompt)),
+      modes: named.length > 0 ? named : fallback ? [fallback] : [],
       memoryRoot: field(prompt, 'memory-root'),
       memoryLogin: field(prompt, 'memory-login'),
       isLeak: false,
@@ -118,6 +129,7 @@ export const describeOutcome = (text: string): string => {
 // One pane row per call, led by its status:
 //   running, now 0   → `⠋ 🔮 Oracle · brief-task` (the frame steps every 100ms of `now`)
 //   running, now 100 → `⠙ 🔮 Oracle · brief-task`
+//   two modes        → `⠋ 🔮 Oracle · triage-threads + scout-repo`
 //   done             → `✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
 //   sidekick done    → `✓ 🦸 Sidekick · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6`
 //                      (`no rules` for none; the deviation part only when there are some)
@@ -131,7 +143,7 @@ export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): 
   const names: Record<string, string> = { 'cops:pr-oracle': '🔮 Oracle', 'cops:pr-sidekick': '🦸 Sidekick' }
   const line = [
     names[call.agent] ?? call.agent.replace(/^cops:/, ''),
-    call.mode,
+    call.modes?.join(' + '),
     call.rules !== undefined && (call.rules === 0 ? 'no rules' : `${call.rules} rule${call.rules === 1 ? '' : 's'}`),
     !!call.deviations && `${call.deviations} deviation${call.deviations === 1 ? '' : 's'}`,
     call.durationMs !== undefined && elapsed(call.durationMs),
