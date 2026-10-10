@@ -207,6 +207,20 @@ const recordSkill = async ($: EngineInterface, { skill }: { skill: string }): Pr
   $.ui.invalidate('ui.render')
 }
 
+// The skill.prompt steps that failed this run, each toasted once:
+//   record    → 'COPS HQ couldn't record /cops:pr-start in Activity: <error>'
+//   checklist → 'COPS HQ couldn't start the Handoffs checklist for /cops:pr-start: <error>'
+const failed = new Set<string>()
+
+const reportFailure = ($: EngineInterface, { step, skill, error }: { step: 'record' | 'checklist'; skill: string; error: unknown }): void => {
+  if (failed.has(step)) return
+  failed.add(step)
+  const what = step === 'record' ? `record /${skill} in Activity` : `start the Handoffs checklist for /${skill}`
+  try {
+    $.ui.toast(`COPS HQ couldn't ${what}: ${snippet(error instanceof Error ? error.message : String(error)) || 'unknown error'}`)
+  } catch {}
+}
+
 // Each running cops agent's Bash commands this run, by its agentId, for the 4th-try check.
 const commands = new Map<string, string[]>()
 
@@ -302,16 +316,21 @@ export const register: Register = (on, options) => {
 
   // Every skill reaches the model through here: typed, called by the model, or preloaded.
   // A cops skill with handoffs (EXPECTED_HANDOFFS) also starts its checklist; any other skill clears it.
+  // Neither step may change what the model reads, so a failure is toasted, once per step, instead of thrown.
   on('skill.prompt', async ($, e, next) => {
     const expanded = await next(e)
     try {
       await recordSkill($, { skill: e.skill })
-    } catch {}
+    } catch (error) {
+      reportFailure($, { step: 'record', skill: e.skill, error })
+    }
     try {
       const skill = [e.skill, `cops:${e.skill}`].find(one => EXPECTED_HANDOFFS[one])
       await update($, checklist, () => (skill ? { skill, ticked: [] } : null))
       $.ui.invalidate('ui.render')
-    } catch {}
+    } catch (error) {
+      reportFailure($, { step: 'checklist', skill: e.skill, error })
+    }
     return expanded
   })
 

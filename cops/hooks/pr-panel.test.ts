@@ -344,6 +344,42 @@ describe('skill history', () => {
     await ui.unmount()
   })
 
+  test('a typed cops skill shows its run and starts its Handoffs checklist', async ($, on) => {
+    world(on, { pr: failed('no pull requests found for branch "feat"') })
+    on('skill.prompt', ($, e) => ({ text: e.text }))
+    // The engine expands a typed skill's prompt inside the command's run.
+    on('command.run', async (_, e) => {
+      await $.skill.prompt({ skill: e.command, text: 'body' })
+      return { text: '' }
+    })
+    await start($)
+    await $.command.run({ command: 'cops:pr-start', args: 'add a readme line', origin: { kind: 'composer' } } as never)
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('Activity · 1 skill'))
+    const drawn = await text(ui)
+    expect(drawn).toContain('#1 /cops:pr-start add a readme line · you · just now')
+    expect(drawn).toContain('Handoffs · pr-start')
+    expect(drawn).toContain('[ ] scout-repo + brief-task')
+    await ui.unmount()
+  })
+
+  test('toasts, once, a skill run it could not record', async ($, on) => {
+    world(on, { pr: failed('no pull requests found for branch "feat"') })
+    on('state.set', { plugin: 'cops', key: 'skills' }, () => ({ deny: 'store down' }))
+    const toasts: string[] = []
+    on('ui.toast', ($, e) => {
+      toasts.push(e.text)
+      return { value: undefined }
+    })
+    on('skill.prompt', ($, e) => ({ text: e.text }))
+    await start($)
+    expect(await $.skill.prompt({ skill: 'cops:pr-start', text: 'body' })).toEqual({ text: 'body' })
+    await $.skill.prompt({ skill: 'cops:pr-sync', text: 'body' })
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0]).toStartWith("COPS HQ couldn't record /cops:pr-start in Activity: ")
+    expect(toasts[0]).toContain('store down')
+  })
+
   test('nests each agent call under the skill run it started in', async ($, on) => {
     const { clock } = world(on, { pr: failed('no pull requests found for branch "feat"') })
     on('skill.prompt', ($, e) => ({ text: e.text }))
