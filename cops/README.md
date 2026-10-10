@@ -64,7 +64,7 @@ In Claude Code, a pane with two sections opens by itself when a review thread ne
 
 The threads refresh like the status line. No model is called; the grouping comes from who commented last.
 
-All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts) and [`hooks/pr-panel.ts`](hooks/pr-panel.ts). Cursor doesn't load the module.
+All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts), [`hooks/pr-panel.ts`](hooks/pr-panel.ts) and [`hooks/rule-band.ts`](hooks/rule-band.ts). Cursor doesn't load the module.
 
 ## Agents
 

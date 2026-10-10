@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On, PromptOrigin } from 'claude-code'
+import { findRule } from './rule-band.ts'
 
 const MEMORY_ON = 'COPS memory root: /memory\nCOPS memory login: octocat\n'
 const MEMORY_OFF = 'COPS memory not configured: PR_MEMORY_PATH is unset, so pr-oracle runs without memory.\n'
@@ -126,5 +127,22 @@ describe('rule band', () => {
     expect(await band({ ui })).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
+  })
+})
+
+describe('findRule', () => {
+  test('finds the rule-like sentence the person typed', () => {
+    expect(findRule({ text: 'from now on use pnpm. Thanks', origin: 'composer' })).toBe('from now on use pnpm.')
+    expect(findRule({ text: 'Looks good.\nPlease never push to main!', origin: 'bridge' })).toBe('Please never push to main!')
+    expect(findRule({ text: 'Stop doing drive-bys', origin: 'composer' })).toBe('Stop doing drive-bys')
+  })
+
+  test('skips consent already given, commands, other origins, and prompts with no rule', () => {
+    expect(findRule({ text: 'remember: always squash', origin: 'composer' })).toBeUndefined()
+    expect(findRule({ text: 'record-team: never force-push', origin: 'composer' })).toBeUndefined()
+    expect(findRule({ text: '/review always', origin: 'composer' })).toBeUndefined()
+    expect(findRule({ text: 'always run tests', origin: 'plugin' })).toBeUndefined()
+    expect(findRule({ text: 'always run tests', origin: 'sdk' })).toBeUndefined()
+    expect(findRule({ text: 'looks good, thanks', origin: 'composer' })).toBeUndefined()
   })
 })

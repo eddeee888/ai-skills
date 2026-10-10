@@ -4,12 +4,13 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { AgentCall, Thread, Threads } from '../types'
 import { describeAgent, describeCall, describeOutcome, snippet, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
+import { findRule } from './rule-band.ts'
 import { describeMemory, describePullRequest } from './status-line.ts'
 import type { PullRequest } from './status-line.ts'
 
 // The plugin's one hooks module: the status line, the threads and agents
-// pane, and the band offering to remember a rule the person typed. What the
-// first two say is worked out in status-line.ts and pr-panel.ts.
+// pane, and the band offering to remember a rule the person typed. What each
+// says is worked out in status-line.ts, pr-panel.ts and rule-band.ts.
 
 const REFRESH_MS = 120_000
 // Bash commands that can change the branch, its PR, or its CI.
@@ -17,8 +18,6 @@ const BRANCH_COMMAND = /\b(git\s+(checkout|switch|commit|push|pull|merge|rebase|
 const PUSH = /\bgit\s+push\b/
 const PANE = 'cops-threads'
 const TITLE = 'COPS threads and agents'
-// A sentence that sets a standing rule opens with one of these phrasings.
-const RULE = /^(?:please\s+)?(?:from now on|always|never|don['’]t ever|do not ever|stop doing)\b/i
 
 const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' })
 const handled = atom({ plugin: 'cops', key: 'handled' } as const, [])
@@ -173,19 +172,13 @@ export const register: Register = (on, options) => {
     return closed
   })
 
-  // Offers the rule-like sentence of a prompt the person typed, while memory is on:
-  //   "from now on use pnpm. Thanks"            → offers "from now on use pnpm."
-  //   "Looks good. Never push to main!"         → offers "Never push to main!"
-  //   "remember: always squash", "record-team: never force-push",
-  //   "/review always", a plugin's "always run tests" → no offer
+  // Offers the rule-like sentence of a prompt the person typed, while memory is on.
   // The offer stays until the person takes or dismisses it, or a later rule replaces it.
   on('prompt.submit', async ($, e, next) => {
     const submitted = await next(e)
     try {
-      const text = e.text.trim()
-      const isPerson = e.origin.kind === 'composer' || e.origin.kind === 'bridge'
-      if (submitted.drop !== undefined || !isPerson || !memory.path || text.startsWith('/') || /remember|record-team:/i.test(text)) return submitted
-      const sentence = text.split(/(?<=[.!?])\s+|\n+/).map(one => one.trim()).find(one => RULE.test(one))
+      if (submitted.drop !== undefined || !memory.path) return submitted
+      const sentence = findRule({ text: e.text, origin: e.origin.kind })
       if (!sentence) return submitted
       const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
       if (ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')) await update($, ruleOffer, () => sentence)
