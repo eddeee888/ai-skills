@@ -74,7 +74,7 @@ Draft a title too: one specific line naming the actual behavior (not "bug in X" 
 
 ## Step 6: Show the draft, get confirmation
 
-Show the full drafted title and body verbatim before touching GitHub. This is a hard gate, not a formality — apply requested edits and show the result again if it changed materially. Move to Step 7 only once they've explicitly confirmed it's ready to post.
+Show the full drafted title and body verbatim before touching GitHub, as one question (`CONVENTIONS-posts.md` → "Approving drafts: one question per item"). This is a hard gate, not a formality — apply requested edits and show the result again if it changed materially. Move to Step 7 only once they've explicitly confirmed it's ready to post.
 
 ## Step 7: Create it
 

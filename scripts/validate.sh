@@ -404,6 +404,14 @@ validate_behavioral_contracts() {
   require_order "cops/skills/pr-note/SKILL.md" "note confirmation before posting" \
     "## 4. Confirm" "Never post without confirmation." "## 5. Post and report"
 
+  for path in cops/skills/pr-review/SKILL.md cops/skills/pr-note/SKILL.md \
+    cops/skills/pr-address/SKILL.md cops/skills/pr-start/SKILL.md \
+    oss/skills/issue-fix/SKILL.md oss/skills/issue-create/SKILL.md \
+    oss/skills/issue-verify/SKILL.md oss/skills/issue-analyze/SKILL.md; do
+    require_markers "$path" "one question per item" \
+      '`CONVENTIONS-posts.md` → "Approving drafts: one question per item"'
+  done
+
   require_order "docs/memory-flow.html" "COPS skills in PR lifecycle order" \
     ">pr-start<" ">pr-note<" ">pr-review<" ">pr-address<" ">pr-sync<"
   require_order "cops/README.md" "COPS skills in PR lifecycle order" \

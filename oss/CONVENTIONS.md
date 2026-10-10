@@ -31,6 +31,7 @@ Each indexed section is:
   - Skill signature: `<sub>_Skill: [<plugin>:<skill>](…)_</sub>`
   - Author notes: `Note:` / `Drive-by:`
   - Critical changes
+  - Approving drafts: one question per item
 - `CONVENTIONS-pr-metadata.md`
   - Monorepo title prefix: `[package-name]`
   - Trailing issue reference in the PR title: `(#123)`

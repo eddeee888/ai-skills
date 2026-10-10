@@ -34,7 +34,7 @@ No comments → post nothing; report `nothing unexplained` or the `remove-instea
 
 ## 4. Confirm
 
-Before writing, show:
+Before writing, ask per `CONVENTIONS-posts.md` → "Approving drafts: one question per item". Without that tool, show:
 
 ```text
 Notes for <owner>/<repo>#<number> — <n> comments (<m> dropped as lower priority)
