@@ -114,8 +114,8 @@ export const describeNext = ({ view, handled }: { view: Threads; handled: string
 //   a 'cops:pr-review', b 'pr-review' → true
 //   a 'cops:pr-review', b 'oss:pr-review' → false
 export const isSameSkill = ({ a, b }: { a: string; b: string }): boolean => {
-  const bare = (name: string) => name.replace(/^[^:]+:/, '')
-  return a === b || ((!a.includes(':') || !b.includes(':')) && bare(a) === bare(b))
+  const bare = ({ name }: { name: string }): string => name.replace(/^[^:]+:/, '')
+  return a === b || ((!a.includes(':') || !b.includes(':')) && bare({ name: a }) === bare({ name: b }))
 }
 
 // One pane row per skill run, led by its number in the session:
@@ -134,17 +134,17 @@ export const describeSkill = ({ run, now }: { run: SkillRun; now: number }): str
 //   runs #1 at 0, #2 at 50; calls at 10, 20, 60 → #1 [10, 20], #2 [60]
 //   no runs; a call at 10                       → loose [10]
 export const groupActivity = ({ runs, calls }: { runs: SkillRun[]; calls: AgentCall[] }): { loose: AgentCall[]; groups: { run: SkillRun; calls: AgentCall[] }[] } => {
-  const owner = (call: AgentCall) => runs.findLastIndex(run => run.at <= call.startedAt)
+  const owner = ({ call }: { call: AgentCall }): number => runs.findLastIndex(run => run.at <= call.startedAt)
   return {
-    loose: calls.filter(call => owner(call) === -1),
-    groups: runs.map((run, index) => ({ run, calls: calls.filter(call => owner(call) === index) })),
+    loose: calls.filter(call => owner({ call }) === -1),
+    groups: runs.map((run, index) => ({ run, calls: calls.filter(call => owner({ call }) === index) })),
   }
 }
 
 // The Activity heading: `Activity · 2 skills · 1 agent`, `Activity · none yet`.
 export const describeActivity = ({ runs, calls }: { runs: number; calls: number }): string => {
-  const count = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
-  const parts = [runs > 0 && count(runs, 'skill'), calls > 0 && count(calls, 'agent')].filter(Boolean)
+  const count = ({ n, one }: { n: number; one: string }): string => `${n} ${one}${n === 1 ? '' : 's'}`
+  const parts = [runs > 0 && count({ n: runs, one: 'skill' }), calls > 0 && count({ n: calls, one: 'agent' })].filter(Boolean)
   return ['Activity', ...(parts.length > 0 ? parts : ['none yet'])].join(' · ')
 }
 

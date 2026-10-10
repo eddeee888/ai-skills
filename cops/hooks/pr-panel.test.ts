@@ -282,12 +282,12 @@ describe('next step', () => {
     expect(describeNext({ view: ready({}), handled: [] })).toBeUndefined()
     expect(describeNext({ view: { status: 'needs-gh' }, handled: [] })).toBeUndefined()
 
-    const pr = (nodes: ReturnType<typeof node>[], viewer?: string) => summarize({ response: { data: { viewer: viewer ? { login: viewer } : null, repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } } })
-    expect(pr([], 'octocat')).toEqual({ isMine: true, isReviewed: false, hasNotes: false })
-    expect(pr([node('a', 'octocat', { body: '**Note:** x', isResolved: true })], 'alice')).toEqual({ isMine: false, isReviewed: false, hasNotes: true })
-    expect(pr([node('b', 'octocat', { totalCount: 2, lastAuthor: 'alice' })]).isReviewed).toBe(true)
-    expect(pr([node('c', 'alice', { isResolved: true })]).isMine).toBeUndefined()
-    expect(pr([node('c', 'alice', { isResolved: true })]).isReviewed).toBe(true)
+    const pr = ({ nodes, viewer }: { nodes: ReturnType<typeof node>[]; viewer?: string }): ReturnType<typeof summarize> => summarize({ response: { data: { viewer: viewer ? { login: viewer } : null, repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } } })
+    expect(pr({ nodes: [], viewer: 'octocat' })).toEqual({ isMine: true, isReviewed: false, hasNotes: false })
+    expect(pr({ nodes: [node('a', 'octocat', { body: '**Note:** x', isResolved: true })], viewer: 'alice' })).toEqual({ isMine: false, isReviewed: false, hasNotes: true })
+    expect(pr({ nodes: [node('b', 'octocat', { totalCount: 2, lastAuthor: 'alice' })] }).isReviewed).toBe(true)
+    expect(pr({ nodes: [node('c', 'alice', { isResolved: true })] }).isMine).toBeUndefined()
+    expect(pr({ nodes: [node('c', 'alice', { isResolved: true })] }).isReviewed).toBe(true)
   })
 })
 

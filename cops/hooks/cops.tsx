@@ -148,7 +148,7 @@ const autoOpen = async ($: EngineInterface) => {
 
 let isThreadsRefreshing = false
 
-const refreshThreads = async ($: EngineInterface) => {
+const refreshThreads = async ($: EngineInterface): Promise<void> => {
   if (isThreadsRefreshing) return
   isThreadsRefreshing = true
   try {
@@ -193,7 +193,7 @@ const setCall = async ($: EngineInterface, id: string, change: Partial<AgentCall
 let typed: { command: string; args: string } | undefined
 const calling: { skill: string; args?: string }[] = []
 
-const recordSkill = async ($: EngineInterface, skill: string) => {
+const recordSkill = async ($: EngineInterface, { skill }: { skill: string }): Promise<void> => {
   const byModel = calling.find(one => isSameSkill({ a: one.skill, b: skill }))
   const byYou = !byModel && typed && isSameSkill({ a: typed.command, b: skill }) ? typed : undefined
   if (byYou) typed = undefined
@@ -299,7 +299,7 @@ export const register: Register = (on, options) => {
   on('skill.prompt', async ($, e, next) => {
     const expanded = await next(e)
     try {
-      await recordSkill($, e.skill)
+      await recordSkill($, { skill: e.skill })
     } catch {}
     return expanded
   })
