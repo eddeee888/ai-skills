@@ -177,7 +177,7 @@ export const register: Register = (on, options) => {
   on('prompt.submit', async ($, e, next) => {
     const submitted = await next(e)
     try {
-      if (submitted.drop !== undefined || !memory.path) return submitted
+      if (submitted.drop !== undefined) return submitted
       const sentence = findRule({ text: e.text, origin: e.origin.kind })
       if (!sentence) return submitted
       const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])

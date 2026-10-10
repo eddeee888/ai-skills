@@ -111,12 +111,12 @@ describe('rule band', () => {
     })
   }
 
-  test('makes no offer when no memory path is configured', async ($, on) => {
+  // No plugin option: memory-context.sh reports memory on from PR_MEMORY_PATH.
+  test('offers rules when memory is set only by PR_MEMORY_PATH', async ($, on) => {
     world({ on })
     await submit({ $, text: 'from now on use X' })
     const ui = await mount({ $, surface: 'terminal' })
-    expect(await band({ ui })).toBeUndefined()
-    expect(await ui.find({ text: 'engine band' })).toBeDefined()
+    expect(await band({ ui })).toBe('Remember “from now on use X”?')
     await ui.unmount()
   })
 
