@@ -18,7 +18,8 @@ export type Thread = {
 
 export type Threads =
   | { status: 'loading' | 'no-repo' | 'no-pr' | 'needs-gh' }
-  | { status: 'ready'; pr: number; threads: Thread[] }
+  /** `url` is the PR's web page. */
+  | { status: 'ready'; pr: number; url: string; threads: Thread[] }
 
 /** One cops subagent call this session. */
 export type AgentCall = {
@@ -47,7 +48,7 @@ declare module 'claude-code' {
       /** Thread ids marked handled locally; cleared by a push. */
       handled: string[]
       agents: AgentCall[]
-      /** The person closed the pane, so it stops opening by itself; `/cops-threads` resets it. */
+      /** The person closed the pane, so it stops opening by itself; `/cops-hq` resets it. */
       isDismissed: boolean
       /** A rule-like sentence from the person's last prompt, offered above the prompt; null when there is none. */
       ruleOffer: string | null

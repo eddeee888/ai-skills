@@ -2,21 +2,21 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentCall, Thread, Threads } from '../types'
-import { describeAgent, describeCall, describeOutcome, snippet, THREADS_QUERY, toThreads } from './pr-panel.ts'
+import { describeAgent, describeCall, describeOutcome, snippet, SPINNER_MS, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 
-// The plugin's one hooks module: the status line, the threads and agents
-// pane, and the band offering to remember a rule the person typed. What each
+// The plugin's one hooks module: the status line, the COPS HQ pane of threads
+// and agents, and the band offering to remember a rule the person typed. What each
 // says is worked out in status-line.ts, pr-panel.ts and rule-band.ts.
 
 const REFRESH_MS = 120_000
 // Bash commands that can change the branch or its PR.
 const BRANCH_COMMAND = /\b(git\s+(checkout|switch|commit|push|pull|merge|rebase|reset)|gh\s+pr)\b/
 const PUSH = /\bgit\s+push\b/
-const PANE = 'cops-threads'
-const TITLE = 'COPS threads and agents'
+const PANE = 'cops-hq'
+const TITLE = 'COPS HQ'
 
 const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' })
 const handled = atom({ plugin: 'cops', key: 'handled' } as const, [])
@@ -83,16 +83,16 @@ const refreshStatus = async ($: EngineInterface, memory: Memory) => {
 const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
   const branch = await run($, ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
   if (branch?.exitCode !== 0) return { status: 'no-repo' }
-  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number'])
+  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,url'])
   if (pr?.exitCode !== 0) return { status: pr?.stderr.includes('no pull requests found') ? 'no-pr' : 'needs-gh' }
   try {
     // JSON.parse returns `any`; dropping these casts takes a runtime check of gh's output.
-    const { number } = JSON.parse(pr.stdout) as { number: number }
+    const { number, url = '' } = JSON.parse(pr.stdout) as { number: number; url?: string }
     const ran = await run($, [
       'gh', 'api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-F', `number=${number}`, '-f', `query=${THREADS_QUERY}`,
     ])
     if (ran?.exitCode !== 0) return { status: 'needs-gh' }
-    return { status: 'ready', pr: number, threads: toThreads(JSON.parse(ran.stdout) as ThreadsResponse) }
+    return { status: 'ready', pr: number, url, threads: toThreads(JSON.parse(ran.stdout) as ThreadsResponse) }
   } catch {
     return { status: 'needs-gh' }
   }
@@ -159,17 +159,18 @@ export const register: Register = (on, options) => {
 
   on('session.start', async ($, e, next) => {
     const started = await next(e)
-    await $.command.register({ name: 'cops-threads', description: 'Show the PR’s open review threads and this session’s cops agents' })
+    // Immediate: opening the pane touches nothing the running turn holds.
+    await $.command.register({ name: 'cops-hq', description: 'Show the PR’s open review threads and this session’s cops agents', immediate: true })
     void refreshAll($, memory)
     $.clock.every(REFRESH_MS, () => refreshAll($, memory))
     return started
   })
 
-  on('command.run', { command: 'cops-threads' }, async $ => {
+  on('command.run', { command: 'cops-hq' }, async $ => {
     await update($, isDismissed, () => false)
     void refreshThreads($).catch(() => undefined)
     const opened = await $.ui.open({ id: PANE, title: TITLE })
-    return { text: opened.isPlaced ? 'Opened the COPS threads and agents pane.' : 'This surface doesn’t show panes.' }
+    return { text: opened.isPlaced ? 'Opened the COPS HQ pane.' : 'This surface doesn’t show panes.' }
   })
 
   on('ui.close', { id: PANE }, async ($, e, next) => {
@@ -232,7 +233,9 @@ export const register: Register = (on, options) => {
     const call: AgentCall = { id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall(agent, e.prompt) }
     await update($, agents, list => [...list, call].slice(-50))
     void autoOpen($)
-    const ran = await next(e)
+    // Redraws the pane so the running call's spinner moves.
+    const spin = $.clock.every(SPINNER_MS, () => $.ui.invalidate('ui.render'))
+    const ran = await next(e).finally(() => spin.cancel())
     const durationMs = await elapsedSince($, startedAt)
     if (ran.deny !== undefined || ran.isError === true) {
       await setCall($, call.id, { state: 'failed', durationMs, outcome: snippet(ran.deny ?? ran.text ?? '') || 'failed' })
@@ -247,7 +250,8 @@ export const register: Register = (on, options) => {
   }).catch(($, e, next) => next(e))
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const { Box, Text, Button, Link } = $.ui.resolve(e)
+    const now = await $.clock.now()
     const view = await read($, threads)
     const done = await read($, handled)
     const calls = await read($, agents)
@@ -267,7 +271,7 @@ export const register: Register = (on, options) => {
             </Button>
           )}
           <Text dimColor={isHandled} wrap="truncate-end">
-            {where} · {thread.lastAuthor}: {thread.lastBody}
+            <Link href={thread.url}>{where}</Link> · {thread.lastAuthor}: {thread.lastBody}
             {thread.isOutdated && <Text color="warning"> (outdated)</Text>}
             {isHandled && <Text color="success"> handled locally</Text>}
           </Text>
@@ -293,7 +297,7 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column" gap={1}>
         {view.status === 'ready' ? (
           <Box flexDirection="column" gap={1}>
-            <Text bold>Threads · PR #{view.pr}</Text>
+            <Text bold>Threads · <Link href={view.url}>{`PR #${view.pr}`}</Link></Text>
             {group('Needs you', view.threads.filter(one => one.move === 'you'))}
             {group('Waiting on reviewer', view.threads.filter(one => one.move === 'reviewer'))}
           </Box>
@@ -305,7 +309,7 @@ export const register: Register = (on, options) => {
           {calls.length === 0 && <Text dimColor>No cops agent calls yet.</Text>}
           {calls.map(call => (
             <Box key={call.id} flexDirection="column">
-              <Text color={call.state === 'failed' ? 'error' : undefined} wrap="truncate-end">{describeAgent(call)}</Text>
+              <Text color={call.state === 'failed' ? 'error' : undefined} wrap="truncate-end">{describeAgent({ call, now })}</Text>
               {call.isLeak && <Text color="error">  pr-sidekick was given memory-root; it must never read memory.</Text>}
             </Box>
           ))}

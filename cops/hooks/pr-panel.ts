@@ -1,9 +1,13 @@
 import type { AgentCall, Thread } from '../types'
 
-// What the threads and agents pane says: the PR's open review threads and the
+// What the COPS HQ pane says: the PR's open review threads and the
 // cops subagent calls of this session.
 
 export const MODES = ['scout-repo', 'brief-task', 'sweep-diff', 'review-pr', 'triage-threads', 'grill-description', 'draft-author-notes', 'learn-feedback']
+
+// Braille spinner frames for a running agent, one per SPINNER_MS.
+export const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+export const SPINNER_MS = 100
 
 export const THREADS_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
   repository(owner: $owner, name: $name) {
@@ -103,17 +107,25 @@ export const describeOutcome = (text: string): string => {
   return snippet(text) || 'no output'
 }
 
-export const describeAgent = (call: AgentCall): string => {
+// One pane row per call, led by its status:
+//   running, now 0   → `⠋ 🔮 Oracle · brief-task` (the frame steps every 100ms of `now`)
+//   running, now 100 → `⠙ 🔮 Oracle · brief-task`
+//   done             → `✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
+//   failed           → `✗ 🦸 Sidekick · failed`
+//   background       → `🔮 Oracle · running in the background`
+//   another agent    → `✓ pr-other · …`, its name without `cops:`
+export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): string => {
   const elapsed = (ms: number) => (ms < 60_000 ? `${Math.round(ms / 1000)}s` : `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`)
   const tokens = (n: number) => (n < 1000 ? `${n} tokens` : `${Math.round(n / 1000)}k tokens`)
-  return [
-    call.agent.replace(/^cops:/, ''),
+  const marks = { running: SPINNER[Math.floor(now / SPINNER_MS) % SPINNER.length], done: '✓', failed: '✗', background: '' }
+  const names: Record<string, string> = { 'cops:pr-oracle': '🔮 Oracle', 'cops:pr-sidekick': '🦸 Sidekick' }
+  const line = [
+    names[call.agent] ?? call.agent.replace(/^cops:/, ''),
     call.mode,
-    call.memoryRoot && `memory-root ${call.memoryRoot}`,
-    call.memoryLogin && `login ${call.memoryLogin}`,
     call.rules && `rules: ${call.rules}`,
     call.durationMs !== undefined && elapsed(call.durationMs),
     call.tokens !== undefined && tokens(call.tokens),
-    call.state === 'running' ? 'running…' : call.outcome,
+    call.outcome,
   ].filter(Boolean).join(' · ')
+  return [marks[call.state], line].filter(Boolean).join(' ')
 }
