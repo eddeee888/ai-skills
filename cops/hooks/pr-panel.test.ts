@@ -270,7 +270,7 @@ describe('next step', () => {
     expect(describeNext({ view: ready({}), handled: [] })).toBeUndefined()
     expect(describeNext({ view: { status: 'needs-gh' }, handled: [] })).toBeUndefined()
 
-    const pr = (nodes: ReturnType<typeof node>[], viewer?: string) => summarize({ data: { viewer: viewer ? { login: viewer } : null, repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } })
+    const pr = (nodes: ReturnType<typeof node>[], viewer?: string) => summarize({ response: { data: { viewer: viewer ? { login: viewer } : null, repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } } })
     expect(pr([], 'octocat')).toEqual({ isMine: true, isReviewed: false, hasNotes: false })
     expect(pr([node('a', 'octocat', { body: '**Note:** x', isResolved: true })], 'alice')).toEqual({ isMine: false, isReviewed: false, hasNotes: true })
     expect(pr([node('b', 'octocat', { totalCount: 2, lastAuthor: 'alice' })]).isReviewed).toBe(true)
@@ -339,6 +339,20 @@ describe('skill history', () => {
     await ui.unmount()
   })
 
+  test('keeps each run\'s number once older runs drop off', async ($, on) => {
+    world(on, { pr: failed('no pull requests found for branch "feat"') })
+    on('skill.prompt', ($, e) => ({ text: e.text }))
+    await start($)
+    for (let i = 1; i <= 52; i++) await $.skill.prompt({ skill: `s${i}`, text: 'body' })
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('#52 /s52'))
+    const drawn = await text(ui)
+    expect(drawn).toContain('Activity · 50 skills')
+    expect(drawn).toContain('#3 /s3 ')
+    expect(drawn).not.toContain('/s2 ')
+    await ui.unmount()
+  })
+
   test('the Next line names the run that already used its skill', async ($, on) => {
     world(on, { pr: failed('no pull requests found for branch "feat"') })
     on('skill.prompt', ($, e) => ({ text: e.text }))
@@ -350,15 +364,15 @@ describe('skill history', () => {
   })
 
   test('descriptions', () => {
-    expect(isSameSkill('cops:pr-review', 'pr-review')).toBe(true)
-    expect(isSameSkill('cops:pr-review', 'oss:pr-review')).toBe(false)
-    expect(isSameSkill('pr-note', 'pr-review')).toBe(false)
-    expect(describeSkill({ run: { skill: 'cops:pr-sync', by: 'you', at: 0 }, index: 0, now: 7_200_000 })).toBe('#1 /cops:pr-sync · you · 2h ago')
+    expect(isSameSkill({ a: 'cops:pr-review', b: 'pr-review' })).toBe(true)
+    expect(isSameSkill({ a: 'cops:pr-review', b: 'oss:pr-review' })).toBe(false)
+    expect(isSameSkill({ a: 'pr-note', b: 'pr-review' })).toBe(false)
+    expect(describeSkill({ run: { n: 51, skill: 'cops:pr-sync', by: 'you', at: 0 }, now: 7_200_000 })).toBe('#51 /cops:pr-sync · you · 2h ago')
     expect(describeActivity({ runs: 0, calls: 0 })).toBe('Activity · none yet')
     expect(describeActivity({ runs: 1, calls: 0 })).toBe('Activity · 1 skill')
     expect(describeActivity({ runs: 2, calls: 1 })).toBe('Activity · 2 skills · 1 agent')
     const call = (id: string, startedAt: number) => ({ id, agent: 'cops:pr-oracle', startedAt, state: 'done' as const, isLeak: false })
-    const runs = [{ skill: 'a', by: 'you' as const, at: 0 }, { skill: 'b', by: 'model' as const, at: 50 }]
+    const runs = [{ n: 1, skill: 'a', by: 'you' as const, at: 0 }, { n: 2, skill: 'b', by: 'model' as const, at: 50 }]
     const grouped = groupActivity({ runs, calls: [call('x', 10), call('y', 20), call('z', 60)] })
     expect(grouped.loose).toEqual([])
     expect(grouped.groups.map(group => group.calls.map(one => one.id))).toEqual([['x', 'y'], ['z']])

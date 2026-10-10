@@ -48,6 +48,8 @@ export type AgentCall = {
 
 /** One skill expanded for the model this session. */
 export type SkillRun = {
+  /** Its number in the session, from 1; kept when older runs drop off the list. */
+  n: number
   /** The skill's name as the engine gives it, e.g. `cops:pr-review`. */
   skill: string
   /** What followed the name, typed or passed to the Skill tool. */

@@ -130,7 +130,7 @@ const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
     ])
     if (ran?.exitCode !== 0) return { status: 'needs-gh' }
     const response = JSON.parse(ran.stdout) as ThreadsResponse
-    return { status: 'ready', pr: number, url, threads: toThreads(response), ...summarize(response) }
+    return { status: 'ready', pr: number, url, threads: toThreads(response), ...summarize({ response }) }
   } catch {
     return { status: 'needs-gh' }
   }
@@ -191,12 +191,14 @@ let typed: { command: string; args: string } | undefined
 const calling: { skill: string; args?: string }[] = []
 
 const recordSkill = async ($: EngineInterface, skill: string) => {
-  const byModel = calling.find(one => isSameSkill(one.skill, skill))
-  const byYou = !byModel && typed && isSameSkill(typed.command, skill) ? typed : undefined
+  const byModel = calling.find(one => isSameSkill({ a: one.skill, b: skill }))
+  const byYou = !byModel && typed && isSameSkill({ a: typed.command, b: skill }) ? typed : undefined
   if (byYou) typed = undefined
   const args = (byModel?.args ?? byYou?.args)?.trim() || undefined
-  const run: SkillRun = { skill, ...(args && { args }), by: byModel ? 'model' : byYou ? 'you' : 'other', at: await $.clock.now() }
-  await update($, skills, list => [...list, run].slice(-50))
+  const at = await $.clock.now()
+  const by = byModel ? 'model' : byYou ? 'you' : 'other'
+  // Numbered from the last run kept, so a number stays put once older runs drop off.
+  await update($, skills, list => [...list, { n: (list.at(-1)?.n ?? 0) + 1, skill, ...(args && { args }), by, at } satisfies SkillRun].slice(-50))
   $.ui.invalidate('ui.render')
 }
 
@@ -381,7 +383,7 @@ export const register: Register = (on, options) => {
     const calls = await read($, agents)
     const runs = await read($, skills)
     const hint = describeNext({ view, handled: done })
-    const lastRun = hint && runs.findLastIndex(one => isSameSkill(one.skill, hint.skill))
+    const lastRun = hint && runs.findLast(one => isSameSkill({ a: one.skill, b: hint.skill }))
     const activity = groupActivity({ runs, calls })
     // An agent call's row, indented under the skill run it started in.
     const agentRow = (call: AgentCall, indent: string) => (
@@ -452,7 +454,7 @@ export const register: Register = (on, options) => {
           <Box flexDirection="row" gap={1}>
             <Text wrap="truncate-end">
               <Text bold>Next:</Text> /{hint.skill} · {hint.why}
-              {lastRun !== undefined && lastRun !== -1 && <Text dimColor> · ran as #{lastRun + 1}</Text>}
+              {lastRun && <Text dimColor> · ran as #{lastRun.n}</Text>}
             </Text>
             <Button key="next-skill" label="Use" onPress={() => $.prompt.fill({ text: `/${hint.skill} ` })} />
           </Box>
@@ -460,9 +462,9 @@ export const register: Register = (on, options) => {
         <Box flexDirection="column">
           <Text bold>{describeActivity({ runs: runs.length, calls: calls.length })}</Text>
           {activity.loose.map(call => agentRow(call, ''))}
-          {activity.groups.map(({ run, index, calls: inRun }) => (
-            <Box key={`skill-${index}`} flexDirection="column">
-              <Text wrap="truncate-end">{describeSkill({ run, index, now })}</Text>
+          {activity.groups.map(({ run, calls: inRun }) => (
+            <Box key={`skill-${run.n}`} flexDirection="column">
+              <Text wrap="truncate-end">{describeSkill({ run, now })}</Text>
               {inRun.map(call => agentRow(call, '   '))}
             </Box>
           ))}

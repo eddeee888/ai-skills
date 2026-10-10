@@ -79,7 +79,7 @@ export const toThreads = (response: ThreadsResponse): Thread[] => {
 //   isMine     → the viewer opened it (undefined when gh doesn't say who the viewer is)
 //   isReviewed → someone other than the author started or answered a thread
 //   hasNotes   → the author left a `Note:` / `Drive-by:` thread
-export const summarize = (response: ThreadsResponse): { isMine?: boolean; isReviewed: boolean; hasNotes: boolean } => {
+export const summarize = ({ response }: { response: ThreadsResponse }): { isMine?: boolean; isReviewed: boolean; hasNotes: boolean } => {
   const viewer = response.data?.viewer?.login
   const pr = response.data?.repository?.pullRequest
   const author = pr?.author?.login
@@ -108,38 +108,38 @@ export const describeNext = ({ view, handled }: { view: Threads; handled: string
 }
 
 // Whether two skill names are the same skill, with or without the plugin prefix:
-//   'cops:pr-review' and 'pr-review' → true
-//   'cops:pr-review' and 'oss:pr-review' → false
-export const isSameSkill = (a: string, b: string) => {
+//   a 'cops:pr-review', b 'pr-review' → true
+//   a 'cops:pr-review', b 'oss:pr-review' → false
+export const isSameSkill = ({ a, b }: { a: string; b: string }): boolean => {
   const bare = (name: string) => name.replace(/^[^:]+:/, '')
   return a === b || ((!a.includes(':') || !b.includes(':')) && bare(a) === bare(b))
 }
 
-const ago = (ms: number) => (ms < 60_000 ? 'just now' : ms < 3_600_000 ? `${Math.floor(ms / 60_000)}m ago` : `${Math.floor(ms / 3_600_000)}h ago`)
-
-// One pane row per skill run, numbered in order:
+// One pane row per skill run, led by its number in the session:
 //   typed      → `#1 /cops:pr-review https://github.com/o/r/pull/7 · you · 3m ago`
 //   model      → `#2 /cops:pr-address · model · just now`
 //   other      → `#3 /oss:issue-fix · preloaded · 1h ago` (expanded with no command or Skill call, e.g. into a subagent)
-export const describeSkill = ({ run, index, now }: { run: SkillRun; index: number; now: number }): string => {
+export const describeSkill = ({ run, now }: { run: SkillRun; now: number }): string => {
   const by = { you: 'you', model: 'model', other: 'preloaded' }
-  return [`#${index + 1} /${run.skill}${run.args ? ` ${snippet(run.args)}` : ''}`, by[run.by], ago(Math.max(0, now - run.at))].join(' · ')
+  const ms = Math.max(0, now - run.at)
+  const ago = ms < 60_000 ? 'just now' : ms < 3_600_000 ? `${Math.floor(ms / 60_000)}m ago` : `${Math.floor(ms / 3_600_000)}h ago`
+  return [`#${run.n} /${run.skill}${run.args ? ` ${snippet(run.args)}` : ''}`, by[run.by], ago].join(' · ')
 }
 
 // The pane's Activity section: each agent call under the skill run it started in,
 // the latest run that began at or before the call; calls before any run lead, ungrouped.
 //   runs #1 at 0, #2 at 50; calls at 10, 20, 60 → #1 [10, 20], #2 [60]
 //   no runs; a call at 10                       → loose [10]
-export const groupActivity = ({ runs, calls }: { runs: SkillRun[]; calls: AgentCall[] }) => {
+export const groupActivity = ({ runs, calls }: { runs: SkillRun[]; calls: AgentCall[] }): { loose: AgentCall[]; groups: { run: SkillRun; calls: AgentCall[] }[] } => {
   const owner = (call: AgentCall) => runs.findLastIndex(run => run.at <= call.startedAt)
   return {
     loose: calls.filter(call => owner(call) === -1),
-    groups: runs.map((run, index) => ({ run, index, calls: calls.filter(call => owner(call) === index) })),
+    groups: runs.map((run, index) => ({ run, calls: calls.filter(call => owner(call) === index) })),
   }
 }
 
 // The Activity heading: `Activity · 2 skills · 1 agent`, `Activity · none yet`.
-export const describeActivity = ({ runs, calls }: { runs: number; calls: number }) => {
+export const describeActivity = ({ runs, calls }: { runs: number; calls: number }): string => {
   const count = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
   const parts = [runs > 0 && count(runs, 'skill'), calls > 0 && count(calls, 'agent')].filter(Boolean)
   return ['Activity', ...(parts.length > 0 ? parts : ['none yet'])].join(' · ')
