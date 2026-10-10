@@ -1,7 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
-import { describeChecks, describeMemory, describePullRequest } from './status-line.ts'
+import { countLines, describeCapacityWarning, describeChecks, describeMemory, describePullRequest } from './status-line.ts'
 
 const ok = (stdout: string): ProcessRunResult => ({
   exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
@@ -11,12 +11,30 @@ const failed = (stderr: string): ProcessRunResult => ({
 })
 
 const MEMORY_ON = 'COPS memory root: /memory\nPass this exact path...\nCOPS memory login: octocat\nPass `memory-login: octocat`...\n'
+const PERSONAL = '/memory/memory/users/octocat/MEMORY.md'
+const TEAM = '/memory/memory/team/MEMORY.md'
+const lines = ({ count }: { count: number }): string => 'rule\n'.repeat(count)
 const MEMORY_OFF = 'COPS memory not configured: PR_MEMORY_PATH is unset, so pr-oracle runs without memory.\n'
 
 // Answers the commands the status line runs, and resolves with the first status it sets.
-const world = (on: On, answers: { memory: string; branch?: ProcessRunResult; pr?: ProcessRunResult }) => {
+const world = (
+  on: On,
+  answers: { memory: string; branch?: ProcessRunResult; pr?: ProcessRunResult; files?: Record<string, string> },
+) => {
   const argvs: string[][] = []
-  mock.clock(on)
+  const toasts: string[] = []
+  const reads: string[] = []
+  const clock = mock.clock(on)
+  on('fs.read', ($, e) => {
+    reads.push(e.path)
+    const text = answers.files?.[e.path]
+    if (text === undefined) throw new Error(`ENOENT: ${e.path}`)
+    return { value: text }
+  })
+  on('ui.toast', ($, e) => {
+    toasts.push(e.text)
+    return { value: undefined }
+  })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('command.register', ($, e) => ({ value: { command: e.name } }))
   on('process.run', ($, e) => {
@@ -31,7 +49,7 @@ const world = (on: On, answers: { memory: string; branch?: ProcessRunResult; pr?
       return { value: undefined }
     })
   })
-  return { argvs, status }
+  return { argvs, status, toasts, reads, clock }
 }
 
 const start = ($: Engine) => $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
@@ -65,12 +83,74 @@ describe('status line', () => {
   })
 })
 
+describe('memory capacity', () => {
+  test('shows lines used in the personal and team MEMORY.md', async ($, on) => {
+    const { status, toasts } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 12 }), [TEAM]: lines({ count: 40 }) } })
+    await start($)
+    expect(await status).toBe('memory: octocat · 12/200 · team 40/200')
+    expect(toasts).toEqual([])
+  })
+
+  test('leaves out a missing team file', async ($, on) => {
+    const { status } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 12 }) } })
+    await start($)
+    expect(await status).toBe('memory: octocat · 12/200')
+  })
+
+  test('warns once from 180 lines', async ($, on) => {
+    const { status, toasts, reads, clock } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 185 }) } })
+    await start($)
+    expect(await status).toBe('memory: octocat · 185/200')
+    expect(toasts).toEqual(['COPS memory: personal MEMORY.md has 185 of 200 lines; pr-oracle reads only the first 200.'])
+    await clock.advance(120_000)
+    expect(reads.filter(path => path === PERSONAL)).toHaveLength(2)
+    expect(toasts).toHaveLength(1)
+  })
+
+  test('marks a file at 200 lines or more as over', async ($, on) => {
+    const { status, toasts } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 12 }), [TEAM]: lines({ count: 204 }) } })
+    await start($)
+    expect(await status).toBe('memory: octocat · 12/200 · team 204/200 over')
+    expect(toasts).toEqual(['COPS memory: team MEMORY.md has 204 of 200 lines; pr-oracle reads only the first 200.'])
+  })
+
+  test('reads nothing while memory is off', async ($, on) => {
+    const { status, toasts, reads } = world(on, { memory: MEMORY_OFF, files: { [PERSONAL]: lines({ count: 190 }) } })
+    await start($)
+    expect(await status).toBe('memory: ✗ (off)')
+    expect(reads).toEqual([])
+    expect(toasts).toEqual([])
+  })
+})
+
 describe('descriptions', () => {
   test('memory states', () => {
-    expect(describeMemory(MEMORY_ON)).toBe('memory: octocat')
-    expect(describeMemory('COPS memory root: /m\nCOPS memory login unset: ...')).toBe('memory: ✗ (no login)')
-    expect(describeMemory(MEMORY_OFF)).toBe('memory: ✗ (off)')
-    expect(describeMemory('COPS memory unavailable: the configured path is not a Git root.')).toBe('memory: ✗ (bad path)')
+    expect(describeMemory({ context: MEMORY_ON })).toBe('memory: octocat')
+    expect(describeMemory({ context: 'COPS memory root: /m\nCOPS memory login unset: ...' })).toBe('memory: ✗ (no login)')
+    expect(describeMemory({ context: MEMORY_OFF })).toBe('memory: ✗ (off)')
+    expect(describeMemory({ context: 'COPS memory unavailable: the configured path is not a Git root.' })).toBe('memory: ✗ (bad path)')
+  })
+
+  test('memory usage', () => {
+    expect(describeMemory({ context: MEMORY_ON, usage: { personal: 199 } })).toBe('memory: octocat · 199/200')
+    expect(describeMemory({ context: MEMORY_ON, usage: { personal: 200, team: 3 } })).toBe('memory: octocat · 200/200 over · team 3/200')
+    expect(describeMemory({ context: 'COPS memory root: /m\nCOPS memory login unset: ...', usage: { team: 5 } })).toBe('memory: ✗ (no login) · team 5/200')
+    expect(describeMemory({ context: MEMORY_OFF, usage: { personal: 5 } })).toBe('memory: ✗ (off)')
+  })
+
+  test('capacity warnings', () => {
+    expect(describeCapacityWarning({ usage: { personal: 179, team: 179 } })).toBeUndefined()
+    expect(describeCapacityWarning({ usage: {} })).toBeUndefined()
+    expect(describeCapacityWarning({ usage: { personal: 180, team: 200 } })).toBe(
+      'COPS memory: personal MEMORY.md has 180 and team MEMORY.md has 200 of 200 lines; pr-oracle reads only the first 200.',
+    )
+  })
+
+  test('line counts', () => {
+    expect(countLines({ text: '' })).toBe(0)
+    expect(countLines({ text: 'a' })).toBe(1)
+    expect(countLines({ text: 'a\nb\n' })).toBe(2)
+    expect(countLines({ text: 'a\n\nb' })).toBe(3)
   })
 
   test('CI states', () => {
