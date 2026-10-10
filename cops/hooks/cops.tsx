@@ -238,7 +238,7 @@ export const register: Register = (on, options) => {
     const ran = await next(e)
       .finally(() => spin.cancel())
       .catch(async error => {
-        // A lower hook threw: the row shows ✗ rather than spinning on, and the hook's catch still runs.
+        // A lower hook threw: mark the row failed (✗) and rethrow so the hook's catch still runs.
         await setCall($, call.id, { state: 'failed', durationMs: await elapsedSince($, startedAt), outcome: snippet(error instanceof Error ? error.message : '') || 'failed' })
         throw error
       })
