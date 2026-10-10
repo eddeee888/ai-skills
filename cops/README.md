@@ -6,11 +6,17 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 `/cops:<skill-name>` once this plugin is installed, e.g. `/cops:pr-sync`
 (`/pr-sync` in Cursor).
 
-- [`pr-start`](skills/pr-start/SKILL.md) — turn a confirmed task card into a pushed draft PR (slash-only).
-- [`pr-note`](skills/pr-note/SKILL.md) — leave `Note:` / `Drive-by:` reasoning on your own PR.
-- [`pr-review`](skills/pr-review/SKILL.md) — draft labeled comments on a PR and post one confirmed `COMMENT` review.
-- [`pr-address`](skills/pr-address/SKILL.md) — address unresolved review threads on your PR.
-- [`pr-sync`](skills/pr-sync/SKILL.md) — rebase a PR and refresh its title, description, and changeset.
+Which skill fits depends on whose PR it is and where it is in review. In lifecycle order:
+
+| When | Skill | What it does |
+| --- | --- | --- |
+| You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). |
+| Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. |
+| Someone else's PR | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. |
+| Your PR, reviewers have commented | [`pr-address`](skills/pr-address/SKILL.md) | Addresses unresolved review threads on your PR. |
+| Your PR, branch moved on | [`pr-sync`](skills/pr-sync/SKILL.md) | Rebases the PR and refreshes its title, description, and changeset. |
+
+The [COPS HQ pane](#cops-hq-pane) works out the same thing from the PR: its `Next:` line names the skill, and its Activity section lists what ran this session.
 
 ## Setup
 
@@ -54,13 +60,26 @@ You edit and send the filled prompt yourself; the band never writes memory or ca
 
 ## COPS HQ pane
 
-In Claude Code, a pane with two sections, three while the memory inbox holds lines, opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.
+In Claude Code, a pane with two sections and a `Next:` line, and a third section while the memory inbox holds lines, opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.
 
 - **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. The `PR #<n>` heading links to the PR, and each thread's `path:line` links to its last comment. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out, and so are your own `Note:` / `Drive-by:` threads once you 👍 them (they return if someone replies). It needs `gh` logged in; without it, the section says so.
-- **Agents:** each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call this session, with what it was given and what it returned:
-  - Oracle: its mode;
-  - Sidekick: how many rules its `Rules that apply:` line carried and how many deviations it reported (`6 rules · 1 deviation`), and a red warning if its prompt carried `memory-root`, which it must never get;
-  - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Each row starts with its status: a spinner while the call runs, `✓` when it's done, `✗` when it failed. Background calls show as running in the background.
+- **Next:** the cops skill that fits the branch's PR right now, with why, and a **Use** button that puts it in the prompt box. `/cops:pr-start` on a branch without a PR, `/cops:pr-review` on someone else's PR, and on your own `/cops:pr-address` while threads need you (threads marked handled don't count), or `/cops:pr-note` before anyone has reviewed it or you've left notes. Otherwise it's left out, as it is when `gh` can't say who you are. `pr-sync` is never suggested: whether a description is stale isn't something the pane can see. When that skill already ran this session, the line says which run (`ran as #2`).
+- **Activity:** every skill that ran this session, cops or not, with the cops agent calls each one made nested under it, so you can cross-check what ran against the `Next:` line:
+
+  ```text
+  Activity · 2 skills · 3 agents
+  #1 /cops:pr-review https://github.com/o/r/pull/7 · you · 3m ago
+     ✓ 🔮 Oracle · review-pr · 40s · 30k tokens · 4 findings
+  #2 /cops:pr-address · model · just now
+     ✓ 🔮 Oracle · triage-threads + scout-repo · 20s · 12k tokens · …
+     ⠋ 🦸 Sidekick · 6 rules
+  ```
+
+  - Skill rows are numbered in order, with their arguments, who started them, and when: `you` typed the slash command, `model` means Claude called it, and `preloaded` means it came another way, such as a subagent's preloaded skill.
+  - An agent call sits under the latest skill that started before it; calls made before any skill come first, unindented. Each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call shows what it was given and what it returned:
+    - Oracle: its mode;
+    - Sidekick: how many rules its `Rules that apply:` line carried and how many deviations it reported (`6 rules · 1 deviation`), and a red warning if its prompt carried `memory-root`, which it must never get;
+    - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Each row starts with its status: a spinner while the call runs, `✓` when it's done, `✗` when it failed. Background calls show as running in the background.
 - **Inbox:** while memory is on, the `memory-candidate:`, `promote:`, `conflict:` and `open:` lines cops agents return, each once, with the repository and PR they came from (e.g. `· ai-skills#59`). `open:` lines stay for the session; the rest are kept across sessions. **Park as candidate** (a `triage-threads` candidate) or **Remember** (a `grill-description` one) puts the matching request in the prompt box and clears the line; **Drop** clears it, and the same line isn't collected again, even in later sessions. It never writes memory.
 
 The threads refresh at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes. No model is called; the grouping comes from who commented last.

@@ -288,7 +288,7 @@ describe('memory inbox', () => {
     await oracle({ $, mode: 'triage-threads' })
     await sidekick({ $ })
     const ui = await mount({ $ })
-    await until({ check: async () => (await text({ ui })).includes('Agents (2)') })
+    await until({ check: async () => (await text({ ui })).includes('2 agents') })
     expect(await text({ ui })).not.toContain('Inbox')
     expect(toasts).toEqual([])
     await ui.unmount()
