@@ -3,15 +3,16 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentCall, InboxItem, Thread, Threads } from '../types'
 import { parseSuffixes } from './memory-inbox.ts'
+import { checkLoaded, checkTool, EXPECTED_HANDOFFS, tickedBy } from './orchestration.ts'
 import { describeAgent, describeCall, describeOutcome, snippet, SPINNER_MS, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 
 // The plugin's one hooks module: the status line, the COPS HQ pane of threads,
-// agents and the memory inbox, and the band offering to remember a rule the person
-// typed. What each says is worked out in status-line.ts, pr-panel.ts, memory-inbox.ts
-// and rule-band.ts.
+// agents with their orchestration checks and the memory inbox, and the band offering
+// to remember a rule the person typed. What each says is worked out in status-line.ts,
+// pr-panel.ts, orchestration.ts, memory-inbox.ts and rule-band.ts.
 
 const REFRESH_MS = 120_000
 // Bash commands that can change the branch or its PR.
@@ -33,6 +34,7 @@ const isDismissed = atom({ plugin: 'cops', key: 'isDismissed' } as const, false)
 const ruleOffer = atom({ plugin: 'cops', key: 'ruleOffer' } as const, null)
 const isMemoryOn = atom({ plugin: 'cops', key: 'isMemoryOn' } as const, false)
 const openItems = atom({ plugin: 'cops', key: 'openItems' } as const, [])
+const checklist = atom({ plugin: 'cops', key: 'checklist' } as const, null)
 
 const run = async ($: EngineInterface, argv: readonly string[]) => {
   try {
@@ -181,6 +183,9 @@ const setCall = async ($: EngineInterface, id: string, change: Partial<AgentCall
   } catch {}
 }
 
+// Each running cops agent's Bash commands this run, by its agentId, for the 4th-try check.
+const commands = new Map<string, string[]>()
+
 const clearHandled = async ($: EngineInterface) => {
   try {
     await update($, handled, () => [])
@@ -266,7 +271,10 @@ export const register: Register = (on, options) => {
     const agent = e.subagent_type ?? ''
     if (!agent.startsWith('cops:')) return next(e)
     const startedAt = await $.clock.now()
-    const call: AgentCall = { id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall({ agent, prompt: e.prompt }) }
+    const call: AgentCall = {
+      id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall({ agent, prompt: e.prompt }),
+      mayRewrite: agent === 'cops:pr-sidekick' && /\brebase\b|\bforce[- ]push/i.test(e.prompt),
+    }
     await update($, agents, list => [...list, call].slice(-50))
     void autoOpen($)
     // Redraws the pane so the running call's spinner moves.
@@ -329,12 +337,79 @@ export const register: Register = (on, options) => {
     return ran
   }).catch(($, e, next) => next(e))
 
+  // A cops skill with handoffs (EXPECTED_HANDOFFS) starts its checklist, replacing the last one.
+  on('skill.prompt', async ($, e, next) => {
+    const prompted = await next(e)
+    try {
+      const skill = [e.skill, `cops:${e.skill}`].find(one => EXPECTED_HANDOFFS[one])
+      if (skill) {
+        await update($, checklist, () => ({ skill, ticked: [] }))
+        $.ui.invalidate('ui.render')
+      }
+    } catch {}
+    return prompted
+  })
+
+  // Ticks the handoffs a main-chat spawn makes, and links a cops agent's call to its loop.
+  on('agent.spawn', async ($, e, next) => {
+    const spawned = await next(e)
+    try {
+      const running = await read($, checklist)
+      const ticked = running && e.parentAgentId === undefined
+        ? tickedBy({ skill: running.skill, agent: e.subagentType, modes: describeCall({ agent: e.subagentType, prompt: e.prompt }).modes || [] })
+        : []
+      if (running && ticked.length > 0) await update($, checklist, () => ({ ...running, ticked: [...new Set([...running.ticked, ...ticked])] }))
+      if (spawned.deny === undefined && spawned.agentId && e.subagentType.startsWith('cops:')) await setCall($, e.tool_use_id, { agentId: spawned.agentId })
+      if (ticked.length > 0) $.ui.invalidate('ui.render')
+    } catch {}
+    return spawned
+  })
+
+  // Flags a cops agent's tool call that breaks its agent file's rules, toasting each rule once; the call still runs.
+  on('tool.call', async ($, e, next) => {
+    try {
+      const call = e.agentId ? (await read($, agents)).find(one => one.agentId === e.agentId) : undefined
+      if (call && e.agentId) {
+        const command = e.tool === 'Bash' ? e.command : undefined
+        const run = command === undefined ? commands.get(e.agentId) || [] : [...(commands.get(e.agentId) || []), command]
+        commands.set(e.agentId, run)
+        const path = 'file_path' in e && typeof e.file_path === 'string' ? e.file_path : 'notebook_path' in e && typeof e.notebook_path === 'string' ? e.notebook_path : undefined
+        const found = checkTool({ call, tool: e.tool, command, path, tries: run.filter(one => one === command).length })
+        const added = found.filter(flag => !call.flags?.includes(flag))
+        if (added.length > 0) {
+          await setCall($, call.id, { flags: [...(call.flags || []), ...added] })
+          $.ui.invalidate('ui.render')
+          const name = call.agent === 'cops:pr-oracle' ? 'Oracle' : 'Sidekick'
+          for (const flag of added) $.ui.toast(`COPS rule check: ${name} ${flag}.`)
+        }
+      }
+    } catch {}
+    return next(e)
+  })
+
+  // Checks a cops oracle's `loaded:` once its run ends, and ends the run's 4th-try count.
+  on('turn.complete', async ($, e, next) => {
+    const completed = await next(e)
+    try {
+      const call = e.agentId ? (await read($, agents)).find(one => one.agentId === e.agentId) : undefined
+      if (call && e.agentId) {
+        commands.delete(e.agentId)
+        if (call.agent === 'cops:pr-oracle') {
+          await setCall($, call.id, { missingLoads: checkLoaded({ text: e.answer, modes: call.modes || [] }) })
+          $.ui.invalidate('ui.render')
+        }
+      }
+    } catch {}
+    return completed
+  })
+
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button, Link } = $.ui.resolve(e)
     const now = await $.clock.now()
     const view = await read($, threads)
     const done = await read($, handled)
     const calls = await read($, agents)
+    const running = await read($, checklist)
     // A store that can't be read hides the inbox, not the pane.
     // The inbox stays in the store while memory is off, and shows again once it's on.
     const inbox = (await read($, isMemoryOn)) ? [...(await readInbox($).catch(() => [])), ...(await read($, openItems))] : []
@@ -395,11 +470,22 @@ export const register: Register = (on, options) => {
         )}
         <Box flexDirection="column">
           <Text bold>Agents ({calls.length})</Text>
+          {running && (
+            <Box flexDirection="column">
+              <Text>Handoffs · {running.skill.replace(/^cops:/, '')}</Text>
+              {(EXPECTED_HANDOFFS[running.skill] || []).map(handoff => (
+                <Text key={`handoff-${handoff.label}`} dimColor={!running.ticked.includes(handoff.label)}>
+                  {running.ticked.includes(handoff.label) ? '[x]' : '[ ]'} {handoff.label}
+                </Text>
+              ))}
+            </Box>
+          )}
           {calls.length === 0 && <Text dimColor>No cops agent calls yet.</Text>}
           {calls.map(call => (
             <Box key={call.id} flexDirection="column">
               <Text color={call.state === 'failed' ? 'error' : undefined} wrap="truncate-end">{describeAgent({ call, now })}</Text>
               {call.isLeak && <Text color="error">  pr-sidekick was given memory-root; it must never read memory.</Text>}
+              {call.flags?.map(flag => <Text key={`flag-${call.id}-${flag}`} color="error" wrap="truncate-end">  ⚑ {flag}</Text>)}
             </Box>
           ))}
         </Box>

@@ -35,6 +35,14 @@ export type AgentCall = {
   deviations?: number
   /** A pr-sidekick prompt that carries `memory-root`, against the contract. */
   isLeak: boolean
+  /** A pr-sidekick prompt that names a rebase or a force-push, so amending and force-pushing are allowed. */
+  mayRewrite?: boolean
+  /** The id of the subagent's loop, which its tool calls carry; set once it spawned. */
+  agentId?: string
+  /** The files a pr-oracle reply's `loaded:` lacks; none = all there; unset until the reply. */
+  missingLoads?: string[]
+  /** The rules the agent's tool calls broke, each once. */
+  flags?: string[]
   startedAt: number
   state: 'running' | 'background' | 'done' | 'failed'
   /** Checkpoint sentinel, pushed or committed SHA, findings count, or the first line. */
@@ -74,6 +82,8 @@ declare module 'claude-code' {
       isMemoryOn: boolean
       /** This session's `open:` lines, shown in the inbox. */
       openItems: InboxItem[]
+      /** The running cops skill and the labels of its handoffs made so far; null before one runs. */
+      checklist: { skill: string; ticked: string[] } | null
     }
   }
 }

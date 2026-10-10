@@ -69,6 +69,43 @@ validate_convention_copies() {
   done
 }
 
+# Keep the HQ pane's handoff checklist in step with the orchestration convention:
+# each cops skill's `Call points:` and `Required handoffs:` entries must be the
+# labels of its EXPECTED_HANDOFFS in cops/hooks/orchestration.ts.
+#   `cops:pr-start` (`scout-repo` + `brief-task`, `sweep-diff`) → scout-repo + brief-task, sweep-diff
+#   `cops:pr-start` (fix loop)                                  → fix loop
+validate_orchestration_handoffs() {
+  local convention="$ROOT/cops/CONVENTIONS-orchestration.md"
+  local hooks="$ROOT/cops/hooks/orchestration.ts" expected actual skill
+  expected="$(perl -ne '
+    next unless /^(Call points|Required handoffs): /;
+    while (/`(cops:[\w-]+)` \(([^)]*)\)/g) {
+      my $skill = $1;
+      (my $labels = $2) =~ s/`//g;
+      print "$skill\t$_\n" for split /,\s*/, $labels;
+    }
+  ' "$convention" | LC_ALL=C sort -u)"
+  actual="$(perl -ne '
+    $in = 1 if /^export const EXPECTED_HANDOFFS\b/;
+    next unless $in;
+    last if /^}/;
+    $skill = $1 if /^\s*'\''(cops:[\w-]+)'\'': \[/;
+    print "$skill\t$1\n" if /\blabel: '\''([^'\'']+)'\''/;
+  ' "$hooks" | LC_ALL=C sort -u)"
+  if [ -z "$expected" ] || [ -z "$actual" ]; then
+    fail "$hooks" "no cops handoffs found to compare with ${convention#"$ROOT"/}"
+    return
+  fi
+  while IFS= read -r skill; do
+    [ -n "$skill" ] || continue
+    fail "$hooks" "EXPECTED_HANDOFFS lacks ${skill/$'\t'/ } from ${convention#"$ROOT"/}"
+  done < <(LC_ALL=C comm -23 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+  while IFS= read -r skill; do
+    [ -n "$skill" ] || continue
+    fail "$hooks" "EXPECTED_HANDOFFS has ${skill/$'\t'/ }, absent from ${convention#"$ROOT"/}"
+  done < <(LC_ALL=C comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
+}
+
 # Decode percent-encoded Markdown link components.
 url_decode() {
   local value="${1//+/ }"
@@ -515,6 +552,7 @@ validate_behavioral_contracts() {
 validate_json
 validate_shell
 validate_convention_copies
+validate_orchestration_handoffs
 validate_markdown_links
 validate_convention_pointers
 validate_descriptions
@@ -530,4 +568,4 @@ if [ "${#errors[@]}" -ne 0 ]; then
   exit 1
 fi
 
-echo "Validation passed: JSON, shell syntax, convention copies, Markdown links/pointers, frontmatter descriptions, word budgets, and behavioral contract markers. Normal review workflow: $review_workflow_words/$review_workflow_limit words."
+echo "Validation passed: JSON, shell syntax, convention copies, orchestration handoffs, Markdown links/pointers, frontmatter descriptions, word budgets, and behavioral contract markers. Normal review workflow: $review_workflow_words/$review_workflow_limit words."
