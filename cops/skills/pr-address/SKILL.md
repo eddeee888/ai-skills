@@ -28,7 +28,7 @@ Only if the oracle is unavailable, read [fetch-threads.md](fetch-threads.md) now
 
 ## Step 4: Resolve the "needs the user first" bucket before applying anything
 
-If non-empty, show all items together: file:line, who said what, and why an acknowledged item is high risk. Ask for each: implement, draft a reply, or leave. Apply no automatic action, including already automatic threads, while any decision is waiting. Fold the user's decisions into Step 5. If empty, continue.
+If non-empty, ask for each item per `CONVENTIONS-posts.md` → "Approving drafts: one question per item": file:line, who said what, and why an acknowledged item is high risk, with options implement, draft a reply, or leave. Without that tool, show all items together and ask the same for each. Apply no automatic action, including already automatic threads, while any decision is waiting. Fold the user's decisions into Step 5. If empty, continue.
 
 ## Step 5: Handling comments
 

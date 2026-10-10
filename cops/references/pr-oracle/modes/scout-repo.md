@@ -2,7 +2,7 @@
 
 Read `../../../CONVENTIONS.md`, especially “Defaults and contracts” and its index. Read only the indexed `CONVENTIONS-*` sections needed to identify defaults that repository or memory rules override.
 
-Input: the repository as `owner/repo`, and whether it is checked out locally. `oss:issue-create` often targets one that is not.
+Input: the repository as `owner/repo`, and whether it is checked out locally. Callers may target a repository that isn't checked out.
 
 Return the repository's working setup exactly in this shape:
 

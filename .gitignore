@@ -1,1 +1,4 @@
 node_modules/
+
+# Types Claude Code writes beside a plugin loaded from this checkout
+.claude-plugin/types/

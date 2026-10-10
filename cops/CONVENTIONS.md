@@ -31,11 +31,13 @@ Each indexed section is:
   - Skill signature: `<sub>_Skill: [<plugin>:<skill>](…)_</sub>`
   - Author notes: `Note:` / `Drive-by:`
   - Critical changes
+  - Approving drafts: one question per item
 - `CONVENTIONS-pr-metadata.md`
   - Monorepo title prefix: `[package-name]`
   - Trailing issue reference in the PR title: `(#123)`
   - Non-closing issue references: `Relates to #123` / `Refs #123`
   - Checkpoint/fix branch naming: `repro/<issue-number>` / `fix/<issue-number>`
+  - Non-issue branch naming: `<type>/<short-slug>`
   - Bold the critical claim in Why/What/Verification bullets
   - Split What into Main and Drive-by
   - Verification checklist: name the test type, not the command

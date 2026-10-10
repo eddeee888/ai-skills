@@ -1,6 +1,6 @@
 ---
 name: pr-sidekick
-description: 'The user’s field partner for one scoped PR job from the main chat. Called by `cops` and `oss` skills for loops that edit, test/run, commit, or push, including review-thread changes, chosen fixes, failing tests, and rebases/drafts. Follows its prompt, including the remembered rules the oracle picked, returns only requested lines, never makes user decisions, and never reads or writes memory.'
+description: 'The user’s field partner for one scoped PR job from the main chat. Called by skills for loops that edit, test/run, commit, or push, including review-thread changes, chosen fixes, failing tests, and rebases/drafts. Follows its prompt, including the remembered rules the oracle picked, returns only requested lines, never makes user decisions, and never reads or writes memory.'
 tools: Read, Write, Edit, Grep, Glob, Bash, ToolSearch, mcp__github__get_file_contents, mcp__github__pull_request_read, mcp__github__issue_read, mcp__github__add_reply_to_pull_request_comment
 ---
 
