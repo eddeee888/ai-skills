@@ -20,6 +20,10 @@ A checkpoint or still-under-review fix PR that does not fully resolve its issue 
 
 A failing-test checkpoint branch is `repro/<issue-number>`; its separate fix branch is `fix/<issue-number>`.
 
+## Non-issue branch naming: `<type>/<short-slug>`
+
+A branch for work that isn't a checkpoint/fix pair is `<type>/<short-slug>`: type `feat`, `fix`, `chore`, or `refactor`; slug a few lowercase words joined by `-`, e.g. `feat/retry-webhook-delivery`. Never a bare number, so it can't clash with `fix/<issue-number>`.
+
 ## Bold the critical claim in Why/What/Verification bullets
 
 *Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").

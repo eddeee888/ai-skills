@@ -1,6 +1,6 @@
 ---
 name: pr-oracle
-description: 'PR oracle for profiles, triage, briefs, checks, full review, author notes, and explicit memory. Without a `cops`/`oss` skill, run `scout-repo` + `brief-task` (`for: pr-sidekick` if it codes) before coding and `sweep-diff` before commit/push.'
+description: 'PR oracle for profiles, triage, briefs, checks, full review, author notes, and explicit memory. Without a calling skill, run `scout-repo` + `brief-task` (`for: pr-sidekick` if it codes) before coding and `sweep-diff` before commit/push.'
 tools: Read, Write, Edit, Grep, Glob, Bash, ToolSearch, mcp__github__get_file_contents, mcp__github__search_repositories, mcp__github__pull_request_read, mcp__github__issue_read
 ---
 

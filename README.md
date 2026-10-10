@@ -5,7 +5,7 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 ## Plugins
 
 - [`oss/`](oss/) — maintaining and contributing to open source projects: sizing, filing, verifying, and fixing issues. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`.
-- [`cops/`](cops/) **Code Ops** — working with pull requests: reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-sync`. Cursor: `/pr-sync`.
+- [`cops/`](cops/) **Code Ops** — working with pull requests: starting a draft PR from a task, reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
 
 `cops` also ships two agents, used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
 

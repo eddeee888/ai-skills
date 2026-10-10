@@ -36,6 +36,7 @@ Each indexed section is:
   - Trailing issue reference in the PR title: `(#123)`
   - Non-closing issue references: `Relates to #123` / `Refs #123`
   - Checkpoint/fix branch naming: `repro/<issue-number>` / `fix/<issue-number>`
+  - Non-issue branch naming: `<type>/<short-slug>`
   - Bold the critical claim in Why/What/Verification bullets
   - Split What into Main and Drive-by
   - Verification checklist: name the test type, not the command

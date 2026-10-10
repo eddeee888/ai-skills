@@ -1,10 +1,16 @@
 # Code Ops (`cops`)
 
-Plugin for Claude Code and Cursor — skills for the PR lifecycle: reviewing, describing, syncing, and more.
+Plugin for Claude Code and Cursor — skills for the PR lifecycle: starting, reviewing, describing, syncing, and more.
 
 Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 `/cops:<skill-name>` once this plugin is installed, e.g. `/cops:pr-sync`
 (`/pr-sync` in Cursor).
+
+- [`pr-start`](skills/pr-start/SKILL.md) — turn a confirmed task card into a pushed draft PR (slash-only).
+- [`pr-address`](skills/pr-address/SKILL.md) — address unresolved review threads on your PR.
+- [`pr-sync`](skills/pr-sync/SKILL.md) — rebase a PR and refresh its title, description, and changeset.
+- [`pr-review`](skills/pr-review/SKILL.md) — draft labeled comments on a PR and post one confirmed `COMMENT` review.
+- [`pr-note`](skills/pr-note/SKILL.md) — leave `Note:` / `Drive-by:` reasoning on your own PR.
 
 ## Setup
 
@@ -49,6 +55,11 @@ available, and the skills call them.
 
 ### When the skills consult the oracle
 
+- `pr-start` — `scout-repo` + `brief-task` in one call (how to run tests,
+  the title prefix, the PR template, and the remembered rules for the
+  sidekick) before you confirm the task card, then `sweep-diff` on the
+  commits the fix loop makes, before anything is pushed or the draft PR
+  opens.
 - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
   threads, the rules each matches, and how to run tests), then
   `sweep-diff` on each batch. A subagent implements low-risk asks, up
@@ -73,12 +84,14 @@ available, and the skills call them.
   `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
   subagent commits.
 - **Any other coding task** ("implement this feature", "implement PR for
-  #123") — no skill runs, so the oracle's own description asks the main
-  chat to call it: `scout-repo` + `brief-task` before writing code, then
-  `sweep-diff` before committing or pushing. This is the model's call, so a
-  small change may skip it; for a guarantee, add the same line to your
-  `~/.claude/CLAUDE.md`. Shared convention rules (title prefix, non-closing
-  issue references) and the `pr-note` suggestion only come with the skills.
+  #123") — for a guaranteed path, run `/cops:pr-start`: it makes every
+  oracle call above, confirms a task card with you, and opens a draft PR.
+  Without it, the oracle's own description asks the main chat to call it:
+  `scout-repo` + `brief-task` before writing code, then `sweep-diff` before
+  committing or pushing. That is the model's call, so a small change may
+  skip it; add the same line to your `~/.claude/CLAUDE.md` to make it
+  stick. Shared convention rules (title prefix, non-closing issue
+  references) and the `pr-note` suggestion only come with the skills.
 
 ### Workspace memory
 
