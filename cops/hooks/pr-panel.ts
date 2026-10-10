@@ -50,7 +50,12 @@ const isAcknowledgedNote = (node: ThreadNode, author?: string) =>
   isNote(node, author) && node.comments.totalCount === 1
   && !!node.first.nodes[0]?.reactions.nodes.some(one => one.user?.login === author)
 
-// Open threads only; whoever spoke last decides whose move it is.
+// Open threads only. It's your move when someone other than the author spoke last, or when the
+// author started a thread (not a Note:/Drive-by:) that nobody has replied to:
+//   alice started it, octocat (author) replied last → 'reviewer'
+//   alice started it, alice spoke last              → 'you'
+//   octocat started `**Issue:** x`, no replies      → 'you'
+//   octocat started `**Note:** x`, no replies       → 'reviewer'
 export const toThreads = (response: ThreadsResponse): Thread[] => {
   const pr = response.data?.repository?.pullRequest
   if (!pr) return []
@@ -60,6 +65,7 @@ export const toThreads = (response: ThreadsResponse): Thread[] => {
     // The author's own Note:/Drive-by: they have 👍'd is done, until someone replies.
     .filter(node => !isAcknowledgedNote(node, author))
     .map(node => {
+      const first = node.first.nodes[0]
       const last = node.comments.nodes.at(-1)
       const lastAuthor = last?.author?.login ?? 'ghost'
       return {
@@ -70,7 +76,7 @@ export const toThreads = (response: ThreadsResponse): Thread[] => {
         lastAuthor,
         lastBody: snippet(last?.body ?? ''),
         url: last?.url ?? '',
-        move: lastAuthor === author ? 'reviewer' : 'you',
+        move: lastAuthor !== author || (first?.author?.login === author && !isNote(node, author) && node.comments.totalCount === 1) ? 'you' : 'reviewer',
       }
     })
 }
