@@ -29,8 +29,10 @@ export type AgentCall = {
   mode?: string
   memoryRoot?: string
   memoryLogin?: string
-  /** The `Rules that apply:` line a pr-sidekick prompt carries. */
-  rules?: string
+  /** How many rules the `Rules that apply:` label of a pr-sidekick prompt carries. */
+  rules?: number
+  /** How many entries the pr-sidekick's `deviations:` line reports. */
+  deviations?: number
   /** A pr-sidekick prompt that carries `memory-root`, against the contract. */
   isLeak: boolean
   startedAt: number
