@@ -87,7 +87,7 @@ const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
   if (pr?.exitCode !== 0) return { status: pr?.stderr.includes('no pull requests found') ? 'no-pr' : 'needs-gh' }
   try {
     // JSON.parse returns `any`; dropping these casts takes a runtime check of gh's output.
-    const { number, url = '' } = JSON.parse(pr.stdout) as { number: number; url?: string }
+    const { number, url } = JSON.parse(pr.stdout) as { number: number; url: string }
     const ran = await run($, [
       'gh', 'api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-F', `number=${number}`, '-f', `query=${THREADS_QUERY}`,
     ])
