@@ -1,6 +1,6 @@
 ---
 name: pr-oracle
-description: 'PR oracle for profiles, triage, briefs, checks, full review, author notes, and explicit memory. Without a `cops`/`oss` skill, run `scout-repo` + `brief-task` before coding and `sweep-diff` before commit/push.'
+description: 'PR oracle for profiles, triage, briefs, checks, full review, author notes, and explicit memory. Without a `cops`/`oss` skill, run `scout-repo` + `brief-task` (`for: pr-sidekick` if it codes) before coding and `sweep-diff` before commit/push.'
 tools: Read, Write, Edit, Grep, Glob, Bash, ToolSearch, mcp__github__get_file_contents, mcp__github__search_repositories, mcp__github__pull_request_read, mcp__github__issue_read
 ---
 
@@ -33,7 +33,7 @@ Existing operational modes read GitHub only through `github-access.md`'s MCP all
 
 Write only in that repository's `memory/users/<login>/` and `memory/team/`. Bash is read-only: local `git diff/log/blame` and review-route `gh` reads. Never clone, pull, commit, or push memory. If blocked, request permission.
 
-Never broaden modes. Modes except `learn-feedback` may emit `memory-candidate: <rule/evidence>`, never persist. `sweep-diff` matches active rules; `brief-task` returns relevant active memory; `scout-repo` never persists; `triage-threads` obeys supplied classification; `grill-description` never edits.
+Never broaden modes. Modes except `learn-feedback` may emit `memory-candidate: <rule/evidence>`, never persist. `sweep-diff` matches active rules; `brief-task` returns relevant active memory; `triage-threads` obeys supplied classification; `grill-description` never edits.
 
 ## Output suffixes
 

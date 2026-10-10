@@ -4,7 +4,7 @@ Use this file only after the user selects an option.
 
 ## Oracle order
 
-Ask the oracle for `brief-task` first, passing the chosen option's files and a one-line summary. The brief supplies reviewer-requested rules. If the user explicitly asked to remember concrete feedback, make a separate `learn-feedback` call with its provenance and personal or `record-team:` intent; never add memory instructions to `brief-task` or `sweep-diff`. If unavailable, use `none` for rules and later inspect your own diff in place of `sweep-diff`.
+Ask the oracle for `brief-task` first, passing the chosen option's files, a one-line summary, and `for: pr-sidekick`. Apply any `caller only:` lines yourself; keep them out of the prompt. The brief supplies reviewer-requested rules. If the user explicitly asked to remember concrete feedback, make a separate `learn-feedback` call with its provenance and personal or `record-team:` intent; never add memory instructions to `brief-task` or `sweep-diff`. If unavailable, use `none` for rules and later inspect your own diff in place of `sweep-diff`.
 
 Then delegate one edit/test/commit loop (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"):
 

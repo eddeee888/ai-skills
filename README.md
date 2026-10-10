@@ -10,9 +10,11 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 `cops` also ships two agents, used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
 
 - [`pr-oracle`](cops/agents/pr-oracle.md) — remembers recurring review themes, profiles repository setup, and drafts complete PR reviews and author notes.
-- [`pr-sidekick`](cops/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying those remembered preferences.
+- [`pr-sidekick`](cops/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying the remembered rules the oracle picks for each job.
 
 `oss` works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
+
+![How skills, pr-oracle, pr-sidekick, and memory connect: the main chat runs each skill, pr-oracle is the only agent that reads memory, and pr-sidekick gets remembered rules only through its prompt](docs/memory-flow.png)
 
 ## Layout
 
@@ -26,6 +28,26 @@ Run the repository checks (requires Bash, `jq`, and Perl):
 
 ```bash
 bash scripts/validate.sh
+```
+
+To render the diagram, install the locked dependencies first:
+
+```bash
+pnpm install
+```
+
+### Updating the diagram
+
+The diagram above is [`docs/memory-flow.png`](docs/memory-flow.png), rendered from [`docs/memory-flow.html`](docs/memory-flow.html) by `pnpm render:memory-flow` (needs `jq` and pnpm). The script stamps plugin versions from the manifests, so a version bump only needs a re-run. When skills, agents, or memory access change, give an agent this prompt:
+
+```text
+Update docs/memory-flow.html so the diagram matches the current code. Read
+cops/agents/*.md, cops/hooks/memory-context.sh, CONVENTIONS-orchestration.md,
+cops/skills/*/SKILL.md, oss/skills/*/SKILL.md and
+cops/references/pr-oracle/modes/*.md. Show only the access paths the code
+allows, and label every arrow with what passes along it. Keep the layout,
+colors and legend. Run `pnpm render:memory-flow`, look at
+docs/memory-flow.png, then commit and push.
 ```
 
 ## Install

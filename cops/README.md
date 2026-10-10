@@ -26,7 +26,7 @@ available, and the skills call them.
 ## Agents
 
 - [`agents/pr-oracle.md`](agents/pr-oracle.md) — briefs, checks, reviews, and drafts author notes without editing code or GitHub. Its eight modes lazy-load only their dependencies: active-memory modes load `memory.md`, operational GitHub modes load `github-access.md`, review modes load `review-evidence.md`, and only `learn-feedback` loads `learning.md` or writes memory.
-  - **Memory:** a session-start hook resolves the configured path, verifies it is a Git root, and passes it and the configured `PR_MEMORY_LOGIN` into agent calls. Personal active rules are in `memory/users/<PR_MEMORY_LOGIN>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
+  - **Memory:** a session-start hook resolves the configured path, verifies it is a Git root, and passes it and the configured `PR_MEMORY_LOGIN` into oracle calls. The oracle is the only agent that reads memory. Personal active rules are in `memory/users/<PR_MEMORY_LOGIN>/MEMORY.md`, reviewer-derived inactive candidates in `candidates.md`, and explicitly shared rules in `memory/team/MEMORY.md`.
   - **Consent:** operational modes may suggest `memory-candidate:` but never persist it. Skills call `learn-feedback` separately only after explicit user intent. Direct user rules may become active immediately; reviewer candidates require explicit promotion; team writes require `record-team:`.
   - **One-repo rules aren't remembered.** The oracle suggests that repo's
     `CLAUDE.md` instead, so teammates and CI see it too.
@@ -40,9 +40,9 @@ available, and the skills call them.
   field. The skills hand it loops that edit, run, commit, or push
   (implementing review threads, a chosen fix, a failing test, a
   rebase-and-draft), keeping them out
-  of the main chat. It reads your remembered preferences from `memory/`
-  (never writes them), follows the skill's prompt template, and returns a
-  few lines. The calling skill
+  of the main chat. It never reads or writes `memory/`: the oracle picks
+  the remembered rules for each job and the skill puts them in its prompt.
+  It follows that prompt template and returns a few lines. The calling skill
   picks its model per job — Haiku for mechanical edits, Sonnet for scoped
   changes, the main chat's model for anything needing more judgment. See
   [`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#hand-long-loops-to-a-subagent).
@@ -67,7 +67,8 @@ available, and the skills call them.
   its code survey starts from.
 - `oss:issue-create` — `scout-repo` for the issue template.
 - `oss:issue-verify` — `scout-repo` for the issue template, and for
-  where tests live and how to run them.
+  where tests live and how to run them, then `brief-task` before a
+  subagent writes the failing test.
 - `oss:issue-fix` — `scout-repo` before running the failing test,
   `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
   subagent commits.
