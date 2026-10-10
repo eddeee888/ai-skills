@@ -200,6 +200,7 @@ describe('descriptions', () => {
     expect(ids([node('e', 'octocat', { body: note, thumbs: ['alice'] })])).toEqual(['e'])
     expect(ids([node('f', 'octocat', { body: note, thumbs: ['octocat'], totalCount: 2, lastAuthor: 'alice' })])).toEqual(['f'])
     expect(ids([node('g', 'octocat', { body: 'plain', thumbs: ['octocat'] })])).toEqual(['g'])
+    expect(ids([node('h', 'octocat', { body: 'Note: plain label', thumbs: ['octocat'] })])).toEqual([])
   })
 
   test('calls', () => {

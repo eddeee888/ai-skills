@@ -39,7 +39,7 @@ export const snippet = (text: string) => {
 const isAcknowledgedNote = (node: ThreadNode, author?: string) => {
   const first = node.first.nodes[0]
   return !!author && node.comments.totalCount === 1 && first?.author?.login === author
-    && /^\s*\*\*(Note|Drive-by):\*\*/.test(first.body)
+    && /^\s*(\*\*)?(Note|Drive-by):\1/.test(first.body)
     && first.reactions.nodes.some(one => one.user?.login === author)
 }
 
