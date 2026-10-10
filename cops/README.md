@@ -31,17 +31,16 @@ available, and the skills call them.
 
 ## Status line
 
-In Claude Code, `cops` adds a status line entry that shows the memory state and the current branch's PR and CI, for example (Claude Code labels the entry `cops`):
+In Claude Code, `cops` adds a status line entry that shows the memory state and how full each `MEMORY.md` is, for example (Claude Code labels the entry `cops`):
 
 ```text
-memory: octocat · 12/200 · team 40/200 · PR #45 · CI ✗ 1/6
+memory: octocat (12/200,40/200)
 ```
 
-- **Memory:** `memory: <login>`, `memory: ✗ (no login)`, `memory: ✗ (off)` (no path configured), or `memory: ✗ (bad path)` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
-- **Memory capacity:** lines used in your personal and the team `MEMORY.md`, out of the 200 that `pr-oracle` reads. A missing file is left out. A file at 200 lines or more is marked `over`, and a toast warns once per session when either file reaches 180.
-- **PR and CI:** `PR #<n>` with `CI ✓`, `CI ✗ <failed>/<total>`, `CI … <passed>/<total>` while checks run, or `no CI`; a closed or merged PR shows its state instead. It needs `gh` logged in; without it, only the branch name shows. Outside a Git repository this part is left out.
+- **State:** `memory: <login>`, `memory: ✗ (no login)`, `memory: ✗ (off)` (no path configured), or `memory: ✗ (bad path)` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
+- **Capacity:** `(<personal>/200,<team>/200)`, the lines in your personal and the team `MEMORY.md` out of the 200 that `pr-oracle` reads. A missing file counts as 0. A toast warns once per session when either file reaches 180 lines.
 
-It refreshes at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes.
+It refreshes at session start and every two minutes.
 
 ## Rule band
 
@@ -63,7 +62,7 @@ In Claude Code, a pane with two sections opens by itself when a review thread ne
   - pr-sidekick: the `Rules that apply:` line it was passed, and a red warning if its prompt carried `memory-root`, which it must never get;
   - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Background calls show as running in the background.
 
-The threads refresh like the status line. No model is called; the grouping comes from who commented last.
+The threads refresh at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes. No model is called; the grouping comes from who commented last.
 
 All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts), [`hooks/pr-panel.ts`](hooks/pr-panel.ts) and [`hooks/rule-band.ts`](hooks/rule-band.ts). Cursor doesn't load the module.
 
