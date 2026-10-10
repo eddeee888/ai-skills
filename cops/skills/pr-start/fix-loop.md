@@ -94,4 +94,4 @@ Return one line per flag: fixed (sha) | skipped (why) — then one line for
 the test run.
 ```
 
-Skipped flags go to the user before Step 6. No second sweep: Step 6 pushes after this follow-up's tests pass.
+Skipped flags go to the user before Step 6. After this follow-up, SKILL.md Step 5 sweeps its commit once more before Step 6.

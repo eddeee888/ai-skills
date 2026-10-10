@@ -91,10 +91,10 @@ A question back → ask the user, then respawn with `Resuming:` filled in. Failu
 Call `pr-oracle` in `sweep-diff` mode over the new commits, from the commit before the loop through `HEAD` (pass `memory-root:` / `memory-login:` again).
 
 - `clean` → Step 6.
-- In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits and does not push.
+- In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits and does not push. Then run one more `sweep-diff` over that commit: `clean` → Step 6; any flag → stop and bring it to the user, no second follow-up.
 - A flag outside the card's scope → bring it to the user; don't widen the PR.
 
-Nothing is pushed before a clean `sweep-diff` or its single follow-up.
+Nothing is pushed before a clean `sweep-diff`: every pushed commit, the follow-up's included, has passed a sweep.
 
 ## 6. Push and open the PR
 
@@ -112,7 +112,7 @@ On the MCP route, call `create_pull_request` with `draft: true` and the two file
 
 ## 7. Wrap up
 
-Report the PR link, the commits, and the Done when result. Show `memory-candidate:` lines and ask whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Don't run another skill; suggest `/cops:pr-note` per `CONVENTIONS-orchestration.md` → "Suggesting next steps" — the PR body now carries the task source it needs. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second `fix loop` for a sweep follow-up), `sweep-diff`, and `learn-feedback` when run.
+Report the PR link, the commits, and the Done when result. Show `memory-candidate:` lines and ask whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Don't run another skill; suggest `/cops:pr-note` per `CONVENTIONS-orchestration.md` → "Suggesting next steps" — the PR body now carries the task source it needs. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second `fix loop` for a sweep follow-up), `sweep-diff` (a second `sweep-diff` for the follow-up's commit), and `learn-feedback` when run.
 
 ## Stop instead of proceeding
 
