@@ -49,6 +49,8 @@ declare module 'claude-code' {
       agents: AgentCall[]
       /** The person closed the pane, so it stops opening by itself; `/cops-threads` resets it. */
       isDismissed: boolean
+      /** A rule-like sentence from the person's last prompt, offered above the prompt; null when there is none. */
+      ruleOffer: string | null
     }
   }
 }

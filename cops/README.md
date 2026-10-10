@@ -42,6 +42,16 @@ memory: octocat · PR #45 · CI ✗ 1/6
 
 It refreshes at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes.
 
+## Rule band
+
+In Claude Code, when you type a prompt with a rule-like sentence — one that opens with "from now on", "always", "never", "don't ever", or "stop doing" — `cops` shows that sentence in a band above the prompt with three buttons:
+
+- **Remember personally** puts `Remember this rule: <sentence>` in the prompt box.
+- **Record for team** puts `record-team: <sentence>` in the prompt box.
+- **Dismiss** clears the offer.
+
+You edit and send the filled prompt yourself; the band never writes memory or calls `learn-feedback`. It stays quiet for prompts that already say "remember" or `record-team:`, slash commands, prompts that didn't come from you (a plugin's, a scheduled task's), and sessions where memory is off.
+
 ## Threads and agents pane
 
 In Claude Code, a pane with two sections opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-threads` opens it again. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-threads` shows it at any width.
@@ -54,7 +64,7 @@ In Claude Code, a pane with two sections opens by itself when a review thread ne
 
 The threads refresh like the status line. No model is called; the grouping comes from who commented last.
 
-Both live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts) and [`hooks/pr-panel.ts`](hooks/pr-panel.ts). Cursor doesn't load the module.
+All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts), [`hooks/pr-panel.ts`](hooks/pr-panel.ts) and [`hooks/rule-band.ts`](hooks/rule-band.ts). Cursor doesn't load the module.
 
 ## Agents
 
