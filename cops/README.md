@@ -29,6 +29,19 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 The agents need no setup of their own: installing `cops` makes them
 available, and the skills call them.
 
+## Status line
+
+In Claude Code, `cops` adds a status line entry that shows the memory state and the current branch's PR and CI, for example:
+
+```text
+cops · memory ✓ octocat · PR #45 · CI ✗ 1/6
+```
+
+- **Memory:** `memory ✓ <login>`, `memory ✓ no login`, `memory off` (no path configured), or `memory ✗ bad path` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
+- **PR and CI:** `PR #<n>` with `CI ✓`, `CI ✗ <failed>/<total>`, `CI … <passed>/<total>` while checks run, or `no CI`; a closed or merged PR shows its state instead. It needs `gh` logged in; without it, only the branch name shows. Outside a Git repository this part is left out.
+
+It refreshes at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes. The hooks module is [`hooks/status-line.ts`](hooks/status-line.ts); Cursor doesn't load it.
+
 ## Agents
 
 - [`agents/pr-oracle.md`](agents/pr-oracle.md) — briefs, checks, reviews, and drafts author notes without editing code or GitHub. Its eight modes lazy-load only their dependencies: active-memory modes load `memory.md`, operational GitHub modes load `github-access.md`, review modes load `review-evidence.md`, and only `learn-feedback` loads `learning.md` or writes memory.
