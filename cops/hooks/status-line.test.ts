@@ -41,19 +41,19 @@ describe('status line', () => {
     const pr = { number: 45, state: 'OPEN', isDraft: false, statusCheckRollup: [{ conclusion: 'SUCCESS' }, { state: 'SUCCESS' }] }
     const { status } = world(on, { memory: MEMORY_ON, branch: ok('feat\n'), pr: ok(JSON.stringify(pr)) })
     await start($)
-    expect(await status).toBe('cops · memory ✓ octocat · PR #45 · CI ✓')
+    expect(await status).toBe('memory: octocat · PR #45 · CI ✓')
   })
 
   test('says when the branch has no PR', async ($, on) => {
     const { status } = world(on, { memory: MEMORY_OFF, branch: ok('main\n') })
     await start($)
-    expect(await status).toBe('cops · memory off · main · no PR')
+    expect(await status).toBe('memory: ✗ (off) · main · no PR')
   })
 
   test('leaves out the branch outside a Git repository', async ($, on) => {
     const { status, argvs } = world(on, { memory: MEMORY_OFF })
     await start($)
-    expect(await status).toBe('cops · memory off')
+    expect(await status).toBe('memory: ✗ (off)')
     expect(argvs.some(argv => argv[0] === 'gh')).toBe(false)
   })
 
@@ -67,10 +67,10 @@ describe('status line', () => {
 
 describe('descriptions', () => {
   test('memory states', () => {
-    expect(describeMemory(MEMORY_ON)).toBe('memory ✓ octocat')
-    expect(describeMemory('COPS memory root: /m\nCOPS memory login unset: ...')).toBe('memory ✓ no login')
-    expect(describeMemory(MEMORY_OFF)).toBe('memory off')
-    expect(describeMemory('COPS memory unavailable: the configured path is not a Git root.')).toBe('memory ✗ bad path')
+    expect(describeMemory(MEMORY_ON)).toBe('memory: octocat')
+    expect(describeMemory('COPS memory root: /m\nCOPS memory login unset: ...')).toBe('memory: ✗ (no login)')
+    expect(describeMemory(MEMORY_OFF)).toBe('memory: ✗ (off)')
+    expect(describeMemory('COPS memory unavailable: the configured path is not a Git root.')).toBe('memory: ✗ (bad path)')
   })
 
   test('CI states', () => {

@@ -31,13 +31,13 @@ available, and the skills call them.
 
 ## Status line
 
-In Claude Code, `cops` adds a status line entry that shows the memory state and the current branch's PR and CI, for example:
+In Claude Code, `cops` adds a status line entry that shows the memory state and the current branch's PR and CI, for example (Claude Code labels the entry `cops`):
 
 ```text
-cops · memory ✓ octocat · PR #45 · CI ✗ 1/6
+memory: octocat · PR #45 · CI ✗ 1/6
 ```
 
-- **Memory:** `memory ✓ <login>`, `memory ✓ no login`, `memory off` (no path configured), or `memory ✗ bad path` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
+- **Memory:** `memory: <login>`, `memory: ✗ (no login)`, `memory: ✗ (off)` (no path configured), or `memory: ✗ (bad path)` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
 - **PR and CI:** `PR #<n>` with `CI ✓`, `CI ✗ <failed>/<total>`, `CI … <passed>/<total>` while checks run, or `no CI`; a closed or merged PR shows its state instead. It needs `gh` logged in; without it, only the branch name shows. Outside a Git repository this part is left out.
 
 It refreshes at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes.
