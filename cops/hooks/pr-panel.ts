@@ -130,7 +130,8 @@ export const describeOutcome = (text: string): string => {
 //   running, now 0   → `⠋ 🔮 Oracle · brief-task` (the frame steps every 100ms of `now`)
 //   running, now 100 → `⠙ 🔮 Oracle · brief-task`
 //   two modes        → `⠋ 🔮 Oracle · triage-threads + scout-repo`
-//   done             → `✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
+//   done             → `✓ 🔮 Oracle · brief-task · ✓ loaded · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
+//   loaded: short    → `✓ 🔮 Oracle · sweep-diff · ⚠ loaded lacks modes/sweep-diff.md · 3s · …`
 //   sidekick done    → `✓ 🦸 Sidekick · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6`
 //                      (`no rules` for none; the deviation part only when there are some)
 //   failed           → `✗ 🦸 Sidekick · failed`
@@ -144,6 +145,7 @@ export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): 
   const line = [
     names[call.agent] ?? call.agent.replace(/^cops:/, ''),
     call.modes?.join(' + '),
+    call.missingLoads && (call.missingLoads.length === 0 ? '✓ loaded' : `⚠ loaded lacks ${call.missingLoads.join(', ')}`),
     call.rules !== undefined && (call.rules === 0 ? 'no rules' : `${call.rules} rule${call.rules === 1 ? '' : 's'}`),
     !!call.deviations && `${call.deviations} deviation${call.deviations === 1 ? '' : 's'}`,
     call.durationMs !== undefined && elapsed(call.durationMs),
