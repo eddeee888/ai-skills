@@ -1,20 +1,22 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
-import type { On, ProcessRunResult, PromptOrigin } from 'claude-code'
-
-const ok = (stdout: string): ProcessRunResult => ({
-  exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
-})
+import type { On, PromptOrigin } from 'claude-code'
 
 const MEMORY_ON = 'COPS memory root: /memory\nCOPS memory login: octocat\n'
 const MEMORY_OFF = 'COPS memory not configured: PR_MEMORY_PATH is unset, so pr-oracle runs without memory.\n'
 const MEMORY = { options: { memory_path: '~/mem', memory_login: 'octocat' } }
 
+type Ui = Awaited<ReturnType<Engine['ui']['mount']>>
+
 // Answers what the plugin asks of the engine, and records what it puts in the prompt box.
-const world = (on: On, answers: { memory: string } = { memory: MEMORY_ON }) => {
+const world = ({ on, memory = MEMORY_ON }: { on: On; memory?: string }): { fills: string[] } => {
   const fills: string[] = []
   mock.clock(on)
-  on('process.run', ($, e) => ({ value: ok(e.argv[0] === 'bash' ? answers.memory : '') }))
+  on('process.run', ($, e) => ({
+    value: {
+      exitCode: 0, stdout: e.argv[0] === 'bash' ? memory : '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
+    },
+  }))
   on('prompt.submit', ($, e) => ({ text: e.text }))
   on('prompt.fill', ($, e) => {
     fills.push(e.text)
@@ -28,22 +30,24 @@ const world = (on: On, answers: { memory: string } = { memory: MEMORY_ON }) => {
   return { fills }
 }
 
-const submit = ($: Engine, text: string, origin: PromptOrigin = { kind: 'composer' }) => $.prompt.submit({ text, wait: false, origin })
+const submit = async ({ $, text, origin = { kind: 'composer' } }: { $: Engine; text: string; origin?: PromptOrigin }): Promise<void> => {
+  await $.prompt.submit({ text, wait: false, origin })
+}
 
-const mount = ($: Engine, surface: 'terminal' | 'desktop') =>
+const mount = ({ $, surface }: { $: Engine; surface: 'terminal' | 'desktop' }): Promise<Ui> =>
   $.ui.mount({
     plugin: 'cops', surface, component: 'AbovePrompt',
     props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 100, scroll: { offset: 0, bodyRows: 10 }, view: {} },
   })
 
-const band = async (ui: Awaited<ReturnType<typeof mount>>) => (await ui.find({ type: 'Text', text: /Remember “/ }))?.text
+const band = async (ui: Ui): Promise<string | undefined> => (await ui.find({ type: 'Text', text: /Remember “/ }))?.text
 
 describe('rule band', () => {
   for (const surface of ['terminal', 'desktop'] as const) {
     test(`offers "from now on" rules to remember personally (${surface})`, MEMORY, async ($, on) => {
-      const { fills } = world(on)
-      await submit($, 'from now on use pnpm. Thanks')
-      const ui = await mount($, surface)
+      const { fills } = world({ on })
+      await submit({ $, text: 'from now on use pnpm. Thanks' })
+      const ui = await mount({ $, surface })
       expect(await band(ui)).toBe('Remember “from now on use pnpm.”?')
       await ui.press({ key: 'remember-personally' })
       expect(fills).toEqual(['Remember this rule: from now on use pnpm.'])
@@ -54,9 +58,9 @@ describe('rule band', () => {
   }
 
   test('offers "never" rules to record for the team', MEMORY, async ($, on) => {
-    const { fills } = world(on)
-    await submit($, 'Looks good. Never do force pushes!')
-    const ui = await mount($, 'terminal')
+    const { fills } = world({ on })
+    await submit({ $, text: 'Looks good. Never do force pushes!' })
+    const ui = await mount({ $, surface: 'terminal' })
     expect(await band(ui)).toBe('Remember “Never do force pushes!”?')
     await ui.press({ key: 'record-team' })
     expect(fills).toEqual(['record-team: Never do force pushes!'])
@@ -66,9 +70,9 @@ describe('rule band', () => {
   })
 
   test('dismiss clears the offer without filling the prompt', MEMORY, async ($, on) => {
-    const { fills } = world(on)
-    await submit($, 'always run the tests')
-    const ui = await mount($, 'terminal')
+    const { fills } = world({ on })
+    await submit({ $, text: 'always run the tests' })
+    const ui = await mount({ $, surface: 'terminal' })
     await ui.press({ key: 'dismiss' })
     expect(fills).toEqual([])
     expect(await band(ui)).toBeUndefined()
@@ -77,8 +81,8 @@ describe('rule band', () => {
   })
 
   test('yields to a survey', MEMORY, async ($, on) => {
-    world(on)
-    await submit($, 'never do Y')
+    world({ on })
+    await submit({ $, text: 'never do Y' })
     const ui = await $.ui.mount({
       plugin: 'cops', surface: 'terminal', component: 'AbovePrompt',
       props: { hasSurvey: true, isWorking: false, maxRows: 10, bodyColumns: 100, scroll: { offset: 0, bodyRows: 10 }, view: {} },
@@ -97,9 +101,9 @@ describe('rule band', () => {
   ]
   for (const [name, text, origin] of skipped) {
     test(`makes no offer for ${name}`, MEMORY, async ($, on) => {
-      world(on)
-      await submit($, text, origin)
-      const ui = await mount($, 'terminal')
+      world({ on })
+      await submit({ $, text, origin })
+      const ui = await mount({ $, surface: 'terminal' })
       expect(await band(ui)).toBeUndefined()
       expect(await ui.find({ text: 'engine band' })).toBeDefined()
       await ui.unmount()
@@ -107,18 +111,18 @@ describe('rule band', () => {
   }
 
   test('makes no offer when no memory path is configured', async ($, on) => {
-    world(on)
-    await submit($, 'from now on use X')
-    const ui = await mount($, 'terminal')
+    world({ on })
+    await submit({ $, text: 'from now on use X' })
+    const ui = await mount({ $, surface: 'terminal' })
     expect(await band(ui)).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
   })
 
   test('makes no offer when memory is off', MEMORY, async ($, on) => {
-    world(on, { memory: MEMORY_OFF })
-    await submit($, 'from now on use X')
-    const ui = await mount($, 'terminal')
+    world({ on, memory: MEMORY_OFF })
+    await submit({ $, text: 'from now on use X' })
+    const ui = await mount({ $, surface: 'terminal' })
     expect(await band(ui)).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
