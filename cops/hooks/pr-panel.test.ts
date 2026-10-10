@@ -3,6 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import { describeActivity, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, summarize, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
+import type { Thread } from '../types'
 
 const ok = (stdout: string): ProcessRunResult => ({
   exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
@@ -466,12 +467,12 @@ describe('descriptions', () => {
   })
 
   test('decides whose move a thread is', () => {
-    const moves = (nodes: ReturnType<typeof node>[]) => toThreads({ data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } }).map(one => one.move)
-    expect(moves([node('a', 'octocat', { body: '**Issue:** x' })])).toEqual(['you'])
-    expect(moves([node('b', 'octocat', { body: '**Note:** x' })])).toEqual(['reviewer'])
-    expect(moves([node('c', 'octocat', { body: 'Drive-by: x' })])).toEqual(['reviewer'])
-    expect(moves([node('d', 'alice', { totalCount: 2, lastAuthor: 'octocat' })])).toEqual(['reviewer'])
-    expect(moves([node('e', 'octocat', { body: '**Issue:** x', totalCount: 2 })])).toEqual(['reviewer'])
+    const moves = ({ nodes }: { nodes: ReturnType<typeof node>[] }): Thread['move'][] => toThreads({ data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } }).map(one => one.move)
+    expect(moves({ nodes: [node('a', 'octocat', { body: '**Issue:** x' })] })).toEqual(['you'])
+    expect(moves({ nodes: [node('b', 'octocat', { body: '**Note:** x' })] })).toEqual(['reviewer'])
+    expect(moves({ nodes: [node('c', 'octocat', { body: 'Drive-by: x' })] })).toEqual(['reviewer'])
+    expect(moves({ nodes: [node('d', 'alice', { totalCount: 2, lastAuthor: 'octocat' })] })).toEqual(['reviewer'])
+    expect(moves({ nodes: [node('e', 'octocat', { body: '**Issue:** x', totalCount: 2 })] })).toEqual(['reviewer'])
     const view = { status: 'ready' as const, pr: 7, url: 'u', state: 'OPEN' as const, isMine: true, isReviewed: false, hasNotes: true }
     const threads = toThreads({ data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes: [node('a', 'octocat', { body: '**Issue:** x' })] } } } } })
     expect(describeNext({ view: { ...view, threads }, handled: [] })?.skill).toBe('cops:pr-address')
