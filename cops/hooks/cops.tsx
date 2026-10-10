@@ -61,7 +61,8 @@ const refreshStatus = async ($: EngineInterface, memory: Memory) => {
   isStatusRefreshing = true
   try {
     const parts = await Promise.all([memoryPart($, memory.path, memory.login), branchPart($)])
-    $.ui.status(['cops', ...parts.filter(Boolean)].join(' · '))
+    // The host already labels the entry with the plugin's name.
+    $.ui.status(parts.filter(Boolean).join(' · ') || undefined)
   } finally {
     isStatusRefreshing = false
   }

@@ -9,10 +9,10 @@ export type PullRequest = { number: number; state: string; isDraft?: boolean; st
 // Reads memory state from the session-start hook's own output, so both agree.
 export const describeMemory = (context: string): string => {
   if (!context.includes('COPS memory root:')) {
-    return context.includes('not configured') ? 'memory off' : 'memory ✗ bad path'
+    return context.includes('not configured') ? 'memory: ✗ (off)' : 'memory: ✗ (bad path)'
   }
   const login = /^COPS memory login: (\S+)$/m.exec(context)?.[1]
-  return login ? `memory ✓ ${login}` : 'memory ✓ no login'
+  return login ? `memory: ${login}` : 'memory: ✗ (no login)'
 }
 
 export const describeChecks = (checks: readonly Check[]): string => {
