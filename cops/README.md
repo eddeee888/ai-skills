@@ -40,7 +40,21 @@ cops · memory ✓ octocat · PR #45 · CI ✗ 1/6
 - **Memory:** `memory ✓ <login>`, `memory ✓ no login`, `memory off` (no path configured), or `memory ✗ bad path` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
 - **PR and CI:** `PR #<n>` with `CI ✓`, `CI ✗ <failed>/<total>`, `CI … <passed>/<total>` while checks run, or `no CI`; a closed or merged PR shows its state instead. It needs `gh` logged in; without it, only the branch name shows. Outside a Git repository this part is left out.
 
-It refreshes at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes. The hooks module is [`hooks/status-line.ts`](hooks/status-line.ts); Cursor doesn't load it.
+It refreshes at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes.
+
+## Threads and agents pane
+
+In Claude Code, `/cops-threads` opens a pane with two sections:
+
+- **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out. It needs `gh` logged in; without it, the section says so.
+- **Agents:** each `cops:pr-oracle` and `cops:pr-sidekick` call this session, with what it was given and what it returned:
+  - pr-oracle: its mode, and the `memory-root` and `memory-login` it was passed;
+  - pr-sidekick: the `Rules that apply:` line it was passed, and a red warning if its prompt carried `memory-root`, which it must never get;
+  - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Background calls show as running in the background.
+
+The threads refresh like the status line. No model is called; the grouping comes from who commented last.
+
+Both live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts) and [`hooks/pr-panel.ts`](hooks/pr-panel.ts). Cursor doesn't load the module.
 
 ## Agents
 
