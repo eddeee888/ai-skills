@@ -40,7 +40,7 @@ const mount = ({ $, surface }: { $: Engine; surface: 'terminal' | 'desktop' }): 
     props: { hasSurvey: false, isWorking: false, maxRows: 10, bodyColumns: 100, scroll: { offset: 0, bodyRows: 10 }, view: {} },
   })
 
-const band = async (ui: Ui): Promise<string | undefined> => (await ui.find({ type: 'Text', text: /Remember “/ }))?.text
+const band = async ({ ui }: { ui: Ui }): Promise<string | undefined> => (await ui.find({ type: 'Text', text: /Remember “/ }))?.text
 
 describe('rule band', () => {
   for (const surface of ['terminal', 'desktop'] as const) {
@@ -48,10 +48,10 @@ describe('rule band', () => {
       const { fills } = world({ on })
       await submit({ $, text: 'from now on use pnpm. Thanks' })
       const ui = await mount({ $, surface })
-      expect(await band(ui)).toBe('Remember “from now on use pnpm.”?')
+      expect(await band({ ui })).toBe('Remember “from now on use pnpm.”?')
       await ui.press({ key: 'remember-personally' })
       expect(fills).toEqual(['Remember this rule: from now on use pnpm.'])
-      expect(await band(ui)).toBeUndefined()
+      expect(await band({ ui })).toBeUndefined()
       expect(await ui.find({ text: 'engine band' })).toBeDefined()
       await ui.unmount()
     })
@@ -61,10 +61,10 @@ describe('rule band', () => {
     const { fills } = world({ on })
     await submit({ $, text: 'Looks good. Never do force pushes!' })
     const ui = await mount({ $, surface: 'terminal' })
-    expect(await band(ui)).toBe('Remember “Never do force pushes!”?')
+    expect(await band({ ui })).toBe('Remember “Never do force pushes!”?')
     await ui.press({ key: 'record-team' })
     expect(fills).toEqual(['record-team: Never do force pushes!'])
-    expect(await band(ui)).toBeUndefined()
+    expect(await band({ ui })).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
   })
@@ -75,7 +75,7 @@ describe('rule band', () => {
     const ui = await mount({ $, surface: 'terminal' })
     await ui.press({ key: 'dismiss' })
     expect(fills).toEqual([])
-    expect(await band(ui)).toBeUndefined()
+    expect(await band({ ui })).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
   })
@@ -87,7 +87,7 @@ describe('rule band', () => {
       plugin: 'cops', surface: 'terminal', component: 'AbovePrompt',
       props: { hasSurvey: true, isWorking: false, maxRows: 10, bodyColumns: 100, scroll: { offset: 0, bodyRows: 10 }, view: {} },
     })
-    expect(await band(ui)).toBeUndefined()
+    expect(await band({ ui })).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
   })
@@ -104,7 +104,7 @@ describe('rule band', () => {
       world({ on })
       await submit({ $, text, origin })
       const ui = await mount({ $, surface: 'terminal' })
-      expect(await band(ui)).toBeUndefined()
+      expect(await band({ ui })).toBeUndefined()
       expect(await ui.find({ text: 'engine band' })).toBeDefined()
       await ui.unmount()
     })
@@ -114,7 +114,7 @@ describe('rule band', () => {
     world({ on })
     await submit({ $, text: 'from now on use X' })
     const ui = await mount({ $, surface: 'terminal' })
-    expect(await band(ui)).toBeUndefined()
+    expect(await band({ ui })).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
   })
@@ -123,7 +123,7 @@ describe('rule band', () => {
     world({ on, memory: MEMORY_OFF })
     await submit({ $, text: 'from now on use X' })
     const ui = await mount({ $, surface: 'terminal' })
-    expect(await band(ui)).toBeUndefined()
+    expect(await band({ ui })).toBeUndefined()
     expect(await ui.find({ text: 'engine band' })).toBeDefined()
     await ui.unmount()
   })
