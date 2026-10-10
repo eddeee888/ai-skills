@@ -1,16 +1,16 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { AgentCall, InboxItem, Thread, Threads } from '../types'
+import type { AgentCall, InboxItem, SkillRun, Thread, Threads } from '../types'
 import { parseSuffixes } from './memory-inbox.ts'
-import { describeAgent, describeCall, describeOutcome, snippet, SPINNER_MS, THREADS_QUERY, toThreads } from './pr-panel.ts'
+import { describeActivity, describeAgent, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, snippet, SPINNER_MS, summarize, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 
 // The plugin's one hooks module: the status line, the COPS HQ pane of threads,
-// agents and the memory inbox, and the band offering to remember a rule the person
-// typed. What each says is worked out in status-line.ts, pr-panel.ts, memory-inbox.ts
+// the next skill, skill runs with their agent calls and the memory inbox, and the band offering
+// to remember a rule the person typed. What each says is worked out in status-line.ts, pr-panel.ts, memory-inbox.ts
 // and rule-band.ts.
 
 const REFRESH_MS = 120_000
@@ -29,6 +29,7 @@ const DROPPED_LIMIT = 200
 const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' })
 const handled = atom({ plugin: 'cops', key: 'handled' } as const, [])
 const agents = atom({ plugin: 'cops', key: 'agents' } as const, [])
+const skills = atom({ plugin: 'cops', key: 'skills' } as const, [])
 const isDismissed = atom({ plugin: 'cops', key: 'isDismissed' } as const, false)
 const ruleOffer = atom({ plugin: 'cops', key: 'ruleOffer' } as const, null)
 const isMemoryOn = atom({ plugin: 'cops', key: 'isMemoryOn' } as const, false)
@@ -128,7 +129,8 @@ const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
       'gh', 'api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-F', `number=${number}`, '-f', `query=${THREADS_QUERY}`,
     ])
     if (ran?.exitCode !== 0) return { status: 'needs-gh' }
-    return { status: 'ready', pr: number, url, threads: toThreads(JSON.parse(ran.stdout) as ThreadsResponse) }
+    const response = JSON.parse(ran.stdout) as ThreadsResponse
+    return { status: 'ready', pr: number, url, threads: toThreads(response), ...summarize(response) }
   } catch {
     return { status: 'needs-gh' }
   }
@@ -181,6 +183,23 @@ const setCall = async ($: EngineInterface, id: string, change: Partial<AgentCall
   } catch {}
 }
 
+// Skill runs
+
+// What a skill run in flight was started by, so `skill.prompt` can tell who asked:
+// the last slash command typed, and the Skill tool calls still running.
+let typed: { command: string; args: string } | undefined
+const calling: { skill: string; args?: string }[] = []
+
+const recordSkill = async ($: EngineInterface, skill: string) => {
+  const byModel = calling.find(one => isSameSkill(one.skill, skill))
+  const byYou = !byModel && typed && isSameSkill(typed.command, skill) ? typed : undefined
+  if (byYou) typed = undefined
+  const args = (byModel?.args ?? byYou?.args)?.trim() || undefined
+  const run: SkillRun = { skill, ...(args && { args }), by: byModel ? 'model' : byYou ? 'you' : 'other', at: await $.clock.now() }
+  await update($, skills, list => [...list, run].slice(-50))
+  $.ui.invalidate('ui.render')
+}
+
 const clearHandled = async ($: EngineInterface) => {
   try {
     await update($, handled, () => [])
@@ -196,7 +215,7 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     const started = await next(e)
     // Immediate: opening the pane touches nothing the running turn holds.
-    await $.command.register({ name: 'cops-hq', description: 'Show the PR’s open review threads and this session’s cops agents', immediate: true })
+    await $.command.register({ name: 'cops-hq', description: 'Show the PR’s open review threads, the next cops skill, and this session’s cops agents and skill runs', immediate: true })
     void refreshAll($, memory)
     $.clock.every(REFRESH_MS, () => refreshAll($, memory))
     return started
@@ -253,6 +272,31 @@ export const register: Register = (on, options) => {
         <Button key="dismiss" label="Dismiss" role="dismiss" onPress={() => update($, ruleOffer, () => null)} />
       </Box>
     )
+  })
+
+  // A typed `/name args`; `skill.prompt` claims it when `name` turns out to be a skill.
+  on('command.run', async ($, e, next) => {
+    if (e.origin.kind !== 'plugin') typed = { command: e.command, args: e.args }
+    return next(e)
+  })
+
+  on('tool.call', { tool: 'Skill' }, async ($, e, next) => {
+    const entry = { skill: e.skill, args: e.args }
+    calling.push(entry)
+    try {
+      return await next(e)
+    } finally {
+      calling.splice(calling.indexOf(entry), 1)
+    }
+  })
+
+  // Every skill reaches the model through here: typed, called by the model, or preloaded.
+  on('skill.prompt', async ($, e, next) => {
+    const expanded = await next(e)
+    try {
+      await recordSkill($, e.skill)
+    } catch {}
+    return expanded
   })
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
@@ -335,6 +379,17 @@ export const register: Register = (on, options) => {
     const view = await read($, threads)
     const done = await read($, handled)
     const calls = await read($, agents)
+    const runs = await read($, skills)
+    const hint = describeNext({ view, handled: done })
+    const lastRun = hint && runs.findLastIndex(one => isSameSkill(one.skill, hint.skill))
+    const activity = groupActivity({ runs, calls })
+    // An agent call's row, indented under the skill run it started in.
+    const agentRow = (call: AgentCall, indent: string) => (
+      <Box key={call.id} flexDirection="column">
+        <Text color={call.state === 'failed' ? 'error' : undefined} wrap="truncate-end">{indent}{describeAgent({ call, now })}</Text>
+        {call.isLeak && <Text color="error">{indent}  pr-sidekick was given memory-root; it must never read memory.</Text>}
+      </Box>
+    )
     // A store that can't be read hides the inbox, not the pane.
     // The inbox stays in the store while memory is off, and shows again once it's on.
     const inbox = (await read($, isMemoryOn)) ? [...(await readInbox($).catch(() => [])), ...(await read($, openItems))] : []
@@ -393,13 +448,22 @@ export const register: Register = (on, options) => {
         ) : (
           <Text dimColor>{waiting[view.status]}</Text>
         )}
+        {hint && (
+          <Box flexDirection="row" gap={1}>
+            <Text wrap="truncate-end">
+              <Text bold>Next:</Text> /{hint.skill} · {hint.why}
+              {lastRun !== undefined && lastRun !== -1 && <Text dimColor> · ran as #{lastRun + 1}</Text>}
+            </Text>
+            <Button key="next-skill" label="Use" onPress={() => $.prompt.fill({ text: `/${hint.skill} ` })} />
+          </Box>
+        )}
         <Box flexDirection="column">
-          <Text bold>Agents ({calls.length})</Text>
-          {calls.length === 0 && <Text dimColor>No cops agent calls yet.</Text>}
-          {calls.map(call => (
-            <Box key={call.id} flexDirection="column">
-              <Text color={call.state === 'failed' ? 'error' : undefined} wrap="truncate-end">{describeAgent({ call, now })}</Text>
-              {call.isLeak && <Text color="error">  pr-sidekick was given memory-root; it must never read memory.</Text>}
+          <Text bold>{describeActivity({ runs: runs.length, calls: calls.length })}</Text>
+          {activity.loose.map(call => agentRow(call, ''))}
+          {activity.groups.map(({ run, index, calls: inRun }) => (
+            <Box key={`skill-${index}`} flexDirection="column">
+              <Text wrap="truncate-end">{describeSkill({ run, index, now })}</Text>
+              {inRun.map(call => agentRow(call, '   '))}
             </Box>
           ))}
         </Box>

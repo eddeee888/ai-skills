@@ -1,7 +1,7 @@
-import type { AgentCall, Thread } from '../types'
+import type { AgentCall, SkillRun, Thread, Threads } from '../types'
 
-// What the COPS HQ pane says: the PR's open review threads and the
-// cops subagent calls of this session.
+// What the COPS HQ pane says: the PR's open review threads, the next cops skill
+// to run, and the cops subagent calls and skill runs of this session.
 
 export const MODES = ['scout-repo', 'brief-task', 'sweep-diff', 'review-pr', 'triage-threads', 'grill-description', 'draft-author-notes', 'learn-feedback']
 
@@ -10,6 +10,7 @@ export const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', 
 export const SPINNER_MS = 100
 
 export const THREADS_QUERY = `query($owner: String!, $name: String!, $number: Int!) {
+  viewer { login }
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
       author { login }
@@ -32,7 +33,7 @@ type ThreadNode = {
   first: { nodes: FirstComment[] }
 }
 export type ThreadsResponse = {
-  data?: { repository?: { pullRequest?: { author?: { login: string } | null; reviewThreads: { nodes: ThreadNode[] } } | null } | null }
+  data?: { viewer?: { login: string } | null; repository?: { pullRequest?: { author?: { login: string } | null; reviewThreads: { nodes: ThreadNode[] } } | null } | null }
 }
 
 export const snippet = (text: string) => {
@@ -40,12 +41,14 @@ export const snippet = (text: string) => {
   return line.length > 80 ? `${line.slice(0, 79)}…` : line
 }
 
-const isAcknowledgedNote = (node: ThreadNode, author?: string) => {
+const isNote = (node: ThreadNode, author?: string) => {
   const first = node.first.nodes[0]
-  return !!author && node.comments.totalCount === 1 && first?.author?.login === author
-    && /^\s*(\*\*)?(Note|Drive-by):\1/.test(first.body)
-    && first.reactions.nodes.some(one => one.user?.login === author)
+  return !!author && first?.author?.login === author && /^\s*(\*\*)?(Note|Drive-by):\1/.test(first.body)
 }
+
+const isAcknowledgedNote = (node: ThreadNode, author?: string) =>
+  isNote(node, author) && node.comments.totalCount === 1
+  && !!node.first.nodes[0]?.reactions.nodes.some(one => one.user?.login === author)
 
 // Open threads only; whoever spoke last decides whose move it is.
 export const toThreads = (response: ThreadsResponse): Thread[] => {
@@ -70,6 +73,76 @@ export const toThreads = (response: ThreadsResponse): Thread[] => {
         move: lastAuthor === author ? 'reviewer' : 'you',
       }
     })
+}
+
+// What the next-step hint needs to know about the PR, resolved threads included:
+//   isMine     → the viewer opened it (undefined when gh doesn't say who the viewer is)
+//   isReviewed → someone other than the author started or answered a thread
+//   hasNotes   → the author left a `Note:` / `Drive-by:` thread
+export const summarize = (response: ThreadsResponse): { isMine?: boolean; isReviewed: boolean; hasNotes: boolean } => {
+  const viewer = response.data?.viewer?.login
+  const pr = response.data?.repository?.pullRequest
+  const author = pr?.author?.login
+  const nodes = pr?.reviewThreads.nodes ?? []
+  return {
+    isMine: viewer && author ? viewer === author : undefined,
+    isReviewed: nodes.some(node => [node.first.nodes[0], node.comments.nodes.at(-1)].some(one => !!one?.author && one.author.login !== author)),
+    hasNotes: nodes.some(node => isNote(node, author)),
+  }
+}
+
+// The cops skill that fits the PR's state, for the pane's `Next:` line:
+//   branch without a PR                   → /cops:pr-start
+//   someone else's PR                     → /cops:pr-review
+//   your PR, threads need you             → /cops:pr-address (threads marked handled don't count)
+//   your PR, no review and no notes yet   → /cops:pr-note
+//   anything else (waiting, unknown)      → nothing
+export const describeNext = ({ view, handled }: { view: Threads; handled: string[] }): { skill: string; why: string } | undefined => {
+  if (view.status === 'no-pr') return { skill: 'cops:pr-start', why: 'this branch has no PR yet' }
+  if (view.status !== 'ready' || view.isMine === undefined) return undefined
+  if (!view.isMine) return { skill: 'cops:pr-review', why: 'someone else’s PR' }
+  const waiting = view.threads.filter(one => one.move === 'you' && !handled.includes(one.id)).length
+  if (waiting > 0) return { skill: 'cops:pr-address', why: `${waiting} thread${waiting === 1 ? ' needs' : 's need'} you` }
+  if (!view.isReviewed && !view.hasNotes) return { skill: 'cops:pr-note', why: 'your PR, no review or notes yet' }
+  return undefined
+}
+
+// Whether two skill names are the same skill, with or without the plugin prefix:
+//   'cops:pr-review' and 'pr-review' → true
+//   'cops:pr-review' and 'oss:pr-review' → false
+export const isSameSkill = (a: string, b: string) => {
+  const bare = (name: string) => name.replace(/^[^:]+:/, '')
+  return a === b || ((!a.includes(':') || !b.includes(':')) && bare(a) === bare(b))
+}
+
+const ago = (ms: number) => (ms < 60_000 ? 'just now' : ms < 3_600_000 ? `${Math.floor(ms / 60_000)}m ago` : `${Math.floor(ms / 3_600_000)}h ago`)
+
+// One pane row per skill run, numbered in order:
+//   typed      → `#1 /cops:pr-review https://github.com/o/r/pull/7 · you · 3m ago`
+//   model      → `#2 /cops:pr-address · model · just now`
+//   other      → `#3 /oss:issue-fix · preloaded · 1h ago` (expanded with no command or Skill call, e.g. into a subagent)
+export const describeSkill = ({ run, index, now }: { run: SkillRun; index: number; now: number }): string => {
+  const by = { you: 'you', model: 'model', other: 'preloaded' }
+  return [`#${index + 1} /${run.skill}${run.args ? ` ${snippet(run.args)}` : ''}`, by[run.by], ago(Math.max(0, now - run.at))].join(' · ')
+}
+
+// The pane's Activity section: each agent call under the skill run it started in,
+// the latest run that began at or before the call; calls before any run lead, ungrouped.
+//   runs #1 at 0, #2 at 50; calls at 10, 20, 60 → #1 [10, 20], #2 [60]
+//   no runs; a call at 10                       → loose [10]
+export const groupActivity = ({ runs, calls }: { runs: SkillRun[]; calls: AgentCall[] }) => {
+  const owner = (call: AgentCall) => runs.findLastIndex(run => run.at <= call.startedAt)
+  return {
+    loose: calls.filter(call => owner(call) === -1),
+    groups: runs.map((run, index) => ({ run, index, calls: calls.filter(call => owner(call) === index) })),
+  }
+}
+
+// The Activity heading: `Activity · 2 skills · 1 agent`, `Activity · none yet`.
+export const describeActivity = ({ runs, calls }: { runs: number; calls: number }) => {
+  const count = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`
+  const parts = [runs > 0 && count(runs, 'skill'), calls > 0 && count(calls, 'agent')].filter(Boolean)
+  return ['Activity', ...(parts.length > 0 ? parts : ['none yet'])].join(' · ')
 }
 
 const field = (prompt: string, name: string) => new RegExp(`${name}:\\s*\`?([^\\s\`]+)`).exec(prompt)?.[1]
