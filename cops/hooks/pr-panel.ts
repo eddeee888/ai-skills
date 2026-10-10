@@ -93,13 +93,16 @@ export const summarize = ({ response }: { response: ThreadsResponse }): { isMine
 
 // The cops skill that fits the PR's state, for the pane's `Next:` line:
 //   branch without a PR                   → /cops:pr-start
+//   merged or closed PR                   → /cops:pr-start
 //   someone else's PR                     → /cops:pr-review
 //   your PR, threads need you             → /cops:pr-address (threads marked handled don't count)
 //   your PR, no review and no notes yet   → /cops:pr-note
 //   anything else (waiting, unknown)      → nothing
 export const describeNext = ({ view, handled }: { view: Threads; handled: string[] }): { skill: string; why: string } | undefined => {
   if (view.status === 'no-pr') return { skill: 'cops:pr-start', why: 'this branch has no PR yet' }
-  if (view.status !== 'ready' || view.isMine === undefined) return undefined
+  if (view.status !== 'ready') return undefined
+  if (view.state !== 'OPEN') return { skill: 'cops:pr-start', why: `PR #${view.pr} is ${view.state.toLowerCase()}, start the next task` }
+  if (view.isMine === undefined) return undefined
   if (!view.isMine) return { skill: 'cops:pr-review', why: 'someone else’s PR' }
   const waiting = view.threads.filter(one => one.move === 'you' && !handled.includes(one.id)).length
   if (waiting > 0) return { skill: 'cops:pr-address', why: `${waiting} thread${waiting === 1 ? ' needs' : 's need'} you` }

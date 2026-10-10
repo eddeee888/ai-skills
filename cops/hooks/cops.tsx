@@ -120,17 +120,19 @@ const readDropped = async ($: EngineInterface): Promise<string[]> => {
 const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
   const branch = await run($, ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
   if (branch?.exitCode !== 0) return { status: 'no-repo' }
-  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,url'])
+  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,url,state'])
   if (pr?.exitCode !== 0) return { status: pr?.stderr.includes('no pull requests found') ? 'no-pr' : 'needs-gh' }
   try {
     // JSON.parse returns `any`; dropping these casts takes a runtime check of gh's output.
-    const { number, url } = JSON.parse(pr.stdout) as { number: number; url: string }
+    const { number, url, state } = JSON.parse(pr.stdout) as { number: number; url: string; state?: string }
     const ran = await run($, [
       'gh', 'api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-F', `number=${number}`, '-f', `query=${THREADS_QUERY}`,
     ])
     if (ran?.exitCode !== 0) return { status: 'needs-gh' }
     const response = JSON.parse(ran.stdout) as ThreadsResponse
-    return { status: 'ready', pr: number, url, threads: toThreads(response), ...summarize({ response }) }
+    // gh also finds a branch's merged or closed PR; anything else counts as open.
+    const prState = state === 'MERGED' || state === 'CLOSED' ? state : 'OPEN'
+    return { status: 'ready', pr: number, url, state: prState, threads: toThreads(response), ...summarize({ response }) }
   } catch {
     return { status: 'needs-gh' }
   }
@@ -156,7 +158,8 @@ const refreshThreads = async ($: EngineInterface) => {
     // doesn't draw it again by itself; without this it stays on "loading".
     $.ui.invalidate('ui.render')
     const done = await read($, handled)
-    if (next.status === 'ready' && next.threads.some(one => one.move === 'you' && !done.includes(one.id))) await autoOpen($)
+    // A finished PR's leftover threads don't need you.
+    if (next.status === 'ready' && next.state === 'OPEN' && next.threads.some(one => one.move === 'you' && !done.includes(one.id))) await autoOpen($)
   } finally {
     isThreadsRefreshing = false
   }
@@ -443,7 +446,7 @@ export const register: Register = (on, options) => {
       <Box flexDirection="column" gap={1}>
         {view.status === 'ready' ? (
           <Box flexDirection="column" gap={1}>
-            <Text bold>Threads · <Link href={view.url}>{`PR #${view.pr}`}</Link></Text>
+            <Text bold>Threads · <Link href={view.url}>{`PR #${view.pr}`}</Link>{view.state !== 'OPEN' && ` (${view.state.toLowerCase()})`}</Text>
             {group('Needs you', view.threads.filter(one => one.move === 'you'))}
             {group('Waiting on reviewer', view.threads.filter(one => one.move === 'reviewer'))}
           </Box>

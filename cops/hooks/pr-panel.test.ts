@@ -248,6 +248,16 @@ describe('next step', () => {
     await ui.unmount()
   })
 
+  test('points a merged PR at pr-start and stays shut for its threads', async ($, on) => {
+    const { opens } = world(on, { graphql: withViewer('octocat'), pr: ok(JSON.stringify({ number: 7, url: 'https://github.com/o/r/pull/7', state: 'MERGED' })) })
+    await start($)
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('Next: /cops:pr-start · PR #7 is merged, start the next task'))
+    expect(await text(ui)).toContain('PR #7 (merged)')
+    expect(opens).toEqual([])
+    await ui.unmount()
+  })
+
   test('says nothing when gh does not name the viewer', async ($, on) => {
     world(on)
     await start($)
@@ -259,7 +269,7 @@ describe('next step', () => {
 
   test('descriptions', () => {
     const ready = (extra: Partial<{ isMine: boolean; isReviewed: boolean; hasNotes: boolean }>) => ({
-      status: 'ready' as const, pr: 7, url: 'u', threads: toThreads(RESPONSE), isReviewed: true, hasNotes: false, ...extra,
+      status: 'ready' as const, pr: 7, url: 'u', state: 'OPEN' as const, threads: toThreads(RESPONSE), isReviewed: true, hasNotes: false, ...extra,
     })
     expect(describeNext({ view: ready({ isMine: true }), handled: [] })?.why).toBe('2 threads need you')
     expect(describeNext({ view: ready({ isMine: true }), handled: ['t1'] })?.why).toBe('1 thread needs you')
@@ -267,6 +277,8 @@ describe('next step', () => {
     expect(describeNext({ view: { ...ready({ isMine: true, isReviewed: false }), threads: [] }, handled: [] })?.skill).toBe('cops:pr-note')
     expect(describeNext({ view: { ...ready({ isMine: true, isReviewed: false, hasNotes: true }), threads: [] }, handled: [] })).toBeUndefined()
     expect(describeNext({ view: ready({ isMine: false }), handled: [] })?.skill).toBe('cops:pr-review')
+    expect(describeNext({ view: { ...ready({ isMine: true }), state: 'MERGED' }, handled: [] })).toEqual({ skill: 'cops:pr-start', why: 'PR #7 is merged, start the next task' })
+    expect(describeNext({ view: { ...ready({}), state: 'CLOSED' }, handled: [] })?.why).toBe('PR #7 is closed, start the next task')
     expect(describeNext({ view: ready({}), handled: [] })).toBeUndefined()
     expect(describeNext({ view: { status: 'needs-gh' }, handled: [] })).toBeUndefined()
 

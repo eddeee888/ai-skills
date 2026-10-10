@@ -19,10 +19,10 @@ export type Thread = {
 export type Threads =
   | { status: 'loading' | 'no-repo' | 'no-pr' | 'needs-gh' }
   /**
-   * `url` is the PR's web page. `isMine`: the viewer opened the PR (undefined when unknown);
+   * `url` is the PR's web page; `state` is whether it's still open. `isMine`: the viewer opened the PR (undefined when unknown);
    * `isReviewed`: someone else commented in a thread; `hasNotes`: the author left a `Note:` / `Drive-by:`.
    */
-  | { status: 'ready'; pr: number; url: string; threads: Thread[]; isMine?: boolean; isReviewed: boolean; hasNotes: boolean }
+  | { status: 'ready'; pr: number; url: string; state: 'OPEN' | 'MERGED' | 'CLOSED'; threads: Thread[]; isMine?: boolean; isReviewed: boolean; hasNotes: boolean }
 
 /** One cops subagent call this session. */
 export type AgentCall = {
