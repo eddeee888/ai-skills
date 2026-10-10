@@ -29,7 +29,7 @@ const RESPONSE: ThreadsResponse = {
         reviewThreads: {
           nodes: [
             node('t1', 'alice'),
-            node('t2', 'octocat'),
+            node('t2', 'alice', { totalCount: 2, lastAuthor: 'octocat' }),
             node('t3', 'alice', { isResolved: true }),
             node('t4', 'bob', { isOutdated: true }),
           ],
@@ -437,7 +437,7 @@ describe('opening by itself', () => {
   })
 
   test('stays shut when every thread waits on the reviewer', async ($, on) => {
-    const waiting = { data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes: [node('t2', 'octocat')] } } } } }
+    const waiting = { data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes: [node('t2', 'alice', { totalCount: 2, lastAuthor: 'octocat' })] } } } } }
     const { opens } = world(on, { graphql: ok(JSON.stringify(waiting)) })
     await start($)
     const ui = await mount($, 'terminal')
@@ -463,6 +463,18 @@ describe('descriptions', () => {
     expect(threads.map(one => [one.id, one.move])).toEqual([['t1', 'you'], ['t2', 'reviewer'], ['t4', 'you']])
     expect(threads[0]?.lastBody).toBe('t1 says hi')
     expect(toThreads({})).toEqual([])
+  })
+
+  test('decides whose move a thread is', () => {
+    const moves = (nodes: ReturnType<typeof node>[]) => toThreads({ data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } }).map(one => one.move)
+    expect(moves([node('a', 'octocat', { body: '**Issue:** x' })])).toEqual(['you'])
+    expect(moves([node('b', 'octocat', { body: '**Note:** x' })])).toEqual(['reviewer'])
+    expect(moves([node('c', 'octocat', { body: 'Drive-by: x' })])).toEqual(['reviewer'])
+    expect(moves([node('d', 'alice', { totalCount: 2, lastAuthor: 'octocat' })])).toEqual(['reviewer'])
+    expect(moves([node('e', 'octocat', { body: '**Issue:** x', totalCount: 2 })])).toEqual(['reviewer'])
+    const view = { status: 'ready' as const, pr: 7, url: 'u', state: 'OPEN' as const, isMine: true, isReviewed: false, hasNotes: true }
+    const threads = toThreads({ data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes: [node('a', 'octocat', { body: '**Issue:** x' })] } } } } })
+    expect(describeNext({ view: { ...view, threads }, handled: [] })?.skill).toBe('cops:pr-address')
   })
 
   test('hides the author\'s own note once they 👍 it', () => {
