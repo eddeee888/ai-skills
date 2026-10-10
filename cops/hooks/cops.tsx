@@ -5,15 +5,14 @@ import type { AgentCall, Thread, Threads } from '../types'
 import { describeAgent, describeCall, describeOutcome, snippet, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
-import { describeMemory, describePullRequest } from './status-line.ts'
-import type { PullRequest } from './status-line.ts'
+import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 
 // The plugin's one hooks module: the status line, the threads and agents
 // pane, and the band offering to remember a rule the person typed. What each
 // says is worked out in status-line.ts, pr-panel.ts and rule-band.ts.
 
 const REFRESH_MS = 120_000
-// Bash commands that can change the branch, its PR, or its CI.
+// Bash commands that can change the branch or its PR.
 const BRANCH_COMMAND = /\b(git\s+(checkout|switch|commit|push|pull|merge|rebase|reset)|gh\s+pr)\b/
 const PUSH = /\bgit\s+push\b/
 const PANE = 'cops-threads'
@@ -35,26 +34,34 @@ const run = async ($: EngineInterface, argv: readonly string[]) => {
 
 // Status line
 
-const memoryPart = async ($: EngineInterface, path: string, login: string) => {
-  const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', path, login])
-  return ran?.exitCode === 0 ? describeMemory(ran.stdout) : undefined
-}
+let hasWarnedCapacity = false
 
-// Branch and PR; nothing outside a Git repository, branch alone when gh can't answer.
-const branchPart = async ($: EngineInterface) => {
-  const branch = await run($, ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
-  if (branch?.exitCode !== 0) return undefined
-  const name = branch.stdout.trim()
-  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,state,isDraft,statusCheckRollup'])
-  if (pr?.exitCode === 0) {
+const memoryPart = async ($: EngineInterface, { path, login }: { path: string; login: string }): Promise<string | undefined> => {
+  const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', path, login])
+  if (ran?.exitCode !== 0) return undefined
+  const lineCount = async ({ file }: { file: string }): Promise<number | undefined> => {
     try {
-      // JSON.parse returns `any`; dropping the cast takes a runtime check of gh's output.
-      return describePullRequest(JSON.parse(pr.stdout) as PullRequest)
+      return countLines({ text: await $.fs.read(file) })
     } catch {
-      return name
+      return undefined
     }
   }
-  return pr?.stderr.includes('no pull requests found') ? `${name} · no PR` : name
+  // The script's resolved root, so PR_MEMORY_PATH counts as much as the option.
+  const root = /^COPS memory root: (.+)$/m.exec(ran.stdout)?.[1]
+  const memoryLogin = /^COPS memory login: (\S+)$/m.exec(ran.stdout)?.[1]
+  const [personal, team] = root
+    ? await Promise.all([
+        memoryLogin ? lineCount({ file: `${root}/memory/users/${memoryLogin}/MEMORY.md` }) : undefined,
+        lineCount({ file: `${root}/memory/team/MEMORY.md` }),
+      ])
+    : []
+  const usage = { personal, team }
+  const warning = describeCapacityWarning({ usage })
+  if (warning && !hasWarnedCapacity) {
+    hasWarnedCapacity = true
+    $.ui.toast(warning)
+  }
+  return describeMemory({ context: ran.stdout, usage })
 }
 
 type Memory = { path: string; login: string }
@@ -64,9 +71,8 @@ const refreshStatus = async ($: EngineInterface, memory: Memory) => {
   if (isStatusRefreshing) return
   isStatusRefreshing = true
   try {
-    const parts = await Promise.all([memoryPart($, memory.path, memory.login), branchPart($)])
     // The host already labels the entry with the plugin's name.
-    $.ui.status(parts.filter(Boolean).join(' · ') || undefined)
+    $.ui.status(await memoryPart($, { path: memory.path, login: memory.login }))
   } finally {
     isStatusRefreshing = false
   }
@@ -215,7 +221,7 @@ export const register: Register = (on, options) => {
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
     if (PUSH.test(e.command) && ran.deny === undefined && ran.isError !== true) await clearHandled($)
-    if (BRANCH_COMMAND.test(e.command)) void refreshAll($, memory)
+    if (BRANCH_COMMAND.test(e.command)) void refreshThreads($).catch(() => undefined)
     return ran
   }).catch(($, e, next) => next(e))
 
