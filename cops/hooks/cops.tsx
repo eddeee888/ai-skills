@@ -7,8 +7,9 @@ import type { ThreadsResponse } from './pr-panel.ts'
 import { describeMemory, describePullRequest } from './status-line.ts'
 import type { PullRequest } from './status-line.ts'
 
-// The plugin's one hooks module: the status line, and the threads and agents
-// pane. What each says is worked out in status-line.ts and pr-panel.ts.
+// The plugin's one hooks module: the status line, the threads and agents
+// pane, and the band offering to remember a rule the person typed. What the
+// first two say is worked out in status-line.ts and pr-panel.ts.
 
 const REFRESH_MS = 120_000
 // Bash commands that can change the branch, its PR, or its CI.
@@ -16,11 +17,14 @@ const BRANCH_COMMAND = /\b(git\s+(checkout|switch|commit|push|pull|merge|rebase|
 const PUSH = /\bgit\s+push\b/
 const PANE = 'cops-threads'
 const TITLE = 'COPS threads and agents'
+// A sentence that sets a standing rule opens with one of these phrasings.
+const RULE = /^(?:please\s+)?(?:from now on|always|never|don['’]t ever|do not ever|stop doing)\b/i
 
-const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' } as Threads)
-const handled = atom({ plugin: 'cops', key: 'handled' } as const, [] as string[])
-const agents = atom({ plugin: 'cops', key: 'agents' } as const, [] as AgentCall[])
+const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' })
+const handled = atom({ plugin: 'cops', key: 'handled' } as const, [])
+const agents = atom({ plugin: 'cops', key: 'agents' } as const, [])
 const isDismissed = atom({ plugin: 'cops', key: 'isDismissed' } as const, false)
+const ruleOffer = atom({ plugin: 'cops', key: 'ruleOffer' } as const, null)
 
 const run = async ($: EngineInterface, argv: readonly string[]) => {
   try {
@@ -45,6 +49,7 @@ const branchPart = async ($: EngineInterface) => {
   const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,state,isDraft,statusCheckRollup'])
   if (pr?.exitCode === 0) {
     try {
+      // JSON.parse returns `any`; dropping the cast takes a runtime check of gh's output.
       return describePullRequest(JSON.parse(pr.stdout) as PullRequest)
     } catch {
       return name
@@ -76,6 +81,7 @@ const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
   const pr = await run($, ['gh', 'pr', 'view', '--json', 'number'])
   if (pr?.exitCode !== 0) return { status: pr?.stderr.includes('no pull requests found') ? 'no-pr' : 'needs-gh' }
   try {
+    // JSON.parse returns `any`; dropping these casts takes a runtime check of gh's output.
     const { number } = JSON.parse(pr.stdout) as { number: number }
     const ran = await run($, [
       'gh', 'api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-F', `number=${number}`, '-f', `query=${THREADS_QUERY}`,
@@ -103,6 +109,9 @@ const refreshThreads = async ($: EngineInterface) => {
   try {
     const next = await fetchThreads($)
     await update($, threads, () => next)
+    // A write that lands while the pane is mid-draw, after it read `threads`,
+    // doesn't draw it again by itself; without this it stays on "loading".
+    $.ui.invalidate('ui.render')
     const done = await read($, handled)
     if (next.status === 'ready' && next.threads.some(one => one.move === 'you' && !done.includes(one.id))) await autoOpen($)
   } finally {
@@ -162,6 +171,52 @@ export const register: Register = (on, options) => {
     const closed = await next(e)
     if (e.origin.kind === 'person') await update($, isDismissed, () => true).catch(() => undefined)
     return closed
+  })
+
+  // Offers the rule-like sentence of a prompt the person typed, while memory is on:
+  //   "from now on use pnpm. Thanks"            → offers "from now on use pnpm."
+  //   "Looks good. Never push to main!"         → offers "Never push to main!"
+  //   "remember: always squash", "record-team: never force-push",
+  //   "/review always", a plugin's "always run tests" → no offer
+  // The offer stays until the person takes or dismisses it, or a later rule replaces it.
+  on('prompt.submit', async ($, e, next) => {
+    const submitted = await next(e)
+    try {
+      const text = e.text.trim()
+      const isPerson = e.origin.kind === 'composer' || e.origin.kind === 'bridge'
+      if (submitted.drop !== undefined || !isPerson || !memory.path || text.startsWith('/') || /remember|record-team:/i.test(text)) return submitted
+      const sentence = text.split(/(?<=[.!?])\s+|\n+/).map(one => one.trim()).find(one => RULE.test(one))
+      if (!sentence) return submitted
+      const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+      if (ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')) await update($, ruleOffer, () => sentence)
+    } catch {}
+    return submitted
+  })
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const sentence = await read($, ruleOffer)
+    if (e.props.hasSurvey || !sentence) return next(e)
+    const { Box, Button, Text } = $.ui.resolve(e)
+    return (
+      <Box flexDirection="row" gap={1}>
+        <Text wrap="truncate-end">Remember “{sentence}”?</Text>
+        <Button
+          key="remember-personally"
+          label="Remember personally"
+          onPress={async () => {
+            if ((await $.prompt.fill({ text: `Remember this rule: ${sentence}` })).isFilled) await update($, ruleOffer, () => null)
+          }}
+        />
+        <Button
+          key="record-team"
+          label="Record for team"
+          onPress={async () => {
+            if ((await $.prompt.fill({ text: `record-team: ${sentence}` })).isFilled) await update($, ruleOffer, () => null)
+          }}
+        />
+        <Button key="dismiss" label="Dismiss" role="dismiss" onPress={() => update($, ruleOffer, () => null)} />
+      </Box>
+    )
   })
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
