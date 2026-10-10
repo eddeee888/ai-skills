@@ -51,10 +51,6 @@ const world = ({ $, on, runs = {} }: { $: Engine; on: On; runs?: Record<string, 
   return { toasts }
 }
 
-const spawn = async ({ $, agent, prompt }: { $: Engine; agent: string; prompt: string }): Promise<void> => {
-  await $.tool.call({ tool: 'Agent', description: prompt, subagent_type: agent, prompt })
-}
-
 const mount = async ({ $ }: { $: Engine }): Promise<Ui> => {
   await $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
   return $.ui.mount({
@@ -78,8 +74,8 @@ describe('handoff checklist', () => {
   test('a pr-address run missing sweep-diff leaves it unticked', async ($, on) => {
     world({ $, on })
     await $.skill.prompt({ skill: 'cops:pr-address', text: 'Address the threads.' })
-    await spawn({ $, agent: 'cops:pr-oracle', prompt: 'mode: triage-threads + scout-repo' })
-    await spawn({ $, agent: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
+    await $.tool.call({ tool: 'Agent', description: 'mode: triage-threads + scout-repo', subagent_type: 'cops:pr-oracle', prompt: 'mode: triage-threads + scout-repo' })
+    await $.tool.call({ tool: 'Agent', description: 'Rules that apply: none', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
     const ui = await mount({ $ })
     const drawn = await text({ ui })
     expect(drawn).toContain('Handoffs · pr-address')
@@ -119,8 +115,8 @@ describe('oracle loaded check', () => {
         'mode: brief-task': { answer: 'brief\nloaded: memory.md, modes/brief-task.md' },
       },
     })
-    await spawn({ $, agent: 'cops:pr-oracle', prompt: 'mode: sweep-diff' })
-    await spawn({ $, agent: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    await $.tool.call({ tool: 'Agent', description: 'mode: sweep-diff', subagent_type: 'cops:pr-oracle', prompt: 'mode: sweep-diff' })
+    await $.tool.call({ tool: 'Agent', description: 'mode: brief-task', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
     const ui = await mount({ $ })
     const drawn = await text({ ui })
     expect(drawn).toContain('sweep-diff · ⚠ loaded lacks modes/sweep-diff.md')
@@ -170,7 +166,7 @@ describe('rule checks', () => {
         },
       },
     })
-    await spawn({ $, agent: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
+    await $.tool.call({ tool: 'Agent', description: 'Rules that apply: none', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
     const ui = await mount({ $ })
     expect(await text({ ui })).toContain('⚑ force-pushed')
     expect(toasts.filter(one => one.includes('force-pushed'))).toEqual(['COPS rule check: Sidekick force-pushed.'])
@@ -182,7 +178,7 @@ describe('rule checks', () => {
     const { toasts } = world({
       $, on, runs: { [prompt]: { does: async ({ $, agentId }) => void (await $.tool.call({ tool: 'Bash', command: 'git push --force-with-lease', agentId })) } },
     })
-    await spawn({ $, agent: 'cops:pr-sidekick', prompt })
+    await $.tool.call({ tool: 'Agent', description: prompt, subagent_type: 'cops:pr-sidekick', prompt })
     const ui = await mount({ $ })
     expect(await text({ ui })).not.toContain('⚑')
     expect(toasts).toEqual([])
@@ -199,7 +195,7 @@ describe('rule checks', () => {
         },
       },
     })
-    await spawn({ $, agent: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
+    await $.tool.call({ tool: 'Agent', description: 'Rules that apply: none', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
     const ui = await mount({ $ })
     expect((await text({ ui })).split('⚑ 4th try of: pnpm test')).toHaveLength(2)
     await ui.unmount()
