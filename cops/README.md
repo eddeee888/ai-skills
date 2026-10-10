@@ -1,10 +1,16 @@
 # Code Ops (`cops`)
 
-Plugin for Claude Code and Cursor — skills for the PR lifecycle: reviewing, describing, syncing, and more.
+Plugin for Claude Code and Cursor — skills for the PR lifecycle: starting, reviewing, describing, syncing, and more.
 
 Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 `/cops:<skill-name>` once this plugin is installed, e.g. `/cops:pr-sync`
 (`/pr-sync` in Cursor).
+
+- [`pr-start`](skills/pr-start/SKILL.md) — turn a confirmed task card into a pushed draft PR (slash-only).
+- [`pr-note`](skills/pr-note/SKILL.md) — leave `Note:` / `Drive-by:` reasoning on your own PR.
+- [`pr-review`](skills/pr-review/SKILL.md) — draft labeled comments on a PR and post one confirmed `COMMENT` review.
+- [`pr-address`](skills/pr-address/SKILL.md) — address unresolved review threads on your PR.
+- [`pr-sync`](skills/pr-sync/SKILL.md) — rebase a PR and refresh its title, description, and changeset.
 
 ## Setup
 
@@ -22,6 +28,33 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 
 The agents need no setup of their own: installing `cops` makes them
 available, and the skills call them.
+
+## Status line
+
+In Claude Code, `cops` adds a status line entry that shows the memory state and the current branch's PR and CI, for example (Claude Code labels the entry `cops`):
+
+```text
+memory: octocat · PR #45 · CI ✗ 1/6
+```
+
+- **Memory:** `memory: <login>`, `memory: ✗ (no login)`, `memory: ✗ (off)` (no path configured), or `memory: ✗ (bad path)` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
+- **PR and CI:** `PR #<n>` with `CI ✓`, `CI ✗ <failed>/<total>`, `CI … <passed>/<total>` while checks run, or `no CI`; a closed or merged PR shows its state instead. It needs `gh` logged in; without it, only the branch name shows. Outside a Git repository this part is left out.
+
+It refreshes at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes.
+
+## Threads and agents pane
+
+In Claude Code, a pane with two sections opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-threads` opens it again. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-threads` shows it at any width.
+
+- **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out. It needs `gh` logged in; without it, the section says so.
+- **Agents:** each `cops:pr-oracle` and `cops:pr-sidekick` call this session, with what it was given and what it returned:
+  - pr-oracle: its mode, and the `memory-root` and `memory-login` it was passed;
+  - pr-sidekick: the `Rules that apply:` line it was passed, and a red warning if its prompt carried `memory-root`, which it must never get;
+  - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Background calls show as running in the background.
+
+The threads refresh like the status line. No model is called; the grouping comes from who commented last.
+
+Both live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts) and [`hooks/pr-panel.ts`](hooks/pr-panel.ts). Cursor doesn't load the module.
 
 ## Agents
 
@@ -49,6 +82,15 @@ available, and the skills call them.
 
 ### When the skills consult the oracle
 
+- `pr-start` — `scout-repo` + `brief-task` in one call (how to run tests,
+  the title prefix, the PR template, and the remembered rules for the
+  sidekick) before you confirm the task card, then `sweep-diff` on the
+  commits the fix loop makes, before anything is pushed or the draft PR
+  opens.
+- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
+  `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
+  `Question:` one of them already answers.
+- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review.
 - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
   threads, the rules each matches, and how to run tests), then
   `sweep-diff` on each batch. A subagent implements low-risk asks, up
@@ -59,10 +101,6 @@ available, and the skills call them.
   the subagent that rebases and drafts, then `grill-description` on the
   draft before applying it (flagging claims the diff doesn't back without
   writing memory).
-- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review.
-- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
-  `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
-  `Question:` one of them already answers.
 - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
   its code survey starts from.
 - `oss:issue-create` — `scout-repo` for the issue template.
@@ -73,12 +111,14 @@ available, and the skills call them.
   `brief-task` once a fix option is picked, then `sweep-diff` on the fix a
   subagent commits.
 - **Any other coding task** ("implement this feature", "implement PR for
-  #123") — no skill runs, so the oracle's own description asks the main
-  chat to call it: `scout-repo` + `brief-task` before writing code, then
-  `sweep-diff` before committing or pushing. This is the model's call, so a
-  small change may skip it; for a guarantee, add the same line to your
-  `~/.claude/CLAUDE.md`. Shared convention rules (title prefix, non-closing
-  issue references) and the `pr-note` suggestion only come with the skills.
+  #123") — for a guaranteed path, run `/cops:pr-start`: it makes every
+  oracle call above, confirms a task card with you, and opens a draft PR.
+  Without it, the oracle's own description asks the main chat to call it:
+  `scout-repo` + `brief-task` before writing code, then `sweep-diff` before
+  committing or pushing. That is the model's call, so a small change may
+  skip it; add the same line to your `~/.claude/CLAUDE.md` to make it
+  stick. Shared convention rules (title prefix, non-closing issue
+  references) and the `pr-note` suggestion only come with the skills.
 
 ### Workspace memory
 

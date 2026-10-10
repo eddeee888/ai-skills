@@ -50,7 +50,7 @@ Say plainly that a bug analysis has not confirmed the bug is real. This skill en
 - Unfiled plain-text bug and user wants it filed → hand off to `issue-create`, carrying the root-cause hypothesis. Do not draft it here.
 - Unfiled plain-text feature and user wants it filed → because `issue-create` drafts only bug reports, draft the title/body here using the repository's feature-request template when present and link sources (`CONVENTIONS-posts.md` → "Citing sources"). Show it and wait for confirmation. Then sign the body as above, write title/body files, and run `gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>` (`CONVENTIONS-github.md` → "Passing drafted text to `gh`").
 
-Never post a draft before confirmation.
+Show each draft as one question (`CONVENTIONS-posts.md` → "Approving drafts: one question per item"). Never post a draft before confirmation.
 
 ## Handoffs
 

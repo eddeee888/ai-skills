@@ -1,7 +1,7 @@
 {
   "name": "cops",
   "displayName": "Code Ops",
-  "version": "0.1.6",
+  "version": "0.1.10",
   "description": "Skills for working with pull requests — reviewing, describing, syncing, or otherwise assisting with the PR lifecycle.",
   "author": { "name": "eddeee888" },
   "license": "MIT",
@@ -11,6 +11,7 @@
   "supportUrl": "https://github.com/eddeee888/ai-skills/issues",
   "termsOfServiceUrl": "https://github.com/eddeee888/ai-skills/blob/main/LICENSE",
   "icon": "./assets/logo.svg",
+  "types": "./types/index.d.ts",
   "keywords": ["pr", "github", "review"],
   "userConfig": {
     "memory_path": {
