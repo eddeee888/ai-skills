@@ -84,6 +84,18 @@ export type InboxItem = {
   pr?: number
 }
 
+/**
+ * How often a remembered rule matched a pr-oracle brief-task or sweep-diff reply, kept across sessions in
+ * `$.store` under the key `ruleUsage`, by a hash of the rule's normalized text. Times are `$.clock.now()`.
+ */
+export type RuleUsage = {
+  count: number
+  firstSeen: number
+  lastSeen: number
+  /** The latest times it matched, oldest first, capped. */
+  recent: number[]
+}
+
 declare module 'claude-code' {
   interface PluginState {
     cops: {
@@ -103,6 +115,10 @@ declare module 'claude-code' {
       openItems: InboxItem[]
       /** The running cops skill and the labels of its handoffs made so far; null before one runs. */
       checklist: { skill: string; ticked: string[] } | null
+      /** The COPS HQ pane's tab: `hq` shows threads, activity and inbox; `rules` shows remembered rules' usage. */
+      paneTab: 'hq' | 'rules'
+      /** The rules of the personal and team MEMORY.md, without their evidence, as the status line last read them. */
+      memoryRules: { rule: string; source: 'personal' | 'team' }[]
     }
   }
 }

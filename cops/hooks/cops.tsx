@@ -7,12 +7,13 @@ import { checkLoaded, checkTool, EXPECTED_HANDOFFS, tickedBy } from './orchestra
 import { describeActivity, describeAgent, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, snippet, SPINNER_MS, summarize, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 
 // The plugin's one hooks module: the status line, the COPS HQ pane of threads,
-// the next skill, skill runs with their agent calls and orchestration checks, and the memory inbox, and the band
-// offering to remember a rule the person typed. What each says is worked out in status-line.ts, pr-panel.ts,
-// orchestration.ts, memory-inbox.ts and rule-band.ts.
+// the next skill, skill runs with their agent calls and orchestration checks, and the memory inbox, its Rules tab of
+// remembered rules' usage, and the band offering to remember a rule the person typed. What each says is worked out in
+// status-line.ts, pr-panel.ts, orchestration.ts, memory-inbox.ts, rule-usage.ts and rule-band.ts.
 
 const REFRESH_MS = 120_000
 // Bash commands that can change the branch or its PR.
@@ -26,6 +27,8 @@ const INBOX_LIMIT = 50
 // The `$.store` key of the `kind: text` lines dropped from the inbox, kept so they aren't collected again.
 const DROPPED = 'dropped'
 const DROPPED_LIMIT = 200
+// The `$.store` key of how often each remembered rule matched a brief-task or sweep-diff reply, kept across sessions.
+const RULE_USAGE = 'ruleUsage'
 
 const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' })
 const handled = atom({ plugin: 'cops', key: 'handled' } as const, [])
@@ -36,6 +39,8 @@ const ruleOffer = atom({ plugin: 'cops', key: 'ruleOffer' } as const, null)
 const isMemoryOn = atom({ plugin: 'cops', key: 'isMemoryOn' } as const, false)
 const openItems = atom({ plugin: 'cops', key: 'openItems' } as const, [])
 const checklist = atom({ plugin: 'cops', key: 'checklist' } as const, null)
+const paneTab = atom({ plugin: 'cops', key: 'paneTab' } as const, 'hq')
+const memoryRules = atom({ plugin: 'cops', key: 'memoryRules' } as const, [])
 
 const run = async ($: EngineInterface, argv: readonly string[]) => {
   try {
@@ -64,6 +69,35 @@ const reportFailure = ($: EngineInterface, { step, what, error }: { step: string
   } catch {}
 }
 
+// The personal and team MEMORY.md that memory-context.sh's output names, and their rules; a file that can't be read is undefined.
+const readMemory = async ($: EngineInterface, { context }: { context: string }): Promise<{ personal?: string; team?: string; rules: { rule: string; source: 'personal' | 'team' }[] }> => {
+  const readFile = async ({ file }: { file: string }): Promise<string | undefined> => {
+    try {
+      return await $.fs.read(file)
+    } catch {
+      return undefined
+    }
+  }
+  // The script's resolved root, so PR_MEMORY_PATH counts as much as the option.
+  const root = /^COPS memory root: (.+)$/m.exec(context)?.[1]
+  const memoryLogin = /^COPS memory login: (\S+)$/m.exec(context)?.[1]
+  if (!root) {
+    return { rules: [] }
+  }
+  const [personal, team] = await Promise.all([
+    memoryLogin ? readFile({ file: `${root}/memory/users/${memoryLogin}/MEMORY.md` }) : undefined,
+    readFile({ file: `${root}/memory/team/MEMORY.md` }),
+  ])
+  return {
+    personal,
+    team,
+    rules: [
+      ...(personal === undefined ? [] : parseEntries({ text: personal }).map(rule => ({ rule, source: 'personal' }))),
+      ...(team === undefined ? [] : parseEntries({ text: team }).map(rule => ({ rule, source: 'team' }))),
+    ],
+  }
+}
+
 // Status line
 
 let hasWarnedCapacity = false
@@ -77,23 +111,16 @@ const memoryPart = async ($: EngineInterface, { path, login }: { path: string; l
     $.ui.invalidate('ui.render')
   }
   if (ran?.exitCode !== 0) return undefined
-  const lineCount = async ({ file }: { file: string }): Promise<number | undefined> => {
-    try {
-      return countLines({ text: await $.fs.read(file) })
-    } catch {
-      return undefined
-    }
+  const files = await readMemory($, { context: ran.stdout })
+  const usage = {
+    personal: files.personal === undefined ? undefined : countLines({ text: files.personal }),
+    team: files.team === undefined ? undefined : countLines({ text: files.team }),
   }
-  // The script's resolved root, so PR_MEMORY_PATH counts as much as the option.
-  const root = /^COPS memory root: (.+)$/m.exec(ran.stdout)?.[1]
-  const memoryLogin = /^COPS memory login: (\S+)$/m.exec(ran.stdout)?.[1]
-  const [personal, team] = root
-    ? await Promise.all([
-        memoryLogin ? lineCount({ file: `${root}/memory/users/${memoryLogin}/MEMORY.md` }) : undefined,
-        lineCount({ file: `${root}/memory/team/MEMORY.md` }),
-      ])
-    : []
-  const usage = { personal, team }
+  // The Rules tab lists these.
+  if (JSON.stringify(await read($, memoryRules)) !== JSON.stringify(files.rules)) {
+    await update($, memoryRules, () => files.rules)
+    $.ui.invalidate('ui.render')
+  }
   const warning = describeCapacityWarning({ usage })
   if (warning && !hasWarnedCapacity) {
     hasWarnedCapacity = true
@@ -437,6 +464,24 @@ export const register: Register = (on, options) => {
       } catch (error) {
         reportFailure($, { step: 'inbox', what: 'collect memory lines for the inbox', error })
       }
+      // Counts the remembered rules a plain brief-task or a sweep-diff reply cites, while memory is on.
+      // A `for: pr-sidekick` brief lists every rule that could apply, so it doesn't show which rules fire.
+      try {
+        const isSidekickBrief = /^for:\s*pr-sidekick\b/mi.test(e.prompt)
+        if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !isSidekickBrief))) {
+          const context = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+          if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
+            const { rules } = await readMemory($, { context: context.stdout })
+            const keys = matchEntries({ entries: rules.map(one => one.rule), cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
+            if (keys.length > 0) {
+              await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, now: await $.clock.now() }))
+              $.ui.invalidate('ui.render')
+            }
+          }
+        }
+      } catch (error) {
+        reportFailure($, { step: 'rule-usage', what: 'count remembered rule usage', error })
+      }
     }
     return ran
   }).catch(($, e, next) => next(e))
@@ -530,6 +575,9 @@ export const register: Register = (on, options) => {
         {call.flags?.map(flag => <Text key={`flag-${call.id}-${flag}`} color="error" wrap="truncate-end">{indent}  ⚑ {flag}</Text>)}
       </Box>
     )
+    const isOn = await read($, isMemoryOn)
+    // The Rules tab shows only while memory is on.
+    const tab = isOn ? await read($, paneTab) : 'hq'
     // A store that can't be read hides the inbox, not the pane.
     // The inbox stays in the store while memory is off, and shows again once it's on.
     const stored = async (): Promise<InboxItem[]> => {
@@ -540,7 +588,11 @@ export const register: Register = (on, options) => {
         return []
       }
     }
-    const inbox = (await read($, isMemoryOn)) ? [...(await stored()), ...(await read($, openItems))] : []
+    const inbox = isOn ? [...(await stored()), ...(await read($, openItems))] : []
+    const sources = tab === 'rules' ? await read($, memoryRules) : []
+    const rules = tab === 'rules'
+      ? describeRules({ entries: sources.map(one => one.rule), usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE).catch(() => undefined) }), now })
+      : undefined
 
     const row = (thread: Thread) => {
       const isHandled = done.includes(thread.id)
@@ -585,8 +637,42 @@ export const register: Register = (on, options) => {
       'needs-gh': 'Threads: needs gh, logged in.',
     }
 
+    // HQ | Rules, while memory is on; the tab shown is drawn as the primary button.
+    const tabs = isOn && (
+      <Box flexDirection="row" gap={1}>
+        <Button key="tab-hq" label="HQ" variant={tab === 'hq' ? 'primary' : undefined} dimColor={tab !== 'hq'} onPress={() => update($, paneTab, () => 'hq')} />
+        <Button key="tab-rules" label="Rules" variant={tab === 'rules' ? 'primary' : undefined} dimColor={tab !== 'rules'} onPress={() => update($, paneTab, () => 'rules')} />
+      </Box>
+    )
+
+    if (rules) {
+      return (
+        <Box flexDirection="column" gap={1}>
+          {tabs}
+          <Box flexDirection="column">
+            <Text bold>Stale rules ({rules.stale.length})</Text>
+            <Text dimColor>Not matched by a brief or sweep in 30 days, or ever.</Text>
+            {rules.stale.length === 0 ? <Text dimColor>none</Text> : rules.stale.map((row, index) => (
+              <Box key={`stale-${row.key}`} flexDirection="row" gap={1}>
+                <Text wrap="truncate-end">{row.rule}<Text dimColor> · {describeUse({ use: row.use, now })}</Text></Text>
+                <Button key={`prune-${index}`} label="Prune" onPress={() => $.prompt.fill({ text: `${sources.find(one => one.rule === row.rule)?.source === 'team' ? 'record-team: ' : ''}Use learn-feedback to prune this remembered rule: ${row.rule}` })} />
+              </Box>
+            ))}
+          </Box>
+          <Box flexDirection="column">
+            <Text bold>Often fired ({rules.often.length})</Text>
+            <Text dimColor>Matched 5+ times in 30 days: CLAUDE.md candidates.</Text>
+            {rules.often.length === 0 ? <Text dimColor>none</Text> : rules.often.map(row => (
+              <Text key={`often-${row.key}`} wrap="truncate-end">{row.rule}<Text dimColor> · {row.recentUses} in 30d · {describeUse({ use: row.use, now })}</Text></Text>
+            ))}
+          </Box>
+        </Box>
+      )
+    }
+
     return (
       <Box flexDirection="column" gap={1}>
+        {tabs}
         {view.status === 'ready' ? (
           <Box flexDirection="column" gap={1}>
             <Text bold>Threads · <Link href={view.url}>{`PR #${view.pr}`}</Link>{view.state !== 'OPEN' && ` (${view.state.toLowerCase()})`}</Text>
