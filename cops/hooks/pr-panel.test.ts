@@ -218,6 +218,11 @@ describe('next step', () => {
     test(`points the author at pr-address and fills the prompt (${surface})`, async ($, on) => {
       world(on, { graphql: withViewer('octocat') })
       const fills: string[] = []
+      const toasts: string[] = []
+      on('ui.toast', ($, e) => {
+        toasts.push(e.text)
+        return { value: undefined }
+      })
       on('prompt.fill', ($, e) => {
         fills.push(e.text)
         return { isFilled: true }
@@ -228,9 +233,26 @@ describe('next step', () => {
       expect(await text(ui)).toContain('Next: /cops:pr-address · 2 threads need you')
       await ui.press({ key: 'next-skill' })
       expect(fills).toEqual(['/cops:pr-address '])
+      expect(toasts).toEqual([])
       await ui.unmount()
     })
   }
+
+  test('toasts the skill to type when the prompt is not filled', async ($, on) => {
+    world(on, { graphql: withViewer('octocat') })
+    const toasts: string[] = []
+    on('ui.toast', ($, e) => {
+      toasts.push(e.text)
+      return { value: undefined }
+    })
+    on('prompt.fill', () => ({ isFilled: false }))
+    await start($)
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('Next:'))
+    await ui.press({ key: 'next-skill' })
+    expect(toasts).toEqual(["Couldn't fill the prompt — type /cops:pr-address"])
+    await ui.unmount()
+  })
 
   test('points a reviewer at pr-review', async ($, on) => {
     world(on, { graphql: withViewer('alice') })

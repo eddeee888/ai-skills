@@ -539,7 +539,9 @@ export const register: Register = (on, options) => {
               <Text bold>Next:</Text> /{hint.skill} · {hint.why}
               {lastRun && <Text dimColor> · ran as #{lastRun.n}</Text>}
             </Text>
-            <Button key="next-skill" label="Use" onPress={() => $.prompt.fill({ text: `/${hint.skill} ` })} />
+            <Button key="next-skill" label="Use" onPress={async () => {
+              if (!(await $.prompt.fill({ text: `/${hint.skill} ` })).isFilled) $.ui.toast(`Couldn't fill the prompt — type /${hint.skill}`)
+            }} />
           </Box>
         )}
         <Box flexDirection="column">
