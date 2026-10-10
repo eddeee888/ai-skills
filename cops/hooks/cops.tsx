@@ -20,6 +20,7 @@ const TITLE = 'COPS threads and agents'
 const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' } as Threads)
 const handled = atom({ plugin: 'cops', key: 'handled' } as const, [] as string[])
 const agents = atom({ plugin: 'cops', key: 'agents' } as const, [] as AgentCall[])
+const isDismissed = atom({ plugin: 'cops', key: 'isDismissed' } as const, false)
 
 const run = async ($: EngineInterface, argv: readonly string[]) => {
   try {
@@ -85,6 +86,14 @@ const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
   }
 }
 
+// Opens the pane unasked when it has something to show, unless the person
+// closed it. Unasked, a narrow terminal keeps it undrawn until it widens.
+const autoOpen = async ($: EngineInterface) => {
+  try {
+    if (!(await read($, isDismissed))) await $.ui.open({ id: PANE, title: TITLE })
+  } catch {}
+}
+
 let isThreadsRefreshing = false
 
 const refreshThreads = async ($: EngineInterface) => {
@@ -93,6 +102,8 @@ const refreshThreads = async ($: EngineInterface) => {
   try {
     const next = await fetchThreads($)
     await update($, threads, () => next)
+    const done = await read($, handled)
+    if (next.status === 'ready' && next.threads.some(one => one.move === 'you' && !done.includes(one.id))) await autoOpen($)
   } finally {
     isThreadsRefreshing = false
   }
@@ -140,9 +151,16 @@ export const register: Register = (on, options) => {
   })
 
   on('command.run', { command: 'cops-threads' }, async $ => {
+    await update($, isDismissed, () => false)
     void refreshThreads($).catch(() => undefined)
     const opened = await $.ui.open({ id: PANE, title: TITLE })
     return { text: opened.isPlaced ? 'Opened the COPS threads and agents pane.' : 'This surface doesn’t show panes.' }
+  })
+
+  on('ui.close', { id: PANE }, async ($, e, next) => {
+    const closed = await next(e)
+    if (e.origin.kind === 'person') await update($, isDismissed, () => true).catch(() => undefined)
+    return closed
   })
 
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
@@ -158,6 +176,7 @@ export const register: Register = (on, options) => {
     const startedAt = await $.clock.now()
     const call: AgentCall = { id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall(agent, e.prompt) }
     await update($, agents, list => [...list, call].slice(-50))
+    void autoOpen($)
     const ran = await next(e)
     const durationMs = await elapsedSince($, startedAt)
     if (ran.deny !== undefined || ran.isError === true) {

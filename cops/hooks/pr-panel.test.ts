@@ -36,7 +36,12 @@ const RESPONSE: ThreadsResponse = {
 
 // Answers the commands the plugin runs: git, gh pr view, gh api graphql.
 const world = (on: On, answers: { pr?: ProcessRunResult; graphql?: ProcessRunResult } = {}) => {
+  const opens: string[] = []
   mock.clock(on)
+  on('ui.open', ($, e) => {
+    opens.push(e.id)
+    return { value: { isPlaced: true } }
+  })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
   on('command.register', ($, e) => ({ value: { command: e.name } }))
   on('ui.status', () => ({ value: undefined }))
@@ -47,6 +52,7 @@ const world = (on: On, answers: { pr?: ProcessRunResult; graphql?: ProcessRunRes
     return { value: answers.pr ?? ok(JSON.stringify({ number: 7, state: 'OPEN', statusCheckRollup: [] })) }
   })
   on('tool.call', { tool: 'Bash' }, () => ({ result: { stdout: '', stderr: '', interrupted: false }, text: '' }) as never)
+  return { opens }
 }
 
 const start = ($: Engine) => $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
@@ -140,6 +146,34 @@ describe('agents', () => {
     expect(drawn).toContain('pr-sidekick was given memory-root')
     expect(drawn).not.toContain('Explore')
     await ui.unmount()
+  })
+})
+
+describe('opening by itself', () => {
+  test('opens when a thread needs you', async ($, on) => {
+    const { opens } = world(on)
+    await start($)
+    await until(async () => opens.includes('cops-threads'))
+  })
+
+  test('stays shut when every thread waits on the reviewer', async ($, on) => {
+    const waiting = { data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes: [node('t2', 'octocat')] } } } } }
+    const { opens } = world(on, { graphql: ok(JSON.stringify(waiting)) })
+    await start($)
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('Waiting on reviewer (1)'))
+    expect(opens).toEqual([])
+    await ui.unmount()
+  })
+
+  test('opens when a cops agent starts, not for other agents', async ($, on) => {
+    const { opens } = world(on, { pr: failed('no pull requests found for branch "feat"') })
+    on('tool.call', { tool: 'Agent' }, () => ({ result: { status: 'async_launched', agentId: 'a', description: 'd' }, text: '' }) as never)
+    await start($)
+    await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
+    expect(opens).toEqual([])
+    await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    await until(async () => opens.includes('cops-threads'))
   })
 })
 

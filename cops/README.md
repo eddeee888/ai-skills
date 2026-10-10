@@ -44,7 +44,7 @@ It refreshes at session start, after Bash commands that switch, commit, push, or
 
 ## Threads and agents pane
 
-In Claude Code, `/cops-threads` opens a pane with two sections:
+In Claude Code, a pane with two sections opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-threads` opens it again. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-threads` shows it at any width.
 
 - **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out. It needs `gh` logged in; without it, the section says so.
 - **Agents:** each `cops:pr-oracle` and `cops:pr-sidekick` call this session, with what it was given and what it returned:

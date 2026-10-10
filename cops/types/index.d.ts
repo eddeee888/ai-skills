@@ -47,6 +47,8 @@ declare module 'claude-code' {
       /** Thread ids marked handled locally; cleared by a push. */
       handled: string[]
       agents: AgentCall[]
+      /** The person closed the pane, so it stops opening by itself; `/cops-threads` resets it. */
+      isDismissed: boolean
     }
   }
 }
