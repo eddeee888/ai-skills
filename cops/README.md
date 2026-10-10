@@ -56,7 +56,7 @@ You edit and send the filled prompt yourself; the band never writes memory or ca
 
 In Claude Code, a pane with two sections opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-threads` opens it again. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-threads` shows it at any width.
 
-- **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out. It needs `gh` logged in; without it, the section says so.
+- **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out, and so are your own `Note:` / `Drive-by:` threads once you 👍 them (they return if someone replies). It needs `gh` logged in; without it, the section says so.
 - **Agents:** each `cops:pr-oracle` and `cops:pr-sidekick` call this session, with what it was given and what it returned:
   - pr-oracle: its mode, and the `memory-root` and `memory-login` it was passed;
   - pr-sidekick: the `Rules that apply:` line it was passed, and a red warning if its prompt carried `memory-root`, which it must never get;

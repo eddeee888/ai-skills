@@ -12,7 +12,8 @@ export const THREADS_QUERY = `query($owner: String!, $name: String!, $number: In
       reviewThreads(first: 100) {
         nodes {
           id isResolved isOutdated path line
-          comments(last: 1) { nodes { author { login } body url } }
+          comments(last: 1) { totalCount nodes { author { login } body url } }
+          first: comments(first: 1) { nodes { author { login } body reactions(content: THUMBS_UP, first: 50) { nodes { user { login } } } } }
         }
       }
     }
@@ -20,9 +21,11 @@ export const THREADS_QUERY = `query($owner: String!, $name: String!, $number: In
 }`
 
 type Comment = { author?: { login: string } | null; body: string; url: string }
+type FirstComment = { author?: { login: string } | null; body: string; reactions: { nodes: { user?: { login: string } | null }[] } }
 type ThreadNode = {
   id: string; isResolved: boolean; isOutdated: boolean; path: string; line: number | null
-  comments: { nodes: Comment[] }
+  comments: { totalCount: number; nodes: Comment[] }
+  first: { nodes: FirstComment[] }
 }
 export type ThreadsResponse = {
   data?: { repository?: { pullRequest?: { author?: { login: string } | null; reviewThreads: { nodes: ThreadNode[] } } | null } | null }
@@ -33,6 +36,13 @@ export const snippet = (text: string) => {
   return line.length > 80 ? `${line.slice(0, 79)}…` : line
 }
 
+const isAcknowledgedNote = (node: ThreadNode, author?: string) => {
+  const first = node.first.nodes[0]
+  return !!author && node.comments.totalCount === 1 && first?.author?.login === author
+    && /^\s*(\*\*)?(Note|Drive-by):\1/.test(first.body)
+    && first.reactions.nodes.some(one => one.user?.login === author)
+}
+
 // Open threads only; whoever spoke last decides whose move it is.
 export const toThreads = (response: ThreadsResponse): Thread[] => {
   const pr = response.data?.repository?.pullRequest
@@ -40,6 +50,8 @@ export const toThreads = (response: ThreadsResponse): Thread[] => {
   const author = pr.author?.login
   return pr.reviewThreads.nodes
     .filter(node => !node.isResolved)
+    // The author's own Note:/Drive-by: they have 👍'd is done, until someone replies.
+    .filter(node => !isAcknowledgedNote(node, author))
     .map(node => {
       const last = node.comments.nodes.at(-1)
       const lastAuthor = last?.author?.login ?? 'ghost'

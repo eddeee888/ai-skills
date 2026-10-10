@@ -11,10 +11,15 @@ const failed = (stderr: string): ProcessRunResult => ({
   exitCode: 1, stdout: '', stderr, isStdoutTruncated: false, isStderrTruncated: false,
 })
 
-const node = (id: string, author: string, extra: { isResolved?: boolean; isOutdated?: boolean } = {}) => ({
-  id, isResolved: false, isOutdated: false, path: `src/${id}.ts`, line: 3, ...extra,
-  comments: { nodes: [{ author: { login: author }, body: `${id} says hi\nmore`, url: `https://example.com/${id}` }] },
-})
+const node = (id: string, author: string, extra: { isResolved?: boolean; isOutdated?: boolean; body?: string; thumbs?: string[]; totalCount?: number; lastAuthor?: string } = {}) => {
+  const { body = `${id} says hi\nmore`, thumbs = [], totalCount = 1, lastAuthor = author, ...rest } = extra
+  const last = { author: { login: lastAuthor }, body: lastAuthor === author ? body : 'reply', url: `https://example.com/${id}` }
+  return {
+    id, isResolved: false, isOutdated: false, path: `src/${id}.ts`, line: 3, ...rest,
+    comments: { totalCount, nodes: [last] },
+    first: { nodes: [{ author: { login: author }, body, reactions: { nodes: thumbs.map(login => ({ user: { login } })) } }] },
+  }
+}
 
 const RESPONSE: ThreadsResponse = {
   data: {
@@ -183,6 +188,20 @@ describe('descriptions', () => {
     expect(threads.map(one => [one.id, one.move])).toEqual([['t1', 'you'], ['t2', 'reviewer'], ['t4', 'you']])
     expect(threads[0]?.lastBody).toBe('t1 says hi')
     expect(toThreads({})).toEqual([])
+  })
+
+  test('hides the author\'s own note once they 👍 it', () => {
+    const note = '**Note:** heads up'
+    const ids = (nodes: ReturnType<typeof node>[]) => toThreads({ data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes } } } } }).map(one => one.id)
+    expect(ids([node('a', 'octocat', { body: note, thumbs: ['octocat'] })])).toEqual([])
+    expect(ids([node('b', 'octocat', { body: '**Drive-by:** x', thumbs: ['octocat'] })])).toEqual([])
+    expect(ids([node('c', 'octocat', { body: note })])).toEqual(['c'])
+    expect(ids([node('d', 'octocat', { body: note, thumbs: [] })])).toEqual(['d'])
+    expect(ids([node('e', 'octocat', { body: note, thumbs: ['alice'] })])).toEqual(['e'])
+    expect(ids([node('f', 'octocat', { body: note, thumbs: ['octocat'], totalCount: 2, lastAuthor: 'alice' })])).toEqual(['f'])
+    expect(ids([node('g', 'octocat', { body: 'plain', thumbs: ['octocat'] })])).toEqual(['g'])
+    expect(ids([node('h', 'octocat', { body: 'Note: plain label', thumbs: ['octocat'] })])).toEqual([])
+    expect(ids([node('i', 'alice', { body: note, thumbs: ['octocat'] })])).toEqual(['i'])
   })
 
   test('calls', () => {
