@@ -412,6 +412,11 @@ validate_behavioral_contracts() {
       '`CONVENTIONS-posts.md` → "Approving drafts: one question per item"'
   done
 
+  require_order "docs/memory-flow.html" "COPS skills in PR lifecycle order" \
+    ">pr-start<" ">pr-note<" ">pr-review<" ">pr-address<" ">pr-sync<"
+  require_order "cops/README.md" "COPS skills in PR lifecycle order" \
+    '- [`pr-start`]' '- [`pr-note`]' '- [`pr-review`]' '- [`pr-address`]' '- [`pr-sync`]'
+
   require_markers "cops/skills/pr-start/SKILL.md" "slash-only skill" \
     "disable-model-invocation: true"
   require_order "cops/skills/pr-start/SKILL.md" "task card before any edit" \
