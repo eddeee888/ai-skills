@@ -404,6 +404,11 @@ validate_behavioral_contracts() {
   require_order "cops/skills/pr-note/SKILL.md" "note confirmation before posting" \
     "## 4. Confirm" "Never post without confirmation." "## 5. Post and report"
 
+  require_order "docs/memory-flow.html" "COPS skills in PR lifecycle order" \
+    ">pr-start<" ">pr-note<" ">pr-review<" ">pr-address<" ">pr-sync<"
+  require_order "cops/README.md" "COPS skills in PR lifecycle order" \
+    '- [`pr-start`]' '- [`pr-note`]' '- [`pr-review`]' '- [`pr-address`]' '- [`pr-sync`]'
+
   require_markers "cops/skills/pr-start/SKILL.md" "slash-only skill" \
     "disable-model-invocation: true"
   require_order "cops/skills/pr-start/SKILL.md" "task card before any edit" \

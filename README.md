@@ -46,7 +46,8 @@ cops/agents/*.md, cops/hooks/memory-context.sh, CONVENTIONS-orchestration.md,
 cops/skills/*/SKILL.md, oss/skills/*/SKILL.md and
 cops/references/pr-oracle/modes/*.md. Show only the access paths the code
 allows, and label every arrow with what passes along it. Keep the layout,
-colors and legend. Run `pnpm render:memory-flow`, look at
+colors, legend, and the COPS skills in PR lifecycle order (pr-start,
+pr-note, pr-review, pr-address, pr-sync). Run `pnpm render:memory-flow`, look at
 docs/memory-flow.png, then commit and push.
 ```
 

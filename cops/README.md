@@ -7,10 +7,10 @@ Skills live under `skills/<skill-name>/SKILL.md` and are invoked as
 (`/pr-sync` in Cursor).
 
 - [`pr-start`](skills/pr-start/SKILL.md) — turn a confirmed task card into a pushed draft PR (slash-only).
+- [`pr-note`](skills/pr-note/SKILL.md) — leave `Note:` / `Drive-by:` reasoning on your own PR.
+- [`pr-review`](skills/pr-review/SKILL.md) — draft labeled comments on a PR and post one confirmed `COMMENT` review.
 - [`pr-address`](skills/pr-address/SKILL.md) — address unresolved review threads on your PR.
 - [`pr-sync`](skills/pr-sync/SKILL.md) — rebase a PR and refresh its title, description, and changeset.
-- [`pr-review`](skills/pr-review/SKILL.md) — draft labeled comments on a PR and post one confirmed `COMMENT` review.
-- [`pr-note`](skills/pr-note/SKILL.md) — leave `Note:` / `Drive-by:` reasoning on your own PR.
 
 ## Setup
 
@@ -60,6 +60,10 @@ available, and the skills call them.
   sidekick) before you confirm the task card, then `sweep-diff` on the
   commits the fix loop makes, before anything is pushed or the draft PR
   opens.
+- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
+  `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
+  `Question:` one of them already answers.
+- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review.
 - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
   threads, the rules each matches, and how to run tests), then
   `sweep-diff` on each batch. A subagent implements low-risk asks, up
@@ -70,10 +74,6 @@ available, and the skills call them.
   the subagent that rebases and drafts, then `grill-description` on the
   draft before applying it (flagging claims the diff doesn't back without
   writing memory).
-- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review.
-- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
-  `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
-  `Question:` one of them already answers.
 - `oss:issue-analyze` — `scout-repo` in a monorepo, for the package map
   its code survey starts from.
 - `oss:issue-create` — `scout-repo` for the issue template.
