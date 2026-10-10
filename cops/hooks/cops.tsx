@@ -55,7 +55,9 @@ const run = async ($: EngineInterface, argv: readonly string[]) => {
 const failed = new Set<string>()
 
 const reportFailure = ($: EngineInterface, { step, what, error }: { step: string; what: string; error: unknown }): void => {
-  if (failed.has(step)) return
+  if (failed.has(step)) {
+    return
+  }
   failed.add(step)
   try {
     $.ui.toast(`COPS HQ couldn't ${what}: ${snippet(error instanceof Error ? error.message : String(error)) || 'unknown error'}`)
@@ -269,7 +271,9 @@ export const register: Register = (on, options) => {
 
   on('ui.close', { id: PANE }, async ($, e, next) => {
     const closed = await next(e)
-    if (e.origin.kind === 'person') await update($, isDismissed, () => true).catch(error => reportFailure($, { step: 'dismiss', what: 'remember the pane was closed', error }))
+    if (e.origin.kind === 'person') {
+      await update($, isDismissed, () => true).catch(error => reportFailure($, { step: 'dismiss', what: 'remember the pane was closed', error }))
+    }
     return closed
   })
 
