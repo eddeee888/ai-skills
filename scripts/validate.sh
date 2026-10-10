@@ -404,6 +404,19 @@ validate_behavioral_contracts() {
   require_order "cops/skills/pr-note/SKILL.md" "note confirmation before posting" \
     "## 4. Confirm" "Never post without confirmation." "## 5. Post and report"
 
+  require_order "docs/memory-flow.html" "COPS skills in PR lifecycle order" \
+    ">pr-start<" ">pr-note<" ">pr-review<" ">pr-address<" ">pr-sync<"
+  require_order "cops/README.md" "COPS skills in PR lifecycle order" \
+    '- [`pr-start`]' '- [`pr-note`]' '- [`pr-review`]' '- [`pr-address`]' '- [`pr-sync`]'
+
+  require_markers "cops/skills/pr-start/SKILL.md" "slash-only skill" \
+    "disable-model-invocation: true"
+  require_order "cops/skills/pr-start/SKILL.md" "task card before any edit" \
+    "## 3. Task card" "Nothing is edited, run or delegated before the user confirms the card." \
+    "## 4. Fix loop"
+  require_order "cops/skills/pr-start/SKILL.md" "sweep-diff before push" \
+    "## 5. Sweep" 'Nothing is pushed before a clean `sweep-diff`' "git push"
+
   require_markers "cops/references/pr-oracle/modes/draft-author-notes.md" "author note YAML" \
     "mode: draft-author-notes" "remove-instead:" "task source required"
   require_markers "cops/skills/pr-review/post-review.md" "headRefOid posting" \
@@ -423,6 +436,9 @@ validate_behavioral_contracts() {
     "A rule is **concrete** when" "Never turn vague input into a rule"
 
   local path
+  for path in "$ROOT"/cops/skills/pr-start/*.md; do
+    forbid_markers "${path#"$ROOT"/}" "self-contained cops skill" "oss:" "oss/" "/oss"
+  done
   for path in cops/agents/pr-oracle.md cops/agents/pr-sidekick.md cops/README.md \
     cops/.claude-plugin/plugin.json cops/.cursor-plugin/plugin.json; do
     forbid_markers "$path" "local or synchronized memory" \

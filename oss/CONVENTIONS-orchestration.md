@@ -15,7 +15,7 @@ When a skill names a handoff and the host can spawn a subagent, make it every ti
 - **Resume, don't restart.** After a question, carry question+answer and resume at that step, checking completed rebase/commit/push work.
 - **No way to spawn** means no subagent tool at all, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
 
-Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-sync` (Steps 2–6); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
+Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-sync` (Steps 2–6); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
 
 ## Handoffs in the final report
 
@@ -36,7 +36,7 @@ Handoffs:
 
 Oracle labels use the named mode(s), joined with ` + ` for a combined call. Other labels are the skill's named handoff. Omit inapplicable handoffs. If an honest mark would be unauthorized `✗`, invalid `inline`, invalid `fallback`, or an invented label, perform the handoff before reporting.
 
-Final-report users: `cops:pr-address`, `cops:pr-sync`, `cops:pr-review`, `cops:pr-note`, `oss:issue-analyze`, `oss:issue-create`, `oss:issue-verify`, and `oss:issue-fix`.
+Final-report users: every `cops` and `oss` skill.
 
 ## Companion plugin: `cops`
 
@@ -71,4 +71,4 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
 
 Review modes scout repository context, read complete PR evidence, verify new-side changed-line anchors, return structured YAML, and never write GitHub or memory. If the oracle is unavailable but a subagent tool exists, run one general read-only subagent with the oracle mode contract. No subagent capability → run it inline. Never replace review with `sweep-diff`.
 
-Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-sync` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `oss:issue-analyze` and `oss:issue-create` (`scout-repo`); `oss:issue-verify` (`scout-repo`, `brief-task`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).
+Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-sync` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (`scout-repo` + `brief-task`, `sweep-diff`); `oss:issue-analyze` and `oss:issue-create` (`scout-repo`); `oss:issue-verify` (`scout-repo`, `brief-task`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).

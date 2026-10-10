@@ -5,7 +5,7 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 ## Plugins
 
 - [`oss/`](oss/) — maintaining and contributing to open source projects: sizing, filing, verifying, and fixing issues. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`.
-- [`cops/`](cops/) **Code Ops** — working with pull requests: reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-sync`. Cursor: `/pr-sync`.
+- [`cops/`](cops/) **Code Ops** — working with pull requests: starting a draft PR from a task, reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
 
 `cops` also ships two agents, used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
 
@@ -46,7 +46,8 @@ cops/agents/*.md, cops/hooks/memory-context.sh, CONVENTIONS-orchestration.md,
 cops/skills/*/SKILL.md, oss/skills/*/SKILL.md and
 cops/references/pr-oracle/modes/*.md. Show only the access paths the code
 allows, and label every arrow with what passes along it. Keep the layout,
-colors and legend. Run `pnpm render:memory-flow`, look at
+colors, legend, and the COPS skills in PR lifecycle order (pr-start,
+pr-note, pr-review, pr-address, pr-sync). Run `pnpm render:memory-flow`, look at
 docs/memory-flow.png, then commit and push.
 ```
 
