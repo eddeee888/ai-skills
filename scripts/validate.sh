@@ -415,7 +415,7 @@ validate_behavioral_contracts() {
   require_order "docs/memory-flow.html" "COPS skills in PR lifecycle order" \
     ">pr-start<" ">pr-note<" ">pr-review<" ">pr-address<" ">pr-sync<"
   require_order "cops/README.md" "COPS skills in PR lifecycle order" \
-    '- [`pr-start`]' '- [`pr-note`]' '- [`pr-review`]' '- [`pr-address`]' '- [`pr-sync`]'
+    '| [`pr-start`]' '| [`pr-note`]' '| [`pr-review`]' '| [`pr-address`]' '| [`pr-sync`]'
 
   require_markers "cops/skills/pr-start/SKILL.md" "slash-only skill" \
     "disable-model-invocation: true"

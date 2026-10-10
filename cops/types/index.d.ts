@@ -18,8 +18,11 @@ export type Thread = {
 
 export type Threads =
   | { status: 'loading' | 'no-repo' | 'no-pr' | 'needs-gh' }
-  /** `url` is the PR's web page. */
-  | { status: 'ready'; pr: number; url: string; threads: Thread[] }
+  /**
+   * `url` is the PR's web page; `state` is whether it's still open. `isMine`: the viewer opened the PR (undefined when unknown);
+   * `isReviewed`: someone else commented in a thread; `hasNotes`: the author left a `Note:` / `Drive-by:`.
+   */
+  | { status: 'ready'; pr: number; url: string; state: 'OPEN' | 'MERGED' | 'CLOSED'; threads: Thread[]; isMine?: boolean; isReviewed: boolean; hasNotes: boolean }
 
 /** One cops subagent call this session. */
 export type AgentCall = {
@@ -41,6 +44,20 @@ export type AgentCall = {
   outcome?: string
   durationMs?: number
   tokens?: number
+}
+
+/** One skill expanded for the model this session. */
+export type SkillRun = {
+  /** Its number in the session, from 1; kept when older runs drop off the list. */
+  n: number
+  /** The skill's name as the engine gives it, e.g. `cops:pr-review`. */
+  skill: string
+  /** What followed the name, typed or passed to the Skill tool. */
+  args?: string
+  /** `you` typed the slash command, the `model` called the Skill tool, `other` covers the rest (a subagent preload). */
+  by: 'you' | 'model' | 'other'
+  /** `$.clock.now()` when it expanded. */
+  at: number
 }
 
 /**
@@ -66,6 +83,8 @@ declare module 'claude-code' {
       /** Thread ids marked handled locally; cleared by a push. */
       handled: string[]
       agents: AgentCall[]
+      /** This session's skill runs, oldest first. */
+      skills: SkillRun[]
       /** The person closed the pane, so it stops opening by itself; `/cops-hq` resets it. */
       isDismissed: boolean
       /** A rule-like sentence from the person's last prompt, offered above the prompt; null when there is none. */
