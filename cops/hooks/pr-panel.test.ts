@@ -195,6 +195,19 @@ describe('agents', () => {
     expect(await frame()).toBeUndefined()
     await ui.unmount()
   })
+
+  test('shows ✗, not a spinner, when a lower hook throws for the call', async ($, on) => {
+    world(on)
+    on('tool.call', { tool: 'Agent' }, () => {
+      throw new Error('kaboom')
+    })
+    await start($)
+    const ui = await mount($, 'terminal')
+    await expect($.tool.call({ tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })).rejects.toThrow()
+    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · rules: none'))
+    expect(await text(ui)).not.toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] 🦸 Sidekick/)
+    await ui.unmount()
+  })
 })
 
 describe('/cops-hq', () => {

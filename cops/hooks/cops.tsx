@@ -235,7 +235,13 @@ export const register: Register = (on, options) => {
     void autoOpen($)
     // Redraws the pane so the running call's spinner moves.
     const spin = $.clock.every(SPINNER_MS, () => $.ui.invalidate('ui.render'))
-    const ran = await next(e).finally(() => spin.cancel())
+    const ran = await next(e)
+      .finally(() => spin.cancel())
+      .catch(async error => {
+        // A lower hook threw: the row shows ✗ rather than spinning on, and the hook's catch still runs.
+        await setCall($, call.id, { state: 'failed', durationMs: await elapsedSince($, startedAt), outcome: snippet(error instanceof Error ? error.message : '') || 'failed' })
+        throw error
+      })
     const durationMs = await elapsedSince($, startedAt)
     if (ran.deny !== undefined || ran.isError === true) {
       await setCall($, call.id, { state: 'failed', durationMs, outcome: snippet(ran.deny ?? ran.text ?? '') || 'failed' })
