@@ -33,7 +33,7 @@ Explicitly read `./options.md`. Delegate root-cause tracing and shape 2–3 opti
 
 ## Step 4: Present 2-3 options, and ask
 
-Present the 2–3 options returned by `./options.md`, each with changes, blast radius, risk, and rough effort. Ask which the user wants. This is a hard gate: do not choose the fastest, infer approval, edit code, or run an implementation loop before selection.
+Present the 2–3 options returned by `./options.md`, each with changes, blast radius, risk, and rough effort. Ask which the user wants as one question, one option per fix (`CONVENTIONS-posts.md` → "Approving drafts: one question per item"). This is a hard gate: do not choose the fastest, infer approval, edit code, or run an implementation loop before selection.
 
 ## Step 5: Implement the chosen option
 

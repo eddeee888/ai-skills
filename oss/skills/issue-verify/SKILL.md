@@ -40,7 +40,7 @@ Look through the issue body and comments for one of:
 
 With a template field, name it: *“Could you share a link to a minimal reproduction? This issue template asks for one under '\<field name\>' — a CodeSandbox/StackBlitz link or a small repo works best.”* Without one, request exact package versions, a minimal sample, and expected versus actual behavior.
 
-Keep it short (`CONVENTIONS-posts.md` → "Comment body"). Show the exact draft and wait: “confirmed” means the user approved the wording, not that the reporter replied. Sign it `oss:issue-verify`, `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"), write it to a file, and only after confirmation run (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
+Keep it short (`CONVENTIONS-posts.md` → "Comment body"). Show the exact draft as one question (`CONVENTIONS-posts.md` → "Approving drafts: one question per item") and wait: “confirmed” means the user approved the wording, not that the reporter replied. Sign it `oss:issue-verify`, `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"), write it to a file, and only after confirmation run (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
 ```bash
 gh issue comment <number> --body-file <file>

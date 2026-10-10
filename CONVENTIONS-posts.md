@@ -69,3 +69,17 @@ Asks never use these prefixes. `cops:pr-note` posts author reasoning on the auth
 ## Critical changes
 
 A critical/dangerous change (including breaking or hacky user-impacting behavior) warrants a comment even if the checked path works. Raise `Issue:` and suggest a `// FIXME` naming the problem. An author note may answer `Question:` but never retires this.
+
+## Approving drafts: one question per item
+
+*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
+
+When a step shows drafts or choices and waits for the user, and the host has a structured question tool (`AskUserQuestion` on Claude Code), ask through it instead of printing one block:
+
+- **One question per item**, at most 4 per call, in order; more items take further calls. The question text holds the item's anchor (`path:line`) and its exact text as it would be posted or applied, never a summary. The header names the item in a few words.
+- **Options are the decision**: a draft → `Post` / `Drop`, or the step's own verbs; a choice between fixes or actions → one option per choice, trade-offs in its description.
+- **One draft** (a task card, an issue, one comment) → one question holding all of it.
+- **Free-text answer** → an edit: apply it and ask that item again.
+- **Dismissed** → stop and wait; post, apply, or edit nothing. An unanswered item is never approved.
+
+Act only on approved items, then report as the step says. Without such a tool, show the step's own block.

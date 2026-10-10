@@ -14,7 +14,7 @@ GitHub steps below are `gh` commands. Pick and keep one access route exactly as 
 
 Read these, in order:
 
-1. **The command argument.** An issue URL or number (any repository), a path to a spec or plan file, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` (review feedback) or `/cops:pr-sync` (stale description, rebase); this skill never continues an existing PR.
+1. **The command argument.** An issue URL or number (any repository), a path to a spec or plan file, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` (review feedback) or `/cops:pr-sync` (stale description, rebase).
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
@@ -47,7 +47,7 @@ Keep from the reply: the profile (test command, monorepo packages, template, `ov
 
 ## 3. Task card
 
-This is a hard gate. Show the card and wait for the user to confirm or edit it. Nothing is edited, run or delegated before the user confirms the card.
+This is a hard gate. Ask with the card as one question (`CONVENTIONS-posts.md` → "Approving drafts: one question per item"), else show it; wait for the user to confirm or edit it. Nothing is edited, run or delegated before the user confirms the card.
 
 ```text
 Task card
