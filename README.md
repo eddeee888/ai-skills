@@ -30,9 +30,15 @@ Run the repository checks (requires Bash, `jq`, and Perl):
 bash scripts/validate.sh
 ```
 
+To render the diagram, install the locked dependencies first:
+
+```bash
+pnpm install
+```
+
 ### Updating the diagram
 
-The diagram above is [`docs/memory-flow.png`](docs/memory-flow.png), rendered from [`docs/memory-flow.html`](docs/memory-flow.html) by `bash scripts/render-memory-flow.sh` (needs `jq` and `npx`). The script stamps plugin versions from the manifests, so a version bump only needs a re-run. When skills, agents, or memory access change, give an agent this prompt:
+The diagram above is [`docs/memory-flow.png`](docs/memory-flow.png), rendered from [`docs/memory-flow.html`](docs/memory-flow.html) by `pnpm render:memory-flow` (needs `jq` and pnpm). The script stamps plugin versions from the manifests, so a version bump only needs a re-run. When skills, agents, or memory access change, give an agent this prompt:
 
 ```text
 Update docs/memory-flow.html so the diagram matches the current code. Read
@@ -40,7 +46,7 @@ cops/agents/*.md, cops/hooks/memory-context.sh, CONVENTIONS-orchestration.md,
 cops/skills/*/SKILL.md, oss/skills/*/SKILL.md and
 cops/references/pr-oracle/modes/*.md. Show only the access paths the code
 allows, and label every arrow with what passes along it. Keep the layout,
-colors and legend. Run `bash scripts/render-memory-flow.sh`, look at
+colors and legend. Run `pnpm render:memory-flow`, look at
 docs/memory-flow.png, then commit and push.
 ```
 

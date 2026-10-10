@@ -30,7 +30,7 @@ check_budget() {
 
 # List matching repository files as NUL-delimited paths.
 repository_files() {
-  find "$ROOT" -type f -name "$1" ! -path '*/.git/*' -print0
+  find "$ROOT" -type f -name "$1" ! -path '*/.git/*' ! -path '*/node_modules/*' -print0
 }
 
 # Parse every JSON file with jq.
