@@ -250,7 +250,14 @@ export const register: Register = (on, options) => {
     } else {
       const result = ran.result
       const totals = 'status' in result && result.status === 'completed' ? { durationMs: result.totalDurationMs, tokens: result.totalTokens } : { durationMs }
-      await setCall($, call.id, { state: 'done', ...totals, outcome: describeOutcome(ran.text ?? '') })
+      // Entries on the `deviations:` line, split on `;`:
+      //   `deviations: none`        → 0
+      //   no line                   → 0
+      //   `deviations: renamed x`   → 1
+      //   `deviations: a; b; c`     → 3
+      const entries = /^deviations:[ \t]*(.*)$/mi.exec(ran.text ?? '')?.[1]?.split(';').map(one => one.trim()).filter(Boolean) || []
+      const deviations = entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
+      await setCall($, call.id, { state: 'done', ...totals, deviations, outcome: describeOutcome(ran.text ?? '') })
     }
     return ran
   }).catch(($, e, next) => next(e))

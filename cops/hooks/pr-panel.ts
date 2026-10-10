@@ -85,8 +85,16 @@ export const describeCall = (agent: string, prompt: string): Pick<AgentCall, 'mo
       isLeak: false,
     }
   }
+  // How many rules the `Rules that apply:` label carries:
+  //   `Rules that apply: none`                → 0
+  //   no label                                → 0
+  //   `Rules that apply: keep tests beside`   → 1 (one inline line)
+  //   `Rules that apply:\n- a\n- b\n- c`       → 3 (one per `- ` bullet line)
+  const labelled = /Rules that apply:[ \t]*(.*)((?:\r?\n- .*)*)/.exec(prompt)
+  const inline = labelled?.[1]?.trim() || ''
+  const bullets = labelled?.[2]?.match(/\n- /g)?.length || 0
   return {
-    rules: /Rules that apply:\s*(.+)$/m.exec(prompt)?.[1]?.trim(),
+    rules: inline.toLowerCase() === 'none' ? 0 : bullets || (inline ? 1 : 0),
     isLeak: agent.endsWith('pr-sidekick') && prompt.includes('memory-root'),
   }
 }
@@ -111,6 +119,8 @@ export const describeOutcome = (text: string): string => {
 //   running, now 0   → `⠋ 🔮 Oracle · brief-task` (the frame steps every 100ms of `now`)
 //   running, now 100 → `⠙ 🔮 Oracle · brief-task`
 //   done             → `✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
+//   sidekick done    → `✓ 🦸 Sidekick · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6`
+//                      (`no rules` for none; the deviation part only when there are some)
 //   failed           → `✗ 🦸 Sidekick · failed`
 //   background       → `🔮 Oracle · running in the background`
 //   another agent    → `✓ pr-other · …`, its name without `cops:`
@@ -122,7 +132,8 @@ export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): 
   const line = [
     names[call.agent] ?? call.agent.replace(/^cops:/, ''),
     call.mode,
-    call.rules && `rules: ${call.rules}`,
+    call.rules !== undefined && (call.rules === 0 ? 'no rules' : `${call.rules} rule${call.rules === 1 ? '' : 's'}`),
+    !!call.deviations && `${call.deviations} deviation${call.deviations === 1 ? '' : 's'}`,
     call.durationMs !== undefined && elapsed(call.durationMs),
     call.tokens !== undefined && tokens(call.tokens),
     call.outcome,

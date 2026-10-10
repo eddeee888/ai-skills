@@ -137,7 +137,7 @@ describe('agents', () => {
         status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 3, totalDurationMs: 3000, totalTokens: 12_400, prompt: e.prompt,
         usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
       },
-      text: e.subagent_type === 'cops:pr-oracle' ? 'CHECKPOINT_FOUND abc1234def on repro/12' : 'changed: a.ts — x\ncommitted: 9f8e7d6c\ndeviations: none',
+      text: e.subagent_type === 'cops:pr-oracle' ? 'CHECKPOINT_FOUND abc1234def on repro/12' : 'changed: a.ts — x\ncommitted: 9f8e7d6c\ndeviations: renamed a helper',
     }))
     await start($)
     await $.tool.call({
@@ -146,7 +146,7 @@ describe('agents', () => {
     })
     await $.tool.call({
       tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick',
-      prompt: 'Fix it.\nRules that apply: keep tests beside code\nmemory-root: /mem',
+      prompt: 'Fix it.\nRules that apply:\n- a\n- b\n- c\n- d\n- e\n- f\nmemory-root: /mem',
     })
     await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
 
@@ -155,7 +155,7 @@ describe('agents', () => {
     const drawn = await text(ui)
     expect(drawn).toContain('✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234')
     expect(drawn).not.toContain('login octocat')
-    expect(drawn).toContain('✓ 🦸 Sidekick · rules: keep tests beside code · 3s · 12k tokens · committed 9f8e7d6')
+    expect(drawn).toContain('✓ 🦸 Sidekick · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6')
     expect(drawn).toContain('pr-sidekick was given memory-root')
     expect(drawn).not.toContain('Explore')
     await ui.unmount()
@@ -189,7 +189,7 @@ describe('agents', () => {
     await until(async () => (await frame()) !== first)
     expect(await frame()).toBeDefined()
     await clock.advance(1000)
-    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · rules: none · 1s · boom'))
+    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · no rules · 1s · boom'))
     await clock.advance(1000)
     await until(async () => (await text(ui)).includes('✓ 🔮 Oracle · brief-task · 2s · 500 tokens · all good'))
     expect(await frame()).toBeUndefined()
@@ -204,7 +204,7 @@ describe('agents', () => {
     await start($)
     const ui = await mount($, 'terminal')
     await expect($.tool.call({ tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })).rejects.toThrow()
-    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · rules: none'))
+    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · no rules'))
     expect(await text(ui)).not.toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] 🦸 Sidekick/)
     await ui.unmount()
   })
@@ -279,7 +279,10 @@ describe('descriptions', () => {
     expect(describeCall('cops:pr-oracle', 'Run `review-pr`.\nmemory-root: `/m`\nmemory-login: unset')).toEqual({
       mode: 'review-pr', memoryRoot: '/m', memoryLogin: 'unset', isLeak: false,
     })
-    expect(describeCall('cops:pr-sidekick', 'Rules that apply: none')).toEqual({ rules: 'none', isLeak: false })
+    expect(describeCall('cops:pr-sidekick', 'Rules that apply: none')).toEqual({ rules: 0, isLeak: false })
+    expect(describeCall('cops:pr-sidekick', 'Fix it.')).toEqual({ rules: 0, isLeak: false })
+    expect(describeCall('cops:pr-sidekick', 'Rules that apply: keep tests beside code')).toEqual({ rules: 1, isLeak: false })
+    expect(describeCall('cops:pr-sidekick', 'Rules that apply:\n- a\n- b\n- c\n\nTests: x\n- not a rule')).toEqual({ rules: 3, isLeak: false })
   })
 
   test('outcomes', () => {
