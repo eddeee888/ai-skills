@@ -380,6 +380,27 @@ describe('skill history', () => {
     expect(toasts[0]).toContain('store down')
   })
 
+  test('runs a cops agent call it could not add a row for, and toasts once', async ($, on) => {
+    world(on, { pr: failed('no pull requests found for branch "feat"') })
+    on('state.set', { plugin: 'cops', key: 'agents' }, () => ({ deny: 'store down' }))
+    const toasts: string[] = []
+    on('ui.toast', ($, e) => {
+      toasts.push(e.text)
+      return { value: undefined }
+    })
+    let runs = 0
+    on('tool.call', { tool: 'Agent' }, () => {
+      runs += 1
+      return { result: { status: 'async_launched' }, text: '' } as never
+    })
+    await start($)
+    await $.tool.call({ tool: 'Agent', description: 'scout', subagent_type: 'cops:pr-oracle', prompt: 'mode: scout-repo' })
+    await $.tool.call({ tool: 'Agent', description: 'review', subagent_type: 'cops:pr-oracle', prompt: 'mode: review-pr' })
+    expect(runs).toBe(2)
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0]).toStartWith("COPS HQ couldn't add a row for cops:pr-oracle: ")
+  })
+
   test('nests each agent call under the skill run it started in', async ($, on) => {
     const { clock } = world(on, { pr: failed('no pull requests found for branch "feat"') })
     on('skill.prompt', ($, e) => ({ text: e.text }))

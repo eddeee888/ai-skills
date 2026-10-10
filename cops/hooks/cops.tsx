@@ -45,6 +45,23 @@ const run = async ($: EngineInterface, argv: readonly string[]) => {
   }
 }
 
+// Failures
+
+// The steps that failed this run, each toasted once. A step that fails leaves the pane or
+// status line short, never the tool, prompt or command it ran beside, so it reports instead of throwing:
+//   step 'record' → 'COPS HQ couldn't record /cops:pr-start in Activity: <error>'
+// Expected misses stay quiet where the pane already says so: a process that fails (`run`),
+// a MEMORY.md that isn't there, gh output that doesn't parse ("needs gh").
+const failed = new Set<string>()
+
+const reportFailure = ($: EngineInterface, { step, what, error }: { step: string; what: string; error: unknown }): void => {
+  if (failed.has(step)) return
+  failed.add(step)
+  try {
+    $.ui.toast(`COPS HQ couldn't ${what}: ${snippet(error instanceof Error ? error.message : String(error)) || 'unknown error'}`)
+  } catch {}
+}
+
 // Status line
 
 let hasWarnedCapacity = false
@@ -145,7 +162,9 @@ const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
 const autoOpen = async ($: EngineInterface) => {
   try {
     if (!(await read($, isDismissed))) await $.ui.open({ id: PANE, title: TITLE })
-  } catch {}
+  } catch (error) {
+    reportFailure($, { step: 'open', what: 'open the pane', error })
+  }
 }
 
 let isThreadsRefreshing = false
@@ -167,16 +186,22 @@ const refreshThreads = async ($: EngineInterface): Promise<void> => {
   }
 }
 
-// Refreshes run in the background; one that fails (the session ended mid-run)
-// just leaves the last view up.
+// Refreshes run in the background; one that fails leaves the last view up.
 const refreshAll = async ($: EngineInterface, memory: Memory) => {
-  await Promise.allSettled([refreshStatus($, memory), refreshThreads($)])
+  await Promise.all([
+    refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error })),
+    refreshThreadsReported($),
+  ])
 }
+
+const refreshThreadsReported = ($: EngineInterface): Promise<void> =>
+  refreshThreads($).catch(error => reportFailure($, { step: 'threads', what: 'refresh the PR’s threads', error }))
 
 const elapsedSince = async ($: EngineInterface, startedAt: number) => {
   try {
     return (await $.clock.now()) - startedAt
-  } catch {
+  } catch (error) {
+    reportFailure($, { step: 'elapsed', what: 'time an agent call', error })
     return undefined
   }
 }
@@ -185,7 +210,9 @@ const elapsedSince = async ($: EngineInterface, startedAt: number) => {
 const setCall = async ($: EngineInterface, id: string, change: Partial<AgentCall>) => {
   try {
     await update($, agents, list => list.map(call => (call.id === id ? { ...call, ...change } : call)))
-  } catch {}
+  } catch (error) {
+    reportFailure($, { step: 'agent-row', what: 'update an agent row', error })
+  }
 }
 
 // Skill runs
@@ -207,27 +234,15 @@ const recordSkill = async ($: EngineInterface, { skill }: { skill: string }): Pr
   $.ui.invalidate('ui.render')
 }
 
-// The skill.prompt steps that failed this run, each toasted once:
-//   record    → 'COPS HQ couldn't record /cops:pr-start in Activity: <error>'
-//   checklist → 'COPS HQ couldn't start the Handoffs checklist for /cops:pr-start: <error>'
-const failed = new Set<string>()
-
-const reportFailure = ($: EngineInterface, { step, skill, error }: { step: 'record' | 'checklist'; skill: string; error: unknown }): void => {
-  if (failed.has(step)) return
-  failed.add(step)
-  const what = step === 'record' ? `record /${skill} in Activity` : `start the Handoffs checklist for /${skill}`
-  try {
-    $.ui.toast(`COPS HQ couldn't ${what}: ${snippet(error instanceof Error ? error.message : String(error)) || 'unknown error'}`)
-  } catch {}
-}
-
 // Each running cops agent's Bash commands this run, by its agentId, for the 4th-try check.
 const commands = new Map<string, string[]>()
 
 const clearHandled = async ($: EngineInterface) => {
   try {
     await update($, handled, () => [])
-  } catch {}
+  } catch (error) {
+    reportFailure($, { step: 'handled', what: 'clear the threads marked handled after a push', error })
+  }
 }
 
 export const register: Register = (on, options) => {
@@ -247,14 +262,14 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'cops-hq' }, async $ => {
     await update($, isDismissed, () => false)
-    void refreshThreads($).catch(() => undefined)
+    void refreshThreadsReported($)
     const opened = await $.ui.open({ id: PANE, title: TITLE })
     return { text: opened.isPlaced ? 'Opened the COPS HQ pane.' : 'This surface doesn’t show panes.' }
   })
 
   on('ui.close', { id: PANE }, async ($, e, next) => {
     const closed = await next(e)
-    if (e.origin.kind === 'person') await update($, isDismissed, () => true).catch(() => undefined)
+    if (e.origin.kind === 'person') await update($, isDismissed, () => true).catch(error => reportFailure($, { step: 'dismiss', what: 'remember the pane was closed', error }))
     return closed
   })
 
@@ -268,7 +283,9 @@ export const register: Register = (on, options) => {
       if (!sentence) return submitted
       const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
       if (ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')) await update($, ruleOffer, () => sentence)
-    } catch {}
+    } catch (error) {
+      reportFailure($, { step: 'rule-offer', what: 'offer to remember the rule you typed', error })
+    }
     return submitted
   })
 
@@ -316,20 +333,19 @@ export const register: Register = (on, options) => {
 
   // Every skill reaches the model through here: typed, called by the model, or preloaded.
   // A cops skill with handoffs (EXPECTED_HANDOFFS) also starts its checklist; any other skill clears it.
-  // Neither step may change what the model reads, so a failure is toasted, once per step, instead of thrown.
   on('skill.prompt', async ($, e, next) => {
     const expanded = await next(e)
     try {
       await recordSkill($, { skill: e.skill })
     } catch (error) {
-      reportFailure($, { step: 'record', skill: e.skill, error })
+      reportFailure($, { step: 'record', what: `record /${e.skill} in Activity`, error })
     }
     try {
       const skill = [e.skill, `cops:${e.skill}`].find(one => EXPECTED_HANDOFFS[one])
       await update($, checklist, () => (skill ? { skill, ticked: [] } : null))
       $.ui.invalidate('ui.render')
     } catch (error) {
-      reportFailure($, { step: 'checklist', skill: e.skill, error })
+      reportFailure($, { step: 'checklist', what: `start the Handoffs checklist for /${e.skill}`, error })
     }
     return expanded
   })
@@ -337,19 +353,27 @@ export const register: Register = (on, options) => {
   on('tool.call', { tool: 'Bash' }, async ($, e, next) => {
     const ran = await next(e)
     if (PUSH.test(e.command) && ran.deny === undefined && ran.isError !== true) await clearHandled($)
-    if (BRANCH_COMMAND.test(e.command)) void refreshThreads($).catch(() => undefined)
+    if (BRANCH_COMMAND.test(e.command)) void refreshThreadsReported($)
     return ran
   }).catch(($, e, next) => next(e))
 
   on('tool.call', { tool: 'Agent' }, async ($, e, next) => {
     const agent = e.subagent_type ?? ''
     if (!agent.startsWith('cops:')) return next(e)
-    const startedAt = await $.clock.now()
-    const call: AgentCall = {
-      id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall({ agent, prompt: e.prompt }),
-      mayRewrite: agent === 'cops:pr-sidekick' && /\brebase\b|\bforce[- ]push/i.test(e.prompt),
+    let startedAt: number
+    let call: AgentCall
+    // A row that can't be added leaves the call to run untracked.
+    try {
+      startedAt = await $.clock.now()
+      call = {
+        id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall({ agent, prompt: e.prompt }),
+        mayRewrite: agent === 'cops:pr-sidekick' && /\brebase\b|\bforce[- ]push/i.test(e.prompt),
+      }
+      await update($, agents, list => [...list, call].slice(-50))
+    } catch (error) {
+      reportFailure($, { step: 'agent-add', what: `add a row for ${agent}`, error })
+      return next(e)
     }
-    await update($, agents, list => [...list, call].slice(-50))
     void autoOpen($)
     // Redraws the pane so the running call's spinner moves.
     const spin = $.clock.every(SPINNER_MS, () => $.ui.invalidate('ui.render'))
@@ -406,7 +430,9 @@ export const register: Register = (on, options) => {
             for (const item of added.filter(one => one.kind === 'conflict')) $.ui.toast(`COPS memory conflict: ${item.text}`)
           }
         }
-      } catch {}
+      } catch (error) {
+        reportFailure($, { step: 'inbox', what: 'collect memory lines for the inbox', error })
+      }
     }
     return ran
   }).catch(($, e, next) => next(e))
@@ -422,7 +448,9 @@ export const register: Register = (on, options) => {
       if (running && ticked.length > 0) await update($, checklist, () => ({ ...running, ticked: [...new Set([...running.ticked, ...ticked])] }))
       if (spawned.deny === undefined && spawned.agentId && e.subagentType.startsWith('cops:')) await setCall($, e.tool_use_id, { agentId: spawned.agentId })
       if (ticked.length > 0) $.ui.invalidate('ui.render')
-    } catch {}
+    } catch (error) {
+      reportFailure($, { step: 'handoff-tick', what: 'tick the Handoffs checklist', error })
+    }
     return spawned
   })
 
@@ -453,7 +481,9 @@ export const register: Register = (on, options) => {
           }
         }
       }
-    } catch {}
+    } catch (error) {
+      reportFailure($, { step: 'rule-check', what: 'check a cops agent’s tool call', error })
+    }
     return next(e)
   })
 
@@ -469,7 +499,9 @@ export const register: Register = (on, options) => {
           $.ui.invalidate('ui.render')
         }
       }
-    } catch {}
+    } catch (error) {
+      reportFailure($, { step: 'loaded-check', what: 'check the oracle’s loaded: line', error })
+    }
     return completed
   })
 
@@ -496,7 +528,15 @@ export const register: Register = (on, options) => {
     )
     // A store that can't be read hides the inbox, not the pane.
     // The inbox stays in the store while memory is off, and shows again once it's on.
-    const inbox = (await read($, isMemoryOn)) ? [...(await readInbox($).catch(() => [])), ...(await read($, openItems))] : []
+    const stored = async (): Promise<InboxItem[]> => {
+      try {
+        return await readInbox($)
+      } catch (error) {
+        reportFailure($, { step: 'read-inbox', what: 'read the memory inbox', error })
+        return []
+      }
+    }
+    const inbox = (await read($, isMemoryOn)) ? [...(await stored()), ...(await read($, openItems))] : []
 
     const row = (thread: Thread) => {
       const isHandled = done.includes(thread.id)
