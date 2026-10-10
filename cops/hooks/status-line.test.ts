@@ -18,6 +18,7 @@ const world = (on: On, answers: { memory: string; branch?: ProcessRunResult; pr?
   const argvs: string[][] = []
   mock.clock(on)
   on('session.start', ($, e) => ({ cwd: e.cwd }))
+  on('command.register', ($, e) => ({ value: { command: e.name } }))
   on('process.run', ($, e) => {
     argvs.push([...e.argv])
     if (e.argv[0] === 'bash') return { value: ok(answers.memory) }
