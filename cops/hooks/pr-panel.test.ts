@@ -42,30 +42,34 @@ const RESPONSE: ThreadsResponse = {
 // Answers the commands the plugin runs: git, gh pr view, gh api graphql.
 const world = (on: On, answers: { pr?: ProcessRunResult; graphql?: ProcessRunResult } = {}) => {
   const opens: string[] = []
-  mock.clock(on)
+  const commands: { name: string; immediate?: true }[] = []
+  const clock = mock.clock(on)
   on('ui.open', ($, e) => {
     opens.push(e.id)
     return { value: { isPlaced: true } }
   })
   on('session.start', ($, e) => ({ cwd: e.cwd }))
-  on('command.register', ($, e) => ({ value: { command: e.name } }))
+  on('command.register', ($, e) => {
+    commands.push({ name: e.name, immediate: e.immediate })
+    return { value: { command: e.name } }
+  })
   on('ui.status', () => ({ value: undefined }))
   on('process.run', ($, e) => {
     if (e.argv[0] === 'bash') return { value: ok('COPS memory not configured.\n') }
     if (e.argv[0] === 'git') return { value: ok('feat\n') }
     if (e.argv[1] === 'api') return { value: answers.graphql ?? ok(JSON.stringify(RESPONSE)) }
-    return { value: answers.pr ?? ok(JSON.stringify({ number: 7, state: 'OPEN', statusCheckRollup: [] })) }
+    return { value: answers.pr ?? ok(JSON.stringify({ number: 7, url: 'https://github.com/o/r/pull/7' })) }
   })
   on('tool.call', { tool: 'Bash' }, () => ({ result: { stdout: '', stderr: '', interrupted: false }, text: '' }) as never)
-  return { opens }
+  return { opens, commands, clock }
 }
 
 const start = ($: Engine) => $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
 
 const mount = ($: Engine, surface: 'terminal' | 'desktop') =>
   $.ui.mount({
-    plugin: 'cops', surface, component: 'Pane', requestId: 'cops-threads',
-    props: { title: 'COPS threads and agents', isFocused: true, bodyColumns: 100, placement: 'dock', scroll: { offset: 0, bodyRows: 40 }, view: {} },
+    plugin: 'cops', surface, component: 'Pane', requestId: 'cops-hq',
+    props: { title: 'COPS HQ', isFocused: true, bodyColumns: 100, placement: 'dock', scroll: { offset: 0, bodyRows: 40 }, view: {} },
   })
 
 // Background refreshes settle over a few turns of the event loop.
@@ -89,6 +93,9 @@ describe('threads', () => {
       expect(drawn).toContain('src/t1.ts:3 · alice: t1 says hi')
       expect(drawn).toContain('src/t4.ts:3 · bob: t4 says hi (outdated)')
       expect(drawn).not.toContain('t3')
+      expect((await ui.find({ type: 'Link', text: 'PR #7' }))?.props.href).toBe('https://github.com/o/r/pull/7')
+      expect((await ui.find({ type: 'Link', text: 'src/t1.ts:3' }))?.props.href).toBe('https://example.com/t1')
+      expect((await ui.find({ type: 'Link', text: 'src/t2.ts:3' }))?.props.href).toBe('https://example.com/t2')
       await ui.unmount()
     })
   }
@@ -146,11 +153,75 @@ describe('agents', () => {
     const ui = await mount($, 'terminal')
     await until(async () => (await text(ui)).includes('Agents (2)'))
     const drawn = await text(ui)
-    expect(drawn).toContain('pr-oracle · brief-task · memory-root /mem · login octocat · 3s · 12k tokens · CHECKPOINT_FOUND abc1234')
-    expect(drawn).toContain('pr-sidekick · rules: keep tests beside code · 3s · 12k tokens · committed 9f8e7d6')
+    expect(drawn).toContain('✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234')
+    expect(drawn).not.toContain('login octocat')
+    expect(drawn).toContain('✓ 🦸 Sidekick · rules: keep tests beside code · 3s · 12k tokens · committed 9f8e7d6')
     expect(drawn).toContain('pr-sidekick was given memory-root')
     expect(drawn).not.toContain('Explore')
     await ui.unmount()
+  })
+
+  test('spins while a call runs, then shows ✓ when done and ✗ when failed', async ($, on) => {
+    const { clock } = world(on)
+    on('tool.call', { tool: 'Agent' }, async ($, e) => {
+      if (e.subagent_type === 'cops:pr-sidekick') {
+        await clock.sleep(1000)
+        return { deny: 'boom' }
+      }
+      await clock.sleep(2000)
+      return {
+        result: {
+          status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 2000, totalTokens: 500, prompt: e.prompt,
+          usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
+        },
+        text: 'all good',
+      }
+    })
+    await start($)
+    const ui = await mount($, 'terminal')
+    void $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    void $.tool.call({ tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
+    await until(async () => (await text(ui)).includes('Agents (2)'))
+    const frame = async (): Promise<string | undefined> => /([⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]) 🔮 Oracle · brief-task/.exec(await text(ui))?.[1]
+    const first = await frame()
+    expect(first).toBeDefined()
+    await clock.advance(100)
+    await until(async () => (await frame()) !== first)
+    expect(await frame()).toBeDefined()
+    await clock.advance(1000)
+    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · rules: none · 1s · boom'))
+    await clock.advance(1000)
+    await until(async () => (await text(ui)).includes('✓ 🔮 Oracle · brief-task · 2s · 500 tokens · all good'))
+    expect(await frame()).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('shows ✗, not a spinner, when a lower hook throws for the call', async ($, on) => {
+    world(on)
+    on('tool.call', { tool: 'Agent' }, () => {
+      throw new Error('kaboom')
+    })
+    await start($)
+    const ui = await mount($, 'terminal')
+    await expect($.tool.call({ tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })).rejects.toThrow()
+    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · rules: none'))
+    expect(await text(ui)).not.toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] 🦸 Sidekick/)
+    await ui.unmount()
+  })
+})
+
+describe('/cops-hq', () => {
+  test('runs at once, even while a turn is in flight', async ($, on) => {
+    const { commands } = world(on)
+    await start($)
+    expect(commands).toEqual([{ name: 'cops-hq', immediate: true }])
+  })
+
+  test('opens the pane', async ($, on) => {
+    const { opens } = world(on, { pr: failed('no pull requests found for branch "feat"') })
+    await start($)
+    expect(await $.command.run({ command: 'cops-hq', args: '' })).toEqual({ text: 'Opened the COPS HQ pane.' })
+    expect(opens).toContain('cops-hq')
   })
 })
 
@@ -158,7 +229,7 @@ describe('opening by itself', () => {
   test('opens when a thread needs you', async ($, on) => {
     const { opens } = world(on)
     await start($)
-    await until(async () => opens.includes('cops-threads'))
+    await until(async () => opens.includes('cops-hq'))
   })
 
   test('stays shut when every thread waits on the reviewer', async ($, on) => {
@@ -178,7 +249,7 @@ describe('opening by itself', () => {
     await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
     expect(opens).toEqual([])
     await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
-    await until(async () => opens.includes('cops-threads'))
+    await until(async () => opens.includes('cops-hq'))
   })
 })
 
