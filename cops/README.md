@@ -65,7 +65,7 @@ In Claude Code, a pane with two sections and a `Next:` line, and a third section
 
 - **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. The `PR #<n>` heading links to the PR, and each thread's `path:line` links to its last comment. A merged or closed PR is marked in the heading (`PR #7 (merged)`), and its threads don't open the pane by themselves. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out, and so are your own `Note:` / `Drive-by:` threads once you 👍 them (they return if someone replies). It needs `gh` logged in; without it, the section says so.
 - **Next:** the cops skill that fits the branch's PR right now, with why, and a **Use** button that puts it in the prompt box (when it can't, a toast names the skill to type). `/cops:pr-start` on a branch without a PR or whose PR is merged or closed, `/cops:pr-review` on someone else's PR, and on your own `/cops:pr-address` while threads need you (threads marked handled don't count), or `/cops:pr-note` before anyone has reviewed it or you've left notes. Otherwise it's left out, as it is when `gh` can't say who you are. `pr-sync` is never suggested: whether a description is stale isn't something the pane can see. When that skill already ran this session, the line says which run (`ran as #2`).
-- **Activity:** every skill that ran this session, cops or not, with the cops agent calls each one made nested under it, so you can cross-check what ran against the `Next:` line:
+- **Activity:** every skill that ran this session, cops or not, with the agent calls each one made nested under it, so you can cross-check what ran against the `Next:` line:
 
   ```text
   Activity · 2 skills · 3 agents
@@ -76,8 +76,8 @@ In Claude Code, a pane with two sections and a `Next:` line, and a third section
      ⠋ 🦸 Sidekick · 6 rules
   ```
 
-  - Skill rows are numbered in order, with their arguments, who started them, and when: `you` typed the slash command, `model` means Claude called it, and `preloaded` means it came another way, such as a subagent's preloaded skill.
-  - An agent call sits under the latest skill that started before it; calls made before any skill come first, unindented. Each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call shows what it was given and what it returned:
+  - Skill rows are numbered in order, with their arguments, who started them, and when: `you` typed the slash command, `model` means Claude called it, and `preloaded` means it came another way, such as a subagent's preloaded skill. A row tagged `(source:typed)` or `(source:tool.call)` was recorded from the typed command or the Skill call, because a managed plugin seated above cops (as on a team organization) kept its `skill.prompt` hook from running.
+  - An agent call sits under the latest skill that started before it; calls made before any skill come first, unindented. Any agent gets a row with its status, time, tokens and outcome (`✓ Explore · 3s · 12k tokens · …`); only a cops agent opens the pane by itself. Each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call shows what it was given and what it returned:
     - Oracle: its mode;
     - Sidekick: how many rules its `Rules that apply:` line carried and how many deviations it reported (`6 rules · 1 deviation`), and a red warning if its prompt carried `memory-root`, which it must never get;
     - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Each row starts with its status: a spinner while the call runs, `✓` when it's done, `✗` when it failed. Background calls show as running in the background.

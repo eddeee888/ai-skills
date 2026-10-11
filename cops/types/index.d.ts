@@ -24,7 +24,7 @@ export type Threads =
    */
   | { status: 'ready'; pr: number; url: string; state: 'OPEN' | 'MERGED' | 'CLOSED'; threads: Thread[]; isMine?: boolean; isReviewed: boolean; hasNotes: boolean }
 
-/** One cops subagent call this session. */
+/** One subagent call this session, a cops agent's or any other. */
 export type AgentCall = {
   id: string
   agent: string

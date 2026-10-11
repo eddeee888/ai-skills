@@ -152,13 +152,14 @@ describe('agents', () => {
     await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
 
     const ui = await mount($, 'terminal')
-    await until(async () => (await text(ui)).includes('2 agents'))
+    await until(async () => (await text(ui)).includes('3 agents'))
     const drawn = await text(ui)
     expect(drawn).toContain('✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234')
     expect(drawn).not.toContain('login octocat')
     expect(drawn).toContain('✓ 🦸 Sidekick · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6')
     expect(drawn).toContain('pr-sidekick was given memory-root')
-    expect(drawn).not.toContain('Explore')
+    // Any other agent gets its row, with none of a cops agent's rule or deviation counts.
+    expect(drawn).toContain('✓ Explore · 3s · 12k tokens · committed 9f8e7d6')
     await ui.unmount()
   })
 
