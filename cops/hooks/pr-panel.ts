@@ -221,17 +221,18 @@ export const describeOutcome = (text: string): string => {
   return snippet(text) || 'no output'
 }
 
-// One pane row per call, led by its status:
-//   running, now 0   → `⠋ 🔮 Oracle · brief-task` (the frame steps every 100ms of `now`)
-//   running, now 100 → `⠙ 🔮 Oracle · brief-task`
-//   two modes        → `⠋ 🔮 Oracle · triage-threads + scout-repo`
-//   done             → `✓ 🔮 Oracle · brief-task · ✓ loaded · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
-//   loaded: short    → `✓ 🔮 Oracle · sweep-diff · ⚠ loaded lacks modes/sweep-diff.md · 3s · …`
-//   sidekick done    → `✓ 🦸 Sidekick · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6`
+// One pane row per call, led by its status, then the agent and the model it ran with (`inherit` when unset):
+//   running, now 0   → `⠋ 🔮 Oracle · inherit · brief-task` (the frame steps every 100ms of `now`)
+//   running, now 100 → `⠙ 🔮 Oracle · inherit · brief-task`
+//   two modes        → `⠋ 🔮 Oracle · inherit · triage-threads + scout-repo`
+//   model set        → `⠋ 🦸 Sidekick · sonnet · 6 rules`
+//   done             → `✓ 🔮 Oracle · haiku · brief-task · ✓ loaded · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
+//   loaded: short    → `✓ 🔮 Oracle · inherit · sweep-diff · ⚠ loaded lacks modes/sweep-diff.md · 3s · …`
+//   sidekick done    → `✓ 🦸 Sidekick · inherit · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6`
 //                      (`no rules` for none; the deviation part only when there are some)
-//   failed           → `✗ 🦸 Sidekick · failed`
-//   background       → `🔮 Oracle · running in the background`
-//   another agent    → `✓ pr-other · …`, its name without `cops:`
+//   failed           → `✗ 🦸 Sidekick · inherit · failed`
+//   background       → `🔮 Oracle · inherit · running in the background`
+//   another agent    → `✓ pr-other · inherit · …`, its name without `cops:`
 export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): string => {
   const elapsed = (ms: number) => (ms < 60_000 ? `${Math.round(ms / 1000)}s` : `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`)
   const tokens = (n: number) => (n < 1000 ? `${n} tokens` : `${Math.round(n / 1000)}k tokens`)
@@ -239,6 +240,7 @@ export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): 
   const names: Record<string, string> = { 'cops:pr-oracle': '🔮 Oracle', 'cops:pr-sidekick': '🦸 Sidekick' }
   const line = [
     names[call.agent] ?? call.agent.replace(/^cops:/, ''),
+    call.model || 'inherit',
     call.modes?.join(' + '),
     call.missingLoads && (call.missingLoads.length === 0 ? '✓ loaded' : `⚠ loaded lacks ${call.missingLoads.join(', ')}`),
     call.rules !== undefined && (call.rules === 0 ? 'no rules' : `${call.rules} rule${call.rules === 1 ? '' : 's'}`),

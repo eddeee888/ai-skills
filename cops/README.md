@@ -82,14 +82,14 @@ In Claude Code, a pane with a Threads section (its `Next:` line sits right under
   ```text
   Activity · 2 skills · 3 agents
   1. /cops:pr-review https://github.com/o/r/pull/7 · you · 3m ago
-     ✓ 🔮 Oracle · review-pr · 40s · 30k tokens · 4 findings
+     ✓ 🔮 Oracle · haiku · review-pr · 40s · 30k tokens · 4 findings
   2. /cops:pr-address · model · just now
-     ✓ 🔮 Oracle · triage-threads + scout-repo · 20s · 12k tokens · …
-     ⠋ 🦸 Sidekick · 6 rules
+     ✓ 🔮 Oracle · inherit · triage-threads + scout-repo · 20s · 12k tokens · …
+     ⠋ 🦸 Sidekick · sonnet · 6 rules
   ```
 
   - Skill rows are numbered in order (`1.`, `2.`), the command in bold, with its arguments, who started them, and when: `you` typed the slash command, `model` means Claude called it, and `preloaded` means it came another way, such as a subagent's preloaded skill. A row tagged `(source:typed)` or `(source:tool.call)` was recorded from the typed command or the Skill call, because a managed plugin seated above cops (as on a team organization) kept its `skill.prompt` hook from running.
-  - An agent call sits under the latest skill that started before it; calls made before any skill come first, unindented. Any agent gets a row with its status, time, tokens and outcome (`✓ Explore · 3s · 12k tokens · …`); only a cops agent opens the pane by itself. Each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call shows what it was given and what it returned:
+  - An agent call sits under the latest skill that started before it; calls made before any skill come first, unindented. Any agent gets a row with its status, the model it ran with (`inherit` when the call set none), time, tokens and outcome (`✓ Explore · inherit · 3s · 12k tokens · …`); only a cops agent opens the pane by itself. Each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call shows what it was given and what it returned:
     - Oracle: its mode;
     - Sidekick: how many rules its `Rules that apply:` line carried and how many deviations it reported (`6 rules · 1 deviation`), and a red warning if its prompt carried `memory-root`, which it must never get;
     - for both: the outcome (`CHECKPOINT_FOUND <sha>`, `CHECKPOINT_NOT_FOUND`, `pushed <sha>`, `committed <sha>`, a findings count, or the first line), the time taken, and the tokens used. Each row starts with its status: a spinner while the call runs, `✓` when it's done, `✗` when it failed. Background calls show as running in the background.

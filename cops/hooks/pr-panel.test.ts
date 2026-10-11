@@ -142,7 +142,7 @@ describe('agents', () => {
     }))
     await start($)
     await $.tool.call({
-      tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle',
+      tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', model: 'haiku',
       prompt: 'mode: brief-task\nmemory-root: /mem\nmemory-login: octocat\nTask: fix it',
     })
     await $.tool.call({
@@ -154,12 +154,12 @@ describe('agents', () => {
     const ui = await mount($, 'terminal')
     await until(async () => (await text(ui)).includes('3 agents'))
     const drawn = await text(ui)
-    expect(drawn).toContain('✓ 🔮 Oracle · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234')
+    expect(drawn).toContain('✓ 🔮 Oracle · haiku · brief-task · 3s · 12k tokens · CHECKPOINT_FOUND abc1234')
     expect(drawn).not.toContain('login octocat')
-    expect(drawn).toContain('✓ 🦸 Sidekick · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6')
+    expect(drawn).toContain('✓ 🦸 Sidekick · inherit · 6 rules · 1 deviation · 3s · 12k tokens · committed 9f8e7d6')
     expect(drawn).toContain('pr-sidekick was given memory-root')
     // Any other agent gets its row, with none of a cops agent's rule or deviation counts.
-    expect(drawn).toContain('✓ Explore · 3s · 12k tokens · committed 9f8e7d6')
+    expect(drawn).toContain('✓ Explore · inherit · 3s · 12k tokens · committed 9f8e7d6')
     await ui.unmount()
   })
 
@@ -184,16 +184,16 @@ describe('agents', () => {
     void $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
     void $.tool.call({ tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })
     await until(async () => (await text(ui)).includes('2 agents'))
-    const frame = async (): Promise<string | undefined> => /([⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]) 🔮 Oracle · brief-task/.exec(await text(ui))?.[1]
+    const frame = async (): Promise<string | undefined> => /([⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]) 🔮 Oracle · inherit · brief-task/.exec(await text(ui))?.[1]
     const first = await frame()
     expect(first).toBeDefined()
     await clock.advance(100)
     await until(async () => (await frame()) !== first)
     expect(await frame()).toBeDefined()
     await clock.advance(1000)
-    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · no rules · 1s · boom'))
+    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · inherit · no rules · 1s · boom'))
     await clock.advance(1000)
-    await until(async () => (await text(ui)).includes('✓ 🔮 Oracle · brief-task · 2s · 500 tokens · all good'))
+    await until(async () => (await text(ui)).includes('✓ 🔮 Oracle · inherit · brief-task · 2s · 500 tokens · all good'))
     expect(await frame()).toBeUndefined()
     await ui.unmount()
   })
@@ -206,7 +206,7 @@ describe('agents', () => {
     await start($)
     const ui = await mount($, 'terminal')
     await expect($.tool.call({ tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick', prompt: 'Rules that apply: none' })).rejects.toThrow()
-    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · no rules'))
+    await until(async () => (await text(ui)).includes('✗ 🦸 Sidekick · inherit · no rules'))
     expect(await text(ui)).not.toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] 🦸 Sidekick/)
     await ui.unmount()
   })
@@ -480,13 +480,13 @@ describe('skill history', () => {
     await until(async () => (await text(ui)).includes('Activity · 2 skills · 3 agents'))
     const drawn = await text(ui)
     const at = (part: string) => drawn.indexOf(part)
-    expect(at('✓ 🔮 Oracle · scout-repo')).toBeLessThan(at('1. /cops:pr-review'))
-    expect(at('1. /cops:pr-review')).toBeLessThan(at('   ✓ 🔮 Oracle · review-pr'))
-    expect(at('   ✓ 🔮 Oracle · review-pr')).toBeLessThan(at('2. /cops:pr-address'))
-    expect(at('2. /cops:pr-address')).toBeLessThan(at('   ✓ 🦸 Sidekick · no rules'))
+    expect(at('✓ 🔮 Oracle · inherit · scout-repo')).toBeLessThan(at('1. /cops:pr-review'))
+    expect(at('1. /cops:pr-review')).toBeLessThan(at('   ✓ 🔮 Oracle · inherit · review-pr'))
+    expect(at('   ✓ 🔮 Oracle · inherit · review-pr')).toBeLessThan(at('2. /cops:pr-address'))
+    expect(at('2. /cops:pr-address')).toBeLessThan(at('   ✓ 🦸 Sidekick · inherit · no rules'))
     expect(at('─'.repeat(20))).toBeGreaterThan(-1)
     expect(at('─'.repeat(20))).toBeLessThan(at('Activity · 2 skills'))
-    expect(drawn).not.toContain('   ✓ 🔮 Oracle · scout-repo')
+    expect(drawn).not.toContain('   ✓ 🔮 Oracle · inherit · scout-repo')
     await ui.unmount()
   })
 
