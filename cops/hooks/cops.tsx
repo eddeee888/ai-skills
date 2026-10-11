@@ -691,6 +691,16 @@ export const register: Register = (on, options) => {
       ? describeRules({ entries: sources.map(one => one.rule), usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE).catch(() => undefined) }), now })
       : undefined
     const usage = tab === 'stats' ? toUsage({ stored: await $.store.get(USAGE).catch(() => undefined) }) : undefined
+    // The plugin's own version, read while the Stats tab is shown; a manifest that can't be read or has no string version leaves it out.
+    let version: string | undefined
+    if (tab === 'stats') {
+      try {
+        const manifest = JSON.parse(await $.fs.read(`${$.plugin.root}/.claude-plugin/plugin.json`))
+        if (typeof manifest?.version === 'string') {
+          version = manifest.version
+        }
+      } catch {}
+    }
 
     const row = (thread: Thread) => {
       const isHandled = done.includes(thread.id)
@@ -749,6 +759,7 @@ export const register: Register = (on, options) => {
       return (
         <Box flexDirection="column" gap={1}>
           {tabs}
+          {version && <Text dimColor>COPS {version}</Text>}
           <Box flexDirection="column">
             <Box flexDirection="row" gap={1}>
               <Text bold>Usage</Text>

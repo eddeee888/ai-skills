@@ -14,10 +14,10 @@ const FILES = { [PERSONAL]: '## Code\n- Prefer early returns  (stated by user 2x
 
 type Ui = Awaited<ReturnType<Engine['ui']['mount']>>
 
-// Answers what the plugin asks of the engine from `files` and `stored`, gives each pr-oracle call the reply
+// Answers what the plugin asks of the engine from `files`, `manifest` (the plugin's plugin.json; unreadable when left out) and `stored`, gives each pr-oracle call the reply
 // `replies` names for its prompt, and records the prompt fills.
-const world = ({ on, memory = MEMORY_ON, files = FILES, replies = {}, stored = {} }: {
-  on: On; memory?: string; files?: Record<string, string>; replies?: Record<string, string>; stored?: Record<string, unknown>
+const world = ({ on, memory = MEMORY_ON, files = FILES, manifest, replies = {}, stored = {} }: {
+  on: On; memory?: string; files?: Record<string, string>; manifest?: string; replies?: Record<string, string>; stored?: Record<string, unknown>
 }): { fills: string[]; clock: ReturnType<typeof mock.clock> } => {
   const ok = ({ stdout }: { stdout: string }): ProcessRunResult => ({
     exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
@@ -30,7 +30,7 @@ const world = ({ on, memory = MEMORY_ON, files = FILES, replies = {}, stored = {
     return { value: undefined }
   })
   on('fs.read', ($, e) => {
-    const text = files[e.path]
+    const text = e.path.endsWith('/.claude-plugin/plugin.json') ? manifest : files[e.path]
     if (text === undefined) {
       throw new Error(`ENOENT: ${e.path}`)
     }
@@ -192,6 +192,30 @@ describe('Stats tab', () => {
     expect(drawn).not.toContain('Threads:')
     await ui.unmount()
   })
+
+  test('shows the plugin version above Usage when the manifest has one', MEMORY, async ($, on) => {
+    world({ on, manifest: JSON.stringify({ name: 'cops', version: '0.1.14' }) })
+    const ui = await mount({ $ })
+    await stats({ $, ui })
+    const drawn = await text({ ui })
+    expect(drawn).toContain('COPS 0.1.14')
+    expect(drawn.indexOf('COPS 0.1.14')).toBeLessThan(drawn.indexOf('Usage'))
+    await ui.unmount()
+  })
+
+  for (const [why, manifest] of [['is missing', undefined], ['isn\'t JSON', 'not json'], ['has no string version', JSON.stringify({ name: 'cops', version: 14 })]]) {
+    test(`shows no version line, and still draws Usage, when the manifest ${why}`, MEMORY, async ($, on) => {
+      world({ on, manifest })
+      const ui = await mount({ $ })
+      await stats({ $, ui })
+      const drawn = await text({ ui })
+      expect(drawn).not.toContain('COPS 0')
+      expect(drawn).not.toContain('COPS 14')
+      expect(drawn).not.toContain('COPS undefined')
+      expect(drawn).toContain('Usage')
+      await ui.unmount()
+    })
+  }
 
   test('says none when nothing is stored', MEMORY, async ($, on) => {
     world({ on })
