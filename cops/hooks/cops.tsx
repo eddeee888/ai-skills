@@ -123,8 +123,7 @@ let hasWarnedCapacity = false
 
 const memoryPart = async ($: EngineInterface, { path, login }: { path: string; login: string }): Promise<string | undefined> => {
   const pluginRoot = $.plugin.root
-  const script = `${pluginRoot}/hooks/memory-context.sh`
-  const ran = await run($, ['bash', script, 'claude', path, login])
+  const ran = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', path, login])
   const isOn = ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')
   if ((await read($, isMemoryOn)) !== isOn) {
     await update($, isMemoryOn, () => isOn)
