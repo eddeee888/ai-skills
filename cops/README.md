@@ -61,22 +61,22 @@ You edit and send the filled prompt yourself; the band never writes memory or ca
 
 ## COPS HQ pane
 
-In Claude Code, a pane with two sections and a `Next:` line, and a third section while the memory inbox holds lines, opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.
+In Claude Code, a pane with a Threads section (its `Next:` line sits right under the heading), a separator, an Activity section, and a third section while the memory inbox holds lines, opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.
 
 - **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. The `PR #<n>` heading links to the PR, and each thread's `path:line` links to its last comment. A merged or closed PR is marked in the heading (`PR #7 (merged)`), and its threads don't open the pane by themselves. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out, and so are your own `Note:` / `Drive-by:` threads once you 👍 them (they return if someone replies). It needs `gh` logged in; without it, the section says so.
-- **Next:** the cops skill that fits the branch's PR right now, with why, and a **Use** button that puts it in the prompt box (when it can't, a toast names the skill to type). `/cops:pr-start` on a branch without a PR or whose PR is merged or closed, `/cops:pr-review` on someone else's PR, and on your own `/cops:pr-address` while threads need you (threads marked handled don't count), or `/cops:pr-note` before anyone has reviewed it or you've left notes. Otherwise it's left out, as it is when `gh` can't say who you are. `pr-sync` is never suggested: whether a description is stale isn't something the pane can see. When that skill already ran this session, the line says which run (`ran as #2`).
+- **Next:** the cops skill that fits the branch's PR right now, with why, and a **Use** button that puts it in the prompt box (when it can't, a toast names the skill to type). `/cops:pr-start` on a branch without a PR or whose PR is merged or closed, `/cops:pr-review` on someone else's PR, and on your own `/cops:pr-address` while threads need you (threads marked handled don't count), or `/cops:pr-note` before anyone has reviewed it or you've left notes. Otherwise it's left out, as it is when `gh` can't say who you are. `pr-sync` is never suggested: whether a description is stale isn't something the pane can see. When that skill already ran this session, the line says which run (`ran as 2.`).
 - **Activity:** every skill that ran this session, cops or not, with the agent calls each one made nested under it, so you can cross-check what ran against the `Next:` line:
 
   ```text
   Activity · 2 skills · 3 agents
-  #1 /cops:pr-review https://github.com/o/r/pull/7 · you · 3m ago
+  1. /cops:pr-review https://github.com/o/r/pull/7 · you · 3m ago
      ✓ 🔮 Oracle · review-pr · 40s · 30k tokens · 4 findings
-  #2 /cops:pr-address · model · just now
+  2. /cops:pr-address · model · just now
      ✓ 🔮 Oracle · triage-threads + scout-repo · 20s · 12k tokens · …
      ⠋ 🦸 Sidekick · 6 rules
   ```
 
-  - Skill rows are numbered in order, with their arguments, who started them, and when: `you` typed the slash command, `model` means Claude called it, and `preloaded` means it came another way, such as a subagent's preloaded skill. A row tagged `(source:typed)` or `(source:tool.call)` was recorded from the typed command or the Skill call, because a managed plugin seated above cops (as on a team organization) kept its `skill.prompt` hook from running.
+  - Skill rows are numbered in order (`1.`, `2.`), the command in bold, with its arguments, who started them, and when: `you` typed the slash command, `model` means Claude called it, and `preloaded` means it came another way, such as a subagent's preloaded skill. A row tagged `(source:typed)` or `(source:tool.call)` was recorded from the typed command or the Skill call, because a managed plugin seated above cops (as on a team organization) kept its `skill.prompt` hook from running.
   - An agent call sits under the latest skill that started before it; calls made before any skill come first, unindented. Any agent gets a row with its status, time, tokens and outcome (`✓ Explore · 3s · 12k tokens · …`); only a cops agent opens the pane by itself. Each `cops:pr-oracle` (🔮 Oracle) and `cops:pr-sidekick` (🦸 Sidekick) call shows what it was given and what it returned:
     - Oracle: its mode;
     - Sidekick: how many rules its `Rules that apply:` line carried and how many deviations it reported (`6 rules · 1 deviation`), and a red warning if its prompt carried `memory-root`, which it must never get;
