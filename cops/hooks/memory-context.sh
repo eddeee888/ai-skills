@@ -31,6 +31,15 @@ canonical_path() {
   [ -d "$1" ] && (cd "$1" 2>/dev/null && pwd -P)
 }
 
+# A tier's model as the user set it, or `inherit` when unset, empty, or not a plain model name.
+model_value() {
+  if printf '%s' "$1" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,99}$'; then
+    printf '%s' "$1"
+  else
+    printf 'inherit'
+  fi
+}
+
 # Cursor hook output is JSON, so escape context text before interpolation.
 json_escape() {
   local value="$1"
@@ -65,6 +74,11 @@ COPS memory login unset: PR_MEMORY_LOGIN is missing or not a GitHub login. Pass 
     context="COPS memory unavailable: the configured path is not a Git root. Pass \`memory-root: unavailable\` to pr-oracle."
   fi
 fi
+
+# Which model each pr-oracle tier runs on, from the user's COPS_MODEL_* variables; `inherit` keeps the session's model.
+context="$context
+COPS models: light=$(model_value "${COPS_MODEL_LIGHT:-}") standard=$(model_value "${COPS_MODEL_STANDARD:-}") deep=$(model_value "${COPS_MODEL_DEEP:-}")
+Pass a call's tier value as the subagent model, or omit the model for \`inherit\` (\`CONVENTIONS-orchestration.md\` → \"Consulting the \`pr-oracle\` agent\")."
 
 if [ "$mode" = cursor ]; then
   if [ -n "$context" ]; then

@@ -61,6 +61,13 @@ Without `cops`, give only a manual-update `pr-sync` line.
 Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
 - Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle`, waits, and supplies the mode plus every listed input because it starts blank.
+- **Model by tier.** A call's tier is its mode's, or the highest of a combined call's modes; a fallback subagent for a mode takes the same tier. Session context's `COPS models:` line gives each tier's value: pass it as the call's model, and omit the model for `inherit`, with no such line, or where the host can't set one per call (Cursor).
+
+  | Tier | For | Modes |
+  | --- | --- | --- |
+  | `light` | sorting, extracting, formatting | `brief-task` |
+  | `standard` | reading, summarising, drafting | `scout-repo`, `triage-threads`, `sweep-diff`, `grill-description`, `learn-feedback` |
+  | `deep` | finding bugs, judging trade-offs | `review-pr`, `draft-author-notes` |
 - **Optional only when missing.** If `cops` is absent, perform the exact step inline, continue, and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
