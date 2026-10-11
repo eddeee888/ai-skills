@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentCall, InboxItem, SkillRun, Thread, Threads } from '../types'
+import { describeChain } from './autopilot-chain.ts'
 import { parseMemoryGit } from './memory-git.ts'
 import type { MemoryGit } from './memory-git.ts'
 import { parseSuffixes } from './memory-inbox.ts'
@@ -46,6 +47,7 @@ const openItems = atom({ plugin: 'cops', key: 'openItems' } as const, [])
 const checklist = atom({ plugin: 'cops', key: 'checklist' } as const, null)
 const paneTab = atom({ plugin: 'cops', key: 'paneTab' } as const, 'hq')
 const memoryRules = atom({ plugin: 'cops', key: 'memoryRules' } as const, [])
+const turnEndedAt = atom({ plugin: 'cops', key: 'turnEndedAt' } as const, null)
 
 const run = async ($: EngineInterface, argv: readonly string[]) => {
   try {
@@ -194,11 +196,11 @@ const readDropped = async ($: EngineInterface): Promise<string[]> => {
 const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
   const branch = await run($, ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
   if (branch?.exitCode !== 0) return { status: 'no-repo' }
-  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,url,state'])
+  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,url,state,isDraft'])
   if (pr?.exitCode !== 0) return { status: pr?.stderr.includes('no pull requests found') ? 'no-pr' : 'needs-gh' }
   try {
     // JSON.parse returns `any`; dropping these casts takes a runtime check of gh's output.
-    const { number, url, state } = JSON.parse(pr.stdout) as { number: number; url: string; state?: string }
+    const { number, url, state, isDraft } = JSON.parse(pr.stdout) as { number: number; url: string; state?: string; isDraft?: boolean }
     const ran = await run($, [
       'gh', 'api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-F', `number=${number}`, '-f', `query=${THREADS_QUERY}`,
     ])
@@ -206,7 +208,7 @@ const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
     const response = JSON.parse(ran.stdout) as ThreadsResponse
     // gh also finds a branch's merged or closed PR; anything else counts as open.
     const prState = state === 'MERGED' || state === 'CLOSED' ? state : 'OPEN'
-    return { status: 'ready', pr: number, url, state: prState, threads: toThreads(response), ...summarize({ response }) }
+    return { status: 'ready', pr: number, url, state: prState, isDraft, threads: toThreads(response), ...summarize({ response }) }
   } catch {
     return { status: 'needs-gh' }
   }
@@ -638,6 +640,16 @@ export const register: Register = (on, options) => {
   // Checks a cops oracle's `loaded:` once its run ends, and ends the run's 4th-try count.
   on('turn.complete', async ($, e, next) => {
     const completed = await next(e)
+    // A main turn (no agentId) ending is when a running autopilot chain counts as stopped.
+    try {
+      if (!e.agentId) {
+        const endedAt = await $.clock.now()
+        await update($, turnEndedAt, () => endedAt)
+        $.ui.invalidate('ui.render')
+      }
+    } catch (error) {
+      reportFailure($, { step: 'turn-end', what: 'note when the turn ended', error })
+    }
     try {
       const call = e.agentId ? (await read($, agents)).find(one => one.agentId === e.agentId) : undefined
       if (call && e.agentId) {
@@ -660,6 +672,7 @@ export const register: Register = (on, options) => {
     const done = await read($, handled)
     const calls = await read($, agents)
     const runs = await read($, skills)
+    const chain = describeChain({ runs, calls, view, turnEndedAt: await read($, turnEndedAt), now })
     const hint = describeNext({ view, handled: done, ran: runs.map(one => one.skill) })
     const lastRun = hint && runs.findLast(one => isSameSkill({ a: one.skill, b: hint.skill }))
     const activity = groupActivity({ runs, calls })
@@ -828,20 +841,37 @@ export const register: Register = (on, options) => {
       </Box>
     )
 
+    const pickUp = chain?.pickUp
+    const chainRow = chain && (
+      <Box flexDirection="column">
+        <Box flexDirection="row" gap={1}>
+          <Text wrap="truncate-end">{chain.line}</Text>
+          {pickUp && (
+            <Button key="pick-up" label="Pick up" onPress={async () => {
+              if (!(await $.prompt.fill({ text: pickUp })).isFilled) $.ui.toast(`Couldn't fill the prompt — type ${pickUp}`)
+            }} />
+          )}
+        </Box>
+        {chain.warnings.map(warning => <Text key={`chain-${warning}`} color="warning" wrap="truncate-end">{warning}</Text>)}
+      </Box>
+    )
+
     return (
       <Box flexDirection="column" gap={1}>
         {tabs}
         {view.status === 'ready' ? (
           <Box flexDirection="column" gap={1}>
             <Text bold>Threads · <Link href={view.url}>{`PR #${view.pr}`}</Link>{view.state !== 'OPEN' && ` (${view.state.toLowerCase()})`}</Text>
-            {nextRow}
+            {!chain?.ownsNext && nextRow}
+            {chainRow}
             {group('Needs you', view.threads.filter(one => one.move === 'you'))}
             {group('Waiting on reviewer', view.threads.filter(one => one.move === 'reviewer'))}
           </Box>
         ) : (
           <Box flexDirection="column" gap={1}>
             <Text dimColor>{waiting[view.status]}</Text>
-            {nextRow}
+            {!chain?.ownsNext && nextRow}
+            {chainRow}
           </Box>
         )}
         <Text dimColor wrap="truncate-end">{'─'.repeat(80)}</Text>

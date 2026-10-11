@@ -106,6 +106,28 @@ validate_orchestration_handoffs() {
   done < <(LC_ALL=C comm -13 <(printf '%s\n' "$expected") <(printf '%s\n' "$actual"))
 }
 
+# Keep the HQ pane's autopilot strip in step with autopilot.md → "The chain": AUTOPILOT_STAGES must
+# list its numbered `cops:` skills in order, and AUTOPILOT_SUFFIX must be the phrase its stage args end in.
+validate_autopilot_chain() {
+  local doc="$ROOT/cops/skills/pr-start/autopilot.md" hooks="$ROOT/cops/hooks/autopilot-chain.ts" expected actual suffix
+  expected="$(perl -ne '
+    $in = 1 if /^## The chain/;
+    next unless $in;
+    last if $in && /^## / && !/^## The chain/;
+    print "$1\n" if /^\d+\. `(cops:[\w-]+)`/;
+  ' "$doc")"
+  actual="$(perl -ne '
+    if (/^export const AUTOPILOT_STAGES = \[(.*)\]/) { print "$_\n" for $1 =~ /\x27(cops:[\w-]+)\x27/g }
+  ' "$hooks")"
+  if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+    fail "$hooks" "AUTOPILOT_STAGES must list ${expected//$'\n'/, } in order, as in ${doc#"$ROOT"/} → The chain; got: ${actual//$'\n'/, }"
+  fi
+  suffix="$(perl -ne "print \$1 if /^export const AUTOPILOT_SUFFIX = '([^']+)'/" "$hooks")"
+  if [ -z "$suffix" ] || ! grep -Fq "\`<PR URL> — $suffix\`" "$doc"; then
+    fail "$hooks" "AUTOPILOT_SUFFIX must be the phrase after the dash in ${doc#"$ROOT"/} → The chain; got: $suffix"
+  fi
+}
+
 # Run the session-start hook and check its `COPS models:` line for each tier setting.
 validate_memory_context_models() {
   local script="$ROOT/cops/hooks/memory-context.sh" out expected
@@ -682,6 +704,7 @@ validate_json
 validate_shell
 validate_convention_copies
 validate_orchestration_handoffs
+validate_autopilot_chain
 validate_memory_context_models
 validate_markdown_links
 validate_convention_pointers
