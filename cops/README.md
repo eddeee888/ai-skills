@@ -40,13 +40,14 @@ available, and the skills call them.
 In Claude Code, `cops` adds a status line entry that shows the memory state and how full each `MEMORY.md` is, for example (Claude Code labels the entry `cops`):
 
 ```text
-memory: octocat (12/200,40/200)
+memory: octocat · self 12/200 · team 40/200 · 1 uncommitted · 2 unpushed
 ```
 
 - **State:** `memory: <login>`, `memory: ✗ (no login)`, `memory: ✗ (off)` (no path configured), or `memory: ✗ (bad path)` (the path isn't a Git root). It comes from the same script as the session-start hook, so the two always agree.
-- **Capacity:** `(<personal>/200,<team>/200)`, the lines in your personal and the team `MEMORY.md` out of the 200 that `pr-oracle` reads. A missing file counts as 0. A toast warns once per session when either file reaches 180 lines.
+- **Capacity:** `self <personal>/200 · team <team>/200`, the lines in your personal and the team `MEMORY.md` out of the 200 that `pr-oracle` reads. A missing file counts as 0. A toast warns once per session when either file reaches 180 lines.
+- **Git:** `<n> uncommitted` and `<n> unpushed`, from `git status --porcelain` and `git rev-list --count @{u}..HEAD` in the memory repository; a zero count is left out, a branch with no upstream shows no unpushed part, and a failing git command drops only these parts. COPS never fetches, pulls, commits or pushes it. A toast at session end says when changes are uncommitted.
 
-It refreshes at session start and every two minutes.
+It refreshes at session start, every two minutes, and after a `learn-feedback` call.
 
 ## Rule band
 

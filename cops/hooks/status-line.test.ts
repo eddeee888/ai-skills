@@ -19,11 +19,13 @@ const MEMORY_OFF = 'COPS memory not configured: PR_MEMORY_PATH is unset, so pr-o
 // Answers the commands and reads the status line makes, and resolves with the first status it sets.
 const world = (
   on: On,
-  answers: { memory: string; files?: Record<string, string> },
+  answers: { memory: string; files?: Record<string, string>; porcelain?: string; ahead?: string },
 ) => {
   const argvs: string[][] = []
   const toasts: string[] = []
   const reads: string[] = []
+  const statuses: (string | undefined)[] = []
+  let porcelain = answers.porcelain
   const clock = mock.clock(on)
   on('fs.read', ($, e) => {
     reads.push(e.path)
@@ -39,16 +41,23 @@ const world = (
   on('command.register', ($, e) => ({ value: { command: e.name } }))
   on('process.run', ($, e) => {
     argvs.push([...e.argv])
-    // The threads pane's git and gh calls find no repository.
+    if (e.argv[0] === 'git' && e.argv.includes('status')) {
+      return { value: porcelain === undefined ? failed('fatal: not a git repository') : ok(porcelain) }
+    }
+    if (e.argv[0] === 'git' && e.argv.includes('rev-list')) {
+      return { value: answers.ahead === undefined ? failed('fatal: no upstream configured') : ok(answers.ahead) }
+    }
+    // The threads pane's other git and gh calls find no repository.
     return { value: e.argv[0] === 'bash' ? ok(answers.memory) : failed('fatal: not a git repository') }
   })
   const status = new Promise<string | undefined>(resolve => {
     on('ui.status', ($, e) => {
+      statuses.push(e.text)
       resolve(e.text)
       return { value: undefined }
     })
   })
-  return { argvs, status, toasts, reads, clock }
+  return { argvs, status, statuses, toasts, reads, clock, setPorcelain: ({ next }: { next: string }): void => { porcelain = next } }
 }
 
 const start = ($: Engine) => $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
@@ -57,7 +66,7 @@ describe('status line', () => {
   test('shows only memory, with no PR or CI', async ($, on) => {
     const { status, argvs } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 12 }), [TEAM]: lines({ count: 40 }) } })
     await start($)
-    expect(await status).toBe('memory: octocat (12/200,40/200)')
+    expect(await status).toBe('memory: octocat · self 12/200 · team 40/200')
     expect(argvs.some(argv => argv.join(' ').startsWith('gh pr view --json number,state'))).toBe(false)
   })
 
@@ -75,24 +84,133 @@ describe('status line', () => {
   })
 })
 
+describe('memory git changes', () => {
+  const files = { [PERSONAL]: lines({ count: 12 }), [TEAM]: lines({ count: 40 }) }
+
+  test('clean shows no git parts', async ($, on) => {
+    const { status } = world(on, { memory: MEMORY_ON, files, porcelain: '', ahead: '0\n' })
+    await start($)
+    expect(await status).toBe('memory: octocat · self 12/200 · team 40/200')
+  })
+
+  test('shows uncommitted and unpushed counts', async ($, on) => {
+    const { status, argvs } = world(on, { memory: MEMORY_ON, files, porcelain: ' M a.md\n', ahead: '2\n' })
+    await start($)
+    expect(await status).toBe('memory: octocat · self 12/200 · team 40/200 · 1 uncommitted · 2 unpushed')
+    expect(argvs).toContainEqual(['git', '--no-optional-locks', '-C', '/memory', 'status', '--porcelain', '--untracked-files=all'])
+    expect(argvs).toContainEqual(['git', '-C', '/memory', 'rev-list', '--count', '@{u}..HEAD'])
+  })
+
+  test('no upstream drops only the unpushed part', async ($, on) => {
+    const { status } = world(on, { memory: MEMORY_ON, files, porcelain: ' M a.md\n' })
+    await start($)
+    expect(await status).toBe('memory: octocat · self 12/200 · team 40/200 · 1 uncommitted')
+  })
+
+  test('a git failure keeps the rest of the line', async ($, on) => {
+    const { status } = world(on, { memory: MEMORY_ON, files })
+    await start($)
+    expect(await status).toBe('memory: octocat · self 12/200 · team 40/200')
+  })
+
+  test('toasts at session end when changes are uncommitted', async ($, on) => {
+    const { toasts } = world(on, { memory: MEMORY_ON, files, porcelain: ' M a.md\n', ahead: '0\n' })
+    on('session.end', () => ({ sessionId: 'test' }))
+    await start($)
+    await $.session.end({ cwd: '/repo' })
+    expect(toasts).toEqual(['COPS memory: 1 uncommitted change in the memory repository; commit them or they stay local.'])
+  })
+
+  test('clean repository gives no toast at session end', async ($, on) => {
+    const { toasts } = world(on, { memory: MEMORY_ON, files, porcelain: '', ahead: '0\n' })
+    on('session.end', () => ({ sessionId: 'test' }))
+    await start($)
+    await $.session.end({ cwd: '/repo' })
+    expect(toasts).toEqual([])
+  })
+
+  test('runs no git command at session end while memory is off', async ($, on) => {
+    const { argvs } = world(on, { memory: MEMORY_OFF, porcelain: ' M a.md\n', ahead: '1\n' })
+    on('session.end', () => ({ sessionId: 'test' }))
+    await start($)
+    await $.session.end({ cwd: '/repo' })
+    expect(argvs.some(argv => argv.includes('-C'))).toBe(false)
+  })
+
+  describe('after a pr-oracle call', () => {
+    // Background work settles over a few turns of the event loop.
+    const until = async ({ check }: { check: () => boolean }): Promise<void> => {
+      for (let tries = 0; tries < 3000; tries++) {
+        if (check()) {
+          return
+        }
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+      throw new Error('never happened')
+    }
+    const answerAgents = (on: On): void => {
+      on('tool.call', { tool: 'Agent' }, ($, e) => ({
+        result: {
+          status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 1000, totalTokens: 100, prompt: e.prompt,
+          usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
+        },
+        text: '',
+      }))
+    }
+
+    test('a learn-feedback call reads the git counts again', async ($, on) => {
+      const { statuses, argvs, setPorcelain } = world(on, { memory: MEMORY_ON, files, porcelain: '' })
+      answerAgents(on)
+      await start($)
+      await until({ check: () => statuses.length === 1 })
+      expect(statuses[0]).toBe('memory: octocat · self 12/200 · team 40/200')
+      setPorcelain({ next: ' M a.md\n' })
+      const before = argvs.filter(argv => argv.includes('status')).length
+      await $.tool.call({ tool: 'Agent', description: 'learn-feedback', subagent_type: 'cops:pr-oracle', prompt: 'mode: learn-feedback' })
+      await until({ check: () => statuses.length === 2 })
+      expect(statuses[1]).toBe('memory: octocat · self 12/200 · team 40/200 · 1 uncommitted')
+      expect(argvs.filter(argv => argv.includes('status')).length).toBe(before + 1)
+    })
+
+    test('a brief-task call does not', async ($, on) => {
+      const { statuses, argvs } = world(on, { memory: MEMORY_ON, files, porcelain: '' })
+      answerAgents(on)
+      await start($)
+      await until({ check: () => statuses.length === 1 })
+      const before = argvs.filter(argv => argv.includes('status')).length
+      await $.tool.call({ tool: 'Agent', description: 'brief-task', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(statuses.length).toBe(1)
+      expect(argvs.filter(argv => argv.includes('status')).length).toBe(before)
+    })
+  })
+
+  test('runs no git command while memory is off', async ($, on) => {
+    const { status, argvs } = world(on, { memory: MEMORY_OFF, porcelain: ' M a.md\n', ahead: '1\n' })
+    await start($)
+    expect(await status).toBe('memory: ✗ (off)')
+    expect(argvs.some(argv => argv.includes('-C'))).toBe(false)
+  })
+})
+
 describe('memory capacity', () => {
   test('shows lines used in the personal and team MEMORY.md', async ($, on) => {
     const { status, toasts } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 12 }), [TEAM]: lines({ count: 40 }) } })
     await start($)
-    expect(await status).toBe('memory: octocat (12/200,40/200)')
+    expect(await status).toBe('memory: octocat · self 12/200 · team 40/200')
     expect(toasts).toEqual([])
   })
 
   test('counts a missing team file as 0 lines', async ($, on) => {
     const { status } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 12 }) } })
     await start($)
-    expect(await status).toBe('memory: octocat (12/200,0/200)')
+    expect(await status).toBe('memory: octocat · self 12/200 · team 0/200')
   })
 
   test('warns once from 180 lines', async ($, on) => {
     const { status, toasts, reads, clock } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 185 }) } })
     await start($)
-    expect(await status).toBe('memory: octocat (185/200,0/200)')
+    expect(await status).toBe('memory: octocat · self 185/200 · team 0/200')
     expect(toasts).toEqual(['COPS memory: personal MEMORY.md has 185 of 200 lines; pr-oracle reads only the first 200.'])
     await clock.advance(120_000)
     expect(reads.filter(path => path === PERSONAL)).toHaveLength(2)
@@ -102,7 +220,7 @@ describe('memory capacity', () => {
   test('warns about a team file over 200 lines', async ($, on) => {
     const { status, toasts } = world(on, { memory: MEMORY_ON, files: { [PERSONAL]: lines({ count: 12 }), [TEAM]: lines({ count: 204 }) } })
     await start($)
-    expect(await status).toBe('memory: octocat (12/200,204/200)')
+    expect(await status).toBe('memory: octocat · self 12/200 · team 204/200')
     expect(toasts).toEqual(['COPS memory: team MEMORY.md has 204 of 200 lines; pr-oracle reads only the first 200.'])
   })
 
@@ -123,8 +241,8 @@ describe('descriptions', () => {
   })
 
   test('memory usage', () => {
-    expect(describeMemory({ context: MEMORY_ON })).toBe('memory: octocat (0/200,0/200)')
-    expect(describeMemory({ context: MEMORY_ON, usage: { personal: 205, team: 3 } })).toBe('memory: octocat (205/200,3/200)')
+    expect(describeMemory({ context: MEMORY_ON })).toBe('memory: octocat · self 0/200 · team 0/200')
+    expect(describeMemory({ context: MEMORY_ON, usage: { personal: 205, team: 3 } })).toBe('memory: octocat · self 205/200 · team 3/200')
     expect(describeMemory({ context: 'COPS memory root: /m\nCOPS memory login unset: ...', usage: { team: 5 } })).toBe('memory: ✗ (no login)')
     expect(describeMemory({ context: MEMORY_OFF, usage: { personal: 5 } })).toBe('memory: ✗ (off)')
   })
