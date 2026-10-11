@@ -30,6 +30,19 @@ Tag by the original comment's nature, not by the later go-ahead:
 - `why-question` — asks for reasoning or research, such as “why this approach?” or “should this handle X too?”.
 - A question plus an instruction that depends on the answer is a `why-question`. Answer it first; the dependent instruction waits for a new user go-ahead on that answer.
 
+## Autopilot runs
+
+Apply this section only when the caller says the run is a pr-start autopilot stage. Nobody is asked, so every thread ends as `automatic` or left open, and the risk gate above still beats everything here.
+
+Only threads opened by the run's own self-review, signed `cops:pr-review` under the authenticated login with nobody else in them, can be `automatic`. Every other unresolved thread is left open. For those self-review threads the opening label decides:
+
+- `Question:` → left open for the user; the agent never answers its own question. No `why-question` is tagged.
+- `Suggestion:` → `automatic`, `authoritative`, if low risk.
+- `Test:` → `automatic`, `authoritative`: add the named missing case.
+- `Issue:` → `automatic`, `authoritative`, if low risk, fixed test first. A critical one (`CONVENTIONS-posts.md` → "Critical changes") is left open.
+
+Return a left-open thread in `needs the user first` with its reason; the caller lists it in the run's report and posts no reply on it.
+
 ## Required output per thread
 
 Return the thread identifier, opening comment `databaseId`, path and effective line, bucket, nature when automatic, one-line ask or handled reason, risk reason when applicable, and every remembered rule the thread matches. Preserve enough author and last-comment information for Step 4's user summary.

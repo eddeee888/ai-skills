@@ -48,13 +48,21 @@ Final-report users: every `cops` and `oss` skill.
 
 ## Suggesting next steps
 
-A skill never runs another skill to finish; it only suggests each applicable step once before `Handoffs:`, and only for the user's own PR, determined by `gh api user --jq .login` or `get_me`.
+A skill never runs another skill to finish, except under "Autopilot runs"; it only suggests each applicable step once before `Handoffs:`, and only for the user's own PR, determined by `gh api user --jq .login` or `get_me`.
 
 - PR just opened → `/cops:pr-review self-reviews it; "fix, no post" skips posting.` (`/pr-review` on Cursor).
 - An existing PR was pushed; title/body may be stale → `The PR's title and description may now be stale; /cops:pr-sync will update them.` (`/pr-sync` on Cursor).
 - No thread comment by anyone else and no user `Note:`/`Drive-by:` in either label form → `/cops:pr-note will post your reasoning and drive-bys as inline comments for reviewers.` (`/pr-note` on Cursor).
 
 Without `cops`, give only a manual-update `pr-sync` line.
+
+## Autopilot runs
+
+The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card listing every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-sync`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`, and marks the PR ready.
+
+- **The card is the only prompt.** Stages post and push without further confirmation and suggest no next step.
+- **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft.
+- **Only that run starts a stage.** No other skill does, and no argument typed to a stage makes it one.
 
 ## Consulting the `pr-oracle` agent
 

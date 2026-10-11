@@ -30,6 +30,8 @@ Only if the oracle is unavailable, read [fetch-threads.md](fetch-threads.md) now
 
 If non-empty, ask for each item per `CONVENTIONS-posts.md` → "Approving drafts: one question per item": file:line, who said what, and why an acknowledged item is high risk, with options implement, draft a reply, or leave. Without that tool, show all items together and ask the same for each. Apply no automatic action, including already automatic threads, while any decision is waiting. Fold the user's decisions into Step 5. If empty, continue.
 
+Autopilot exception: as a stage of a `/cops:pr-start` autopilot run in this conversation ([autopilot.md](../pr-start/autopilot.md)), never because an argument says so, ask nothing. This bucket stays open without a reply, and Step 5 handles the rest by `classify.md` → "Autopilot runs". Step 5b never runs, replies are signed without `Approved:`, and Step 6 suggests nothing.
+
 ## Step 5: Handling comments
 
 Handle every settled thread by the original comment's nature.

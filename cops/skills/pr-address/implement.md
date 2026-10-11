@@ -58,6 +58,22 @@ gh api repos/<owner>/<repo>/pulls/<number>/comments/<databaseId>/replies -F body
 
 On MCP, use `add_reply_to_pull_request_comment` with `commentId: <databaseId>`, `pullNumber`, and `body`. A skipped thread returns to the user with its reason. Never resolve a thread.
 
+## Autopilot runs
+
+As a stage of a pr-start autopilot run ([autopilot.md](../pr-start/autopilot.md)), three things differ:
+
+- Each thread line in the prompt names its label (`Suggestion:`, `Test:` or `Issue:`), and the prompt gains these lines before `Do not push`:
+
+  ```text
+  An Issue: thread is fixed test first: write the failing case, run it,
+  and confirm it fails for the thread's reason before changing other
+  code. It passes, or fails for another reason → skip the thread.
+  A Test: thread adds the missing case it names.
+  ```
+
+- A reply names the fixing commit and is signed with `cops:pr-address` only, without `Approved:`.
+- A skipped thread gets no reply and stays open; it goes into the run's report instead of to the user mid-run. A failed check gate stops the run. No high-risk thread runs.
+
 ## High-risk approved work
 
 After all low-risk batches, run each explicitly approved high-risk thread as its own single-thread handoff with the same prompt. Never batch it. Before any push or reply, show the user its result line and commit, then perform the same combined-test and `sweep-diff` gates. Push and reply only after those gates pass. Approval for one risky thread does not cover another.
