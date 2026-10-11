@@ -19,7 +19,7 @@ Package map: <map or "discover it">
 Return in a few lines:
 - existing API/config surface and extension points that already generalize toward the request;
 - owning files/packages and every workspace whose public API, exported types, or config schema would change;
-- likely call-site and consumer blast radius;
+- the call sites and consumers it likely affects;
 - whether the change can be additive and backward-compatible;
 - any public API signature, exported type, CLI flag, config shape, or documented behavior that would change incompatibly;
 - whether it needs an RFC/design decision, deprecation/migration path, or proactive user communication.
@@ -38,13 +38,13 @@ Size from that answer. Do not re-read the files the survey read.
 
 ## Classify size
 
-Escalate only: one large element makes the whole feature large.
+Size with `CONVENTIONS-pr-metadata.md` → "Task size": its two axes, contract beats diff size, and escalate only. That section defines the sizes; for a feature they look like this:
 
 - **Small** — additive, backward-compatible, and confined to one package/file: a safe-default config option, optional parameter, or new export. Existing callers that change nothing are unaffected.
 - **Medium** — additive and non-breaking but spans files/packages, such as shared-type plumbing, a new package, or coordinated monorepo changes.
 - **Large** — breaks an existing public API, config shape, exported type, or documented behavior; reaches most consumers; needs an RFC/design doc, deprecation window, or migration guide; or needs proactive communication such as a highlighted changelog, blog, or social post.
 
-State the classification and 1–2 concrete evidence-backed reasons, never merely “this seems big.”
+State it as `Size: <Small|Medium|Large> — <reasons>`, each reason backed by evidence, never merely “this seems big.”
 
 ## Recommend
 

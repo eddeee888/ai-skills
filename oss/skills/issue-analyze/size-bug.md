@@ -37,14 +37,14 @@ Size from that answer. Do not re-read the files the survey read.
 
 ## Classify size
 
-Escalate only: one large element makes the whole bug large; never report “small with an asterisk.”
+Size with `CONVENTIONS-pr-metadata.md` → "Task size": its two axes, contract beats diff size, and escalate only. Never report “small with an asterisk.” That section defines the sizes; for a bug they look like this:
 
 - **Small** — once verified, confined to one function/file with no documented/public contract change, such as a missing null check, off-by-one, or wrong condition.
 - **Medium** — touches a shared helper or more than one package/file without changing the documented contract for callers that do not hit the bug.
 - **Large** — changes documented/public behavior relied on by other code, is tangled into a core assumption spanning packages, or requires a design decision before code.
 - **Dependency-rooted** — an upstream release already fixes it: small version bump. No upstream fix but a local patch/override plus tracked upstream issue works: medium. No upstream fix and this repository's public API needs a workaround: large.
 
-State the classification and 1–2 concrete reasons tied to the hypothesis. Dependency sizing previews the options `issue-fix` will offer; do not choose or re-litigate them here.
+State it as `Size: <Small|Medium|Large> — <reasons>`, the reasons tied to the hypothesis. Dependency sizing previews the options `issue-fix` will offer; do not choose or re-litigate them here.
 
 ## Recommend
 

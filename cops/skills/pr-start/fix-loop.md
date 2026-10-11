@@ -54,6 +54,11 @@ Do not push, open a PR, or edit any PR or issue.
 Return at most 5 lines: committed (sha, one-line summary) | uncommitted,
 Done when result (test name: fail before → pass after, or the behavior
 observed), other tests run → pass | fail (names) — or the question.
+Add a `blast radius: <what>` line when the committed change stayed inside In
+scope but touched more files or packages than the Approach named, or a
+shared helper. A file or behavior In scope doesn't cover, or a public or
+documented behavior change the card doesn't name, is a question as
+above, never a `blast radius:` line.
 ```
 
 Fill `Approved-by:` with the login from Step 1; the user's card confirmation is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). Host trailers follow the block without a blank line.
@@ -61,6 +66,12 @@ Fill `Approved-by:` with the login from Step 1; the user's card confirmation is 
 A question → ask the user, then spawn again with `Resuming:` filled in; the same 3-attempt bound carries over. A reply that says Done when holds without a failing-before result on a bug → treat it as incomplete and ask the user before Step 5.
 
 No subagent capability → run the same steps here, in the same order, and mark `fix loop` as `inline (no subagent capability)`.
+
+## Size after the loop
+
+Once the loop has committed, run `git diff --stat <commit before the loop>..HEAD` and compare the files it lists with the card's In scope bullets and Approach; don't rely on the sidekick's report alone. A `blast radius:` line in the reply, or commits that reach further than the card said → apply `CONVENTIONS-pr-metadata.md` → "Task size" again to what was actually changed. The size only goes up, never down. A raised size is reported at Step 7 as `Size: <card size> → <new size> — <what reached further>`; say nothing when it didn't change.
+
+The raise is a report, not a gate: it needs no new confirmation and stops nothing. A change that needs something out of scope still comes back as a question, as the handoff says.
 
 ## Bug: test first
 
