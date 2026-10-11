@@ -299,7 +299,7 @@ validate_budgets() {
   check_budget "CONVENTIONS-orchestration.md" 1200 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
-  check_budget "CONVENTIONS-pr-metadata.md" 700 "convention file"
+  check_budget "CONVENTIONS-pr-metadata.md" 733 "convention file"
 
   while IFS= read -r -d '' path; do
     check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"
@@ -461,6 +461,18 @@ validate_behavioral_contracts() {
     "## 4. Fix loop"
   require_order "cops/skills/pr-start/SKILL.md" "sweep-diff before push" \
     "## 5. Sweep" 'Nothing is pushed before a clean `sweep-diff`' "git push"
+
+  require_order "cops/skills/pr-start/SKILL.md" "task card Size line" \
+    "Approach: <one approach" "Size: <Small|Medium|Large>" "Confirm, or edit any line."
+  for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/size.md \
+    oss/skills/issue-analyze/size-bug.md oss/skills/issue-analyze/size-feature.md; do
+    require_markers "$path" "shared task size" \
+      '`CONVENTIONS-pr-metadata.md` → "Task size"'
+  done
+  require_markers "cops/skills/pr-start/fix-loop.md" "size raised after the loop" \
+    'blast radius: <what>' 'Size: <card size> → <new size>'
+  require_markers "cops/skills/pr-start/SKILL.md" "raised size reported at wrap-up" \
+    "a raised Size"
 
   require_markers "cops/references/pr-oracle/modes/draft-author-notes.md" "author note YAML" \
     "mode: draft-author-notes" "remove-instead:" "task source required"

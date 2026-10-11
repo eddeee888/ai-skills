@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Start a PR from a task
 
-A new PR is only as good as the task it starts from. This skill pins the task down on a card the user confirms, then runs one scoped loop — implement, test, commit — checks it against remembered review rules, and opens a draft PR that says why it exists. It never continues an existing PR.
+This skill pins the task down on a card the user confirms, then runs one scoped loop — implement, test, commit — checks it against remembered review rules, and opens a draft PR. It never continues an existing PR.
 
 GitHub steps below are `gh` commands. Pick and keep one access route exactly as `CONVENTIONS-github.md` → "GitHub access" says.
 
@@ -59,23 +59,26 @@ In scope:
 Out of scope:
 - <nearby things it must leave alone>
 Approach: <one approach, in a line or two>
+Size: <Small|Medium|Large> — <reason>
 Branch: <current branch | new <type>/<short-slug> from <default branch>>
 Confirm, or edit any line.
 ```
 
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes that test first and confirms it fails for the reported reason before changing code.
+- **Size** → read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size"). It is shown only; it gates nothing.
 - **Scope bullets** exist to keep the sidekick from drifting; make them concrete (files, packages, behaviors), not "be careful".
 - **Options instead of one approach** only when the direction is unclear or the user asks. Give 2–3, each as:
 
   ```text
   Option <A>: <one-line name>
     Changes: <files or packages and what changes in each>
-    Blast radius: <who or what else sees the change>
+    Affects: <who or what else sees the change>
     Risk: <what could break, and how likely>
     Effort: <rough size — a few lines | one file | several files>
+    Size: <Small|Medium|Large> — <reason>
   ```
 
-  The user picks one; the card's Approach becomes that option.
+  The card's Approach and Size become the picked option's.
 - Never suggest or hand off to another plugin's skill from the card.
 
 An edit to Goal or likely files that changes what the brief covers → call `brief-task` again before Step 4. Once confirmed, create the new branch if the card named one (`git switch -c <type>/<short-slug>`). Branch declined → stop.
@@ -112,7 +115,7 @@ On the MCP route, call `create_pull_request` with `draft: true` and the two file
 
 ## 7. Wrap up
 
-Report the PR link, the commits, and the Done when result. Show `memory-candidate:` lines and ask whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Don't run another skill; suggest `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps" — the PR body now carries the task source it needs. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second `sweep-diff` for the follow-up's commit), and `learn-feedback` when run.
+Report the PR link, the commits, the Done when result, and a raised Size (fix-loop.md). Show `memory-candidate:` lines and ask whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Don't run another skill; suggest `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps". End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second `sweep-diff` for the follow-up's commit), and `learn-feedback` when run.
 
 ## Stop instead of proceeding
 

@@ -10,7 +10,7 @@ Which skill fits depends on whose PR it is and where it is in review. In lifecyc
 
 | When | Skill | What it does |
 | --- | --- | --- |
-| You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). |
+| You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). The card carries a `Size:` line — Small, Medium or Large, with the reason — for you to see; it gates nothing. |
 | Someone else's PR, or yours as a self-review | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. On your own PR, **Fix, no post** fixes the chosen findings and pushes instead of posting them. |
 | Your PR, branch moved on | [`pr-sync`](skills/pr-sync/SKILL.md) | Rebases the PR and refreshes its title, description, and changeset. |
 | Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. Run it last, on the final diff. |

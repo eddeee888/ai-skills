@@ -24,6 +24,19 @@ A failing-test checkpoint branch is `repro/<issue-number>`; its separate fix bra
 
 A branch for work that isn't a checkpoint/fix pair is `<type>/<short-slug>`: type `feat`, `fix`, `chore`, or `refactor`; slug a few lowercase words joined by `-`, e.g. `feat/retry-webhook-delivery`. Never a bare number, so it can't clash with `fix/<issue-number>`.
 
+## Task size: `Size: Small — <reason>`
+
+Size a task Small, Medium or Large, the name written in full: `Size: Medium — <reason>`. Two axes decide it:
+
+- **Blast radius** — one place (a function or file; for an additive feature, one package), versus several files, packages or a shared helper.
+- **Contract** — whether existing documented or public behavior changes.
+
+Small is one place with no contract change. Medium reaches further, with no contract change. Large changes the contract. A skill's own rubric may add cases.
+
+- **Contract beats diff size.** A change to existing public or documented behavior is Large even when the diff is tiny, as is anything needing a design decision first.
+- **Escalate only.** One Large element makes the whole task Large.
+- **Reasons.** Give one or two concrete reasons; a size without them is incomplete.
+
 ## Bold the critical claim in Why/What/Verification bullets
 
 *Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
