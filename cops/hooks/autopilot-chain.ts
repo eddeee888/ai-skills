@@ -109,5 +109,5 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   })
 
   const pickUp = stoppedAt && stoppedAt !== 'fix' && stoppedAt !== 'finish' && url ? `/${AUTOPILOT_STAGES[lastStage]} ${url} ` : undefined
-  return { line, warnings, status, pickUp, ownsNext: status === 'running' || status === 'stopped' }
+  return { line, warnings, status, pickUp, ownsNext: (status === 'running' || status === 'stopped') && (url === undefined || (view.status === 'ready' && view.url === url)) }
 }

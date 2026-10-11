@@ -91,6 +91,13 @@ describe('describeChain', () => {
     expect(chain?.ownsNext).toBe(true)
   })
 
+  test('a stop leaves the Next slot once the view is another PR', () => {
+    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const chain = describe_({ runs, turnEndedAt: 7, v: view({ url: 'https://github.com/o/r/pull/9' }) })
+    expect(chain?.status).toBe('stopped')
+    expect(chain?.ownsNext).toBe(false)
+  })
+
   test('the PR going ready finishes the chain', () => {
     const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ isDraft: false }) })
