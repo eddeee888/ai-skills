@@ -42,7 +42,7 @@ Keep the login for trailers and the card's `Approved-by:`.
 
 ## 2. Profile and brief
 
-Draft the card's Goal and the files it likely touches from the task sources. Then make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `brief-task` mode with `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it is checked out, the draft Goal as the ask, likely files, `login:`, and `memory-root:` / `memory-login:` from session context.
+Draft the card's Goal and the files it likely touches from the task sources. Then make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `brief-task` mode with `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
 
 Keep from the reply: the profile (test command, monorepo packages, template, `overrides:`), the brief lines for `Rules that apply:`, and any `caller only:` lines. Apply those yourself in this chat; never paste them into the sidekick prompt.
 
@@ -93,7 +93,7 @@ A question back → ask the user, then respawn with `Resuming:` filled in; in au
 
 ## 5. Sweep
 
-Call `pr-oracle` in `sweep-diff` mode over the new commits, from the commit before the loop through `HEAD` (pass `memory-root:` / `memory-login:` again).
+Call `pr-oracle` in `sweep-diff` mode over the new commits, from the pre-loop commit through `HEAD` (pass `GitHub route:`, `memory-root:` / `memory-login:` again).
 
 - `clean` → Step 6.
 - In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits and does not push. Then run one more `sweep-diff` over that commit: `clean` → Step 6; any flag → stop and bring it to the user, no second follow-up.

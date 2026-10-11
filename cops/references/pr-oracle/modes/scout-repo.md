@@ -2,7 +2,7 @@
 
 Read `../../../CONVENTIONS.md`, especially “Defaults and contracts” and its index. Read only the indexed `CONVENTIONS-*` sections needed to identify defaults that repository or memory rules override.
 
-Input: the repository as `owner/repo`, and whether it is checked out locally. Callers may target a repository that isn't checked out.
+Input: the repository as `owner/repo`, whether it is checked out locally, and the selected GitHub route. Callers may target a repository that isn't checked out.
 
 Return the repository's working setup exactly in this shape:
 
@@ -20,7 +20,7 @@ overrides: none | <shared-convention default section> → <what to do instead> (
 
 Keep it terse: one short line per field, paths instead of quoted contents, and nothing the caller's shared conventions already cover except differences on `overrides:`. A skill reads this to decide, not to learn the repository.
 
-Build the profile fresh on every call and never write it anywhere. Read files locally, or through `get_file_contents` when the repository is not checked out. Read only what each field needs: root `package.json` and workspace configuration, or marketplace/plugin manifests; `.changeset/config.json` and one or two recent entries; the PR template; the `.github/ISSUE_TEMPLATE/` listing and one bug template, or `.github/ISSUE_TEMPLATE.md`; `CONTRIBUTING.md`; and repository `CLAUDE.md`. Use `none` or `n/a` rather than guessing. Skip `tests` for a repository that is not checked out.
+Build the profile fresh on every call and never write it anywhere. Read files locally, or through the selected route's file read in `../github-access.md` when the repository is not checked out. Read only what each field needs: root `package.json` and workspace configuration, or marketplace/plugin manifests; `.changeset/config.json` and one or two recent entries; the PR template; the `.github/ISSUE_TEMPLATE/` listing and one bug template, or `.github/ISSUE_TEMPLATE.md`; `CONTRIBUTING.md`; and repository `CLAUDE.md`. Use `none` or `n/a` rather than guessing. Skip `tests` for a repository that is not checked out.
 
 When repository `CLAUDE.md` or `CONTRIBUTING.md` states a fact differently from an inference, the repository file wins.
 

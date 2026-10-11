@@ -646,6 +646,11 @@ validate_behavioral_contracts() {
     "COPS_MODEL_LIGHT" "COPS_MODEL_STANDARD" "COPS_MODEL_DEEP" "COPS models:"
   require_markers "cops/hooks/memory-context.sh" "unconfigured memory notice" \
     "COPS memory not configured:"
+  require_markers "cops/references/pr-oracle/github-access.md" "selected GitHub route" \
+    '`GitHub route: gh | MCP`' "none given → MCP route" '| `gh` route | GitHub MCP route |' \
+    'including `gh auth status`' "401/403/404"
+  forbid_markers "cops/references/pr-oracle/github-access.md" "MCP-only oracle access" \
+    'Do not use `gh`'
   require_markers "cops/agents/pr-oracle.md" "loaded files report" \
     '`loaded: <files actually read'
   for path in cops/references/pr-oracle/modes/review-pr.md \

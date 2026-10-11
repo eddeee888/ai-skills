@@ -4,7 +4,7 @@ Use this file only after the user selects an option.
 
 ## Oracle order
 
-Ask the oracle for `brief-task` first, passing the chosen option's files, a one-line summary, and `for: pr-sidekick`. Apply any `caller only:` lines yourself; keep them out of the prompt. The brief supplies reviewer-requested rules. If the user explicitly asked to remember concrete feedback, make a separate `learn-feedback` call with its provenance and personal or `record-team:` intent; never add memory instructions to `brief-task` or `sweep-diff`. If unavailable, use `none` for rules and later inspect your own diff in place of `sweep-diff`.
+Ask the oracle for `brief-task` first, passing the chosen option's files, a one-line summary, the selected `GitHub route:`, and `for: pr-sidekick`. Apply any `caller only:` lines yourself; keep them out of the prompt. The brief supplies reviewer-requested rules. If the user explicitly asked to remember concrete feedback, make a separate `learn-feedback` call with its provenance and personal or `record-team:` intent; never add memory instructions to `brief-task` or `sweep-diff`. If unavailable, use `none` for rules and later inspect your own diff in place of `sweep-diff`.
 
 Then delegate one edit/test/commit loop (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"):
 
@@ -36,6 +36,6 @@ The test must pass for the correct reason, and affected-package tests must show 
 
 ## Sweep follow-up
 
-After a successful commit, run `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `sweep-diff` mode over `<verify-commit-sha>..HEAD`. For flags inside the selected option's scope, run exactly one follow-up subagent with only the flags and commit SHA, using the same constraints and output shape. Out-of-scope flags do not authorize broader work.
+After a successful commit, run `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `sweep-diff` mode over `<verify-commit-sha>..HEAD`, passing the selected `GitHub route:`. For flags inside the selected option's scope, run exactly one follow-up subagent with only the flags and commit SHA, using the same constraints and output shape. Out-of-scope flags do not authorize broader work.
 
 If the implementation or follow-up stops, return its reason before push. A later `cops:pr-sync` rebase may replay the checkpoint SHA while preserving its content and trailer; that is not the forbidden rewrite.

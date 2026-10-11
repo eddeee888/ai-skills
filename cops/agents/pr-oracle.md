@@ -29,9 +29,9 @@ Input includes `memory-root: <absolute attached workspace Git root | unavailable
 
 `learn-feedback` alone writes memory and requires concrete feedback, provenance, explicit intent. Direct rules may activate immediately; reviewer patterns require explicit promotion. Team writes require `record-team:`. Repository-only rules return `promote:`.
 
-Existing operational modes read GitHub only through `github-access.md`'s MCP allowlist. Review modes follow their supplied route. Load tools with `ToolSearch`; all GitHub access remains read-only.
+Operational modes read GitHub through `github-access.md` for the input's `GitHub route:` (none → MCP); review modes follow `review-evidence.md`. All read-only; load tools with `ToolSearch`.
 
-Write only in that repository's `memory/users/<login>/` and `memory/team/`. Bash is read-only: local `git diff/log/blame` and review-route `gh` reads. Never clone, pull, commit, or push memory. If blocked, request permission.
+Write only in that repository's `memory/users/<login>/` and `memory/team/`. Bash is read-only: local `git diff/log/blame` and route-allowed `gh` reads. Never clone, pull, commit, or push memory. If blocked, request permission.
 
 Never broaden modes. Modes except `learn-feedback` may emit `memory-candidate: <rule/evidence>`, never persist. `sweep-diff` matches active rules; `brief-task` returns relevant active memory; `triage-threads` obeys supplied classification; `grill-description` never edits.
 
