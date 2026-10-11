@@ -50,11 +50,11 @@ Final-report users: every `cops` and `oss` skill.
 
 A skill never runs another skill to finish; it only suggests each applicable step once before `Handoffs:`, and only for the user's own PR, determined by `gh api user --jq .login` or `get_me`.
 
-- PR just opened → `Self-review with /cops:pr-review; "fix, no post" fixes without posting.` (`/pr-review` on Cursor).
-- Existing PR was pushed and title/body may be stale (not a PR just opened) → `The PR's title and description may now be stale; /cops:pr-sync will update them.` (`/pr-sync` on Cursor).
-- Review threads contain no comment by anyone else and no user `Note:`/`Drive-by:` in either label form → `/cops:pr-note will post the reasoning behind the PR's choices, and any drive-by change, as inline comments for reviewers.` (`/pr-note` on Cursor).
+- PR just opened → `/cops:pr-review self-reviews it; "fix, no post" skips posting.` (`/pr-review` on Cursor).
+- An existing PR was pushed; title/body may be stale → `The PR's title and description may now be stale; /cops:pr-sync will update them.` (`/pr-sync` on Cursor).
+- No thread comment by anyone else and no user `Note:`/`Drive-by:` in either label form → `/cops:pr-note will post your reasoning and drive-bys as inline comments for reviewers.` (`/pr-note` on Cursor).
 
-Without `cops`, keep only a manual-update `pr-sync` line.
+Without `cops`, give only a manual-update `pr-sync` line.
 
 ## Consulting the `pr-oracle` agent
 

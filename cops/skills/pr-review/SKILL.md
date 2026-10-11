@@ -20,7 +20,7 @@ Use the named PR or the current branch's. Missing/closed/merged → stop. Keep `
 
 ## 2. Review
 
-Call `pr-oracle` once in `review-pr` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent") with owner/repo, number, URL, saved SHA, login, selected route, checkout path/status, title/body, and changed files. Only fix-no-post.md calls `sweep-diff`; never `brief-task`.
+Call `pr-oracle` once in `review-pr` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent") with owner/repo, number, URL, saved SHA, login, selected route, checkout path/status, title/body, and changed files. Never call `brief-task`.
 
 Oracle unavailable but subagents exist → give `../../agents/pr-oracle.md`, its `review-pr` mode and review-evidence references, and the prompt to a general read-only subagent. No subagent capability → run the same contract inline. Mark Handoffs. Use separate `learn-feedback` only for explicit concrete feedback with provenance and personal or `record-team:` intent.
 
@@ -39,7 +39,7 @@ Body: <kind>: <body, or "empty">
 Post as COMMENT? (drop/edit by number, "post", or "fix, no post" on your PR)
 ```
 
-Apply edits/drops. `Fix, no post` (user's PR only; per item `Fix`) → follow [fix-no-post.md](fix-no-post.md) instead of Step 4. Unless asked otherwise, the event is always `COMMENT`. Never post without confirmation.
+Apply edits/drops. `Fix, no post` (your PR; per item `Fix`) → [fix-no-post.md](fix-no-post.md), not Step 4. Unless asked otherwise, the event is always `COMMENT`. Never post without confirmation.
 
 ## 4. Post and report
 
