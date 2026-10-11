@@ -52,6 +52,8 @@ export type AgentCall = {
   outcome?: string
   durationMs?: number
   tokens?: number
+  /** The Agent call's `model` input; unset = the call inherits the main chat's model. */
+  model?: string
 }
 
 /** One skill expanded for the model this session. */
@@ -98,6 +100,23 @@ export type RuleUsage = {
   recent: number[]
 }
 
+/** Calls, time and tokens summed over finished calls. */
+export type UsageTotals = {
+  calls: number
+  durationMs: number
+  tokens: number
+}
+
+/**
+ * What the cops agent calls cost per pr-oracle mode set or pr-sidekick job, kept across sessions in `$.store`
+ * under the key `usage`. `since` is `$.clock.now()` when it started accumulating; a reset sets a new one.
+ * Each key's totals are also split by the Agent call's `model` input (`inherit` when unset).
+ */
+export type Usage = {
+  since: number
+  keys: Record<string, UsageTotals & { models: Record<string, UsageTotals> }>
+}
+
 declare module 'claude-code' {
   interface PluginState {
     cops: {
@@ -117,8 +136,8 @@ declare module 'claude-code' {
       openItems: InboxItem[]
       /** The running cops skill and the labels of its handoffs made so far; null before one runs. */
       checklist: { skill: string; ticked: string[] } | null
-      /** The COPS HQ pane's tab: `hq` shows threads, activity and inbox; `rules` shows remembered rules' usage. */
-      paneTab: 'hq' | 'rules'
+      /** The COPS HQ pane's tab: `hq` shows threads, activity and inbox; `rules` shows remembered rules' usage; `stats` shows what the cops agents cost. */
+      paneTab: 'hq' | 'rules' | 'stats'
       /** The rules of the personal and team MEMORY.md, without their evidence, as the status line last read them. */
       memoryRules: { rule: string; source: 'personal' | 'team' }[]
     }
