@@ -171,7 +171,7 @@ const refreshStatus = async ($: EngineInterface, memory: Memory) => {
 let hasToastedInbox = false
 
 // The last read-add-write of the stored usage; each next one starts when it ends, so no update is lost.
-let usageWrites: Promise<void> = Promise.resolve()
+let usageWrites = Promise.resolve()
 
 // What the store holds under INBOX; anything there that isn't an item is left out.
 const readInbox = async ($: EngineInterface): Promise<InboxItem[]> => {
@@ -507,7 +507,7 @@ export const register: Register = (on, options) => {
         if ((agent === 'cops:pr-oracle' || agent === 'cops:pr-sidekick') && 'tokens' in totals) {
           const running = await read($, checklist)
           const job = running ? tickedBy({ skill: running.skill, agent, modes: [] })[0] : undefined
-          const written = usageWrites.then(async (): Promise<void> => {
+          const written = usageWrites.then(async () => {
             await $.store.set(USAGE, addUsage({
               usage: toUsage({ stored: await $.store.get(USAGE) }),
               key: keyCall({ agent, modes: call.modes, job }),
@@ -754,7 +754,7 @@ export const register: Register = (on, options) => {
               <Text bold>Usage</Text>
               <Button key="reset-usage" label="Reset" onPress={async () => {
                 try {
-                  const written = usageWrites.then(async (): Promise<void> => {
+                  const written = usageWrites.then(async () => {
                     await $.store.set(USAGE, { since: await $.clock.now(), keys: {} })
                   })
                   usageWrites = written.catch(() => undefined)

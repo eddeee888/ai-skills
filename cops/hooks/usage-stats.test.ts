@@ -59,6 +59,7 @@ const world = ({ on, memory = MEMORY_ON, files = FILES, replies = {}, stored = {
     }
     if (e.prompt === 'unfinished') {
       // The kit's Agent result type has no finished-but-not-completed shape, so the cast builds one.
+      // Removing the cast needs that shape added to the kit's Agent result type.
       return { result: { status: 'error' }, text: '' } as never
     }
     return {
