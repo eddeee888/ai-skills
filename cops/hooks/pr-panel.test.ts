@@ -363,6 +363,56 @@ describe('skill history', () => {
     await ui.unmount()
   })
 
+  // A managed plugin above can skip every user plugin's `skill.prompt`: the command and the Skill call
+  // run their skills with no `skill.prompt` reaching cops.
+  test('records a skill run skill.prompt never saw, naming the hook that did', async ($, on) => {
+    world(on, { pr: failed('no pull requests found for branch "feat"') })
+    on('session.usage', () => ({
+      value: { startedAt: 0, rateLimits: [], context: { breakdown: { skills: { totalSkills: 1, includedSkills: 1, tokens: 1, skillFrontmatter: [{ name: 'cops:pr-start', source: 'plugin', pluginName: 'cops', tokens: 1 }] } } } } as never,
+    }))
+    on('command.run', () => ({ text: '' }))
+    on('tool.call', { tool: 'Skill' }, (_, e) => ({ result: { success: true, commandName: e.skill }, text: '' }) as never)
+    await start($)
+    await $.command.run({ command: 'cops:pr-start', args: 'add a readme line', origin: { kind: 'composer' } } as never)
+    // Not a skill the session lists: no run.
+    await $.command.run({ command: 'cops-hq', args: '', origin: { kind: 'composer' } } as never)
+    await $.tool.call({ tool: 'Skill', skill: 'cops:pr-address', args: '' })
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('Activity · 2 skills'))
+    const drawn = await text(ui)
+    expect(drawn).toContain('#1 /cops:pr-start add a readme line · you (source:typed) · just now')
+    expect(drawn).toContain('#2 /cops:pr-address · model (source:tool.call) · just now')
+    expect(drawn).not.toContain('/cops-hq')
+    expect(drawn).toContain('Handoffs · pr-address')
+    await ui.unmount()
+  })
+
+  test('records a run once when skill.prompt sees it', async ($, on) => {
+    world(on, { pr: failed('no pull requests found for branch "feat"') })
+    on('session.usage', () => ({
+      value: { startedAt: 0, rateLimits: [], context: { breakdown: { skills: { totalSkills: 1, includedSkills: 1, tokens: 1, skillFrontmatter: [{ name: 'cops:pr-start', source: 'plugin', pluginName: 'cops', tokens: 1 }] } } } } as never,
+    }))
+    on('skill.prompt', ($, e) => ({ text: e.text }))
+    on('command.run', async (_, e) => {
+      await $.skill.prompt({ skill: e.command, text: 'body' })
+      return { text: '' }
+    })
+    on('tool.call', { tool: 'Skill' }, async (_, e) => {
+      await $.skill.prompt({ skill: e.skill, text: 'body' })
+      return { result: { success: true, commandName: e.skill }, text: '' } as never
+    })
+    await start($)
+    await $.command.run({ command: 'cops:pr-start', args: 'x', origin: { kind: 'composer' } } as never)
+    await $.tool.call({ tool: 'Skill', skill: 'cops:pr-address', args: '' })
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('Activity · 2 skills'))
+    const drawn = await text(ui)
+    expect(drawn).toContain('#1 /cops:pr-start x · you · just now')
+    expect(drawn).toContain('#2 /cops:pr-address · model · just now')
+    expect(drawn).not.toContain('source:')
+    await ui.unmount()
+  })
+
   test('toasts, once, a skill run it could not record', async ($, on) => {
     world(on, { pr: failed('no pull requests found for branch "feat"') })
     on('state.set', { plugin: 'cops', key: 'skills' }, () => ({ deny: 'store down' }))
@@ -460,6 +510,8 @@ describe('skill history', () => {
     expect(isSameSkill({ a: 'cops:pr-review', b: 'oss:pr-review' })).toBe(false)
     expect(isSameSkill({ a: 'pr-note', b: 'pr-review' })).toBe(false)
     expect(describeSkill({ run: { n: 51, skill: 'cops:pr-sync', by: 'you', at: 0 }, now: 7_200_000 })).toBe('#51 /cops:pr-sync · you · 2h ago')
+    expect(describeSkill({ run: { n: 4, skill: 'cops:pr-sync', by: 'you', source: 'typed', at: 0 }, now: 0 })).toBe('#4 /cops:pr-sync · you (source:typed) · just now')
+    expect(describeSkill({ run: { n: 5, skill: 'pr-address', by: 'model', source: 'tool.call', at: 0 }, now: 0 })).toBe('#5 /pr-address · model (source:tool.call) · just now')
     expect(describeActivity({ runs: 0, calls: 0 })).toBe('Activity · none yet')
     expect(describeActivity({ runs: 1, calls: 0 })).toBe('Activity · 1 skill')
     expect(describeActivity({ runs: 2, calls: 1 })).toBe('Activity · 2 skills · 1 agent')

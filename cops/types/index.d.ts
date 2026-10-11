@@ -64,6 +64,8 @@ export type SkillRun = {
   args?: string
   /** `you` typed the slash command, the `model` called the Skill tool, `other` covers the rest (a subagent preload). */
   by: 'you' | 'model' | 'other'
+  /** Set when `skill.prompt` never fired for the run: the hook that recorded it instead, the typed command's or the Skill call's. */
+  source?: 'typed' | 'tool.call'
   /** `$.clock.now()` when it expanded. */
   at: number
 }
