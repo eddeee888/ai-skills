@@ -859,7 +859,9 @@ export const register: Register = (on, options) => {
           <Text wrap="truncate-end">{chain.line}</Text>
           {pickUp && (
             <Button key="pick-up" label="Pick up" onPress={async () => {
-              if (!(await $.prompt.fill({ text: pickUp })).isFilled) $.ui.toast(`Couldn't fill the prompt — type ${pickUp}`)
+              if (!(await $.prompt.fill({ text: pickUp })).isFilled) {
+                $.ui.toast(`Couldn't fill the prompt — type ${pickUp}`)
+              }
             }} />
           )}
         </Box>
