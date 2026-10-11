@@ -30,7 +30,8 @@ export type Chain = {
 //   turn ended after review began                  → `… → review ■ → address · … · stopped at review`, pickUp `/cops:pr-review <PR URL> `
 //   sync began with address never run              → warnings `⚑ skipped address`
 //   sync began, then address                       → warnings `⚑ ran sync before address`
-//   all four started, turn ended, PR still draft   → `… · stopped at finish`, no pickUp
+//   all four started, turn ended, notes posted     → `… · stopped at finish`, no pickUp
+//   all four started, turn ended, no notes posted  → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `
 //   a plain cops run on the PR after the stages    → status resumed, no stop
 //   view is another PR, or not ready               → `ready ?`
 export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
@@ -69,8 +70,10 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   const isEnded = turnEndedAt !== undefined && turnEndedAt !== null && turnEndedAt >= last.at && !busy
   const isAllStarted = started.every(Boolean)
   const status = isReady ? 'ready' : plain ? 'resumed' : isEnded ? 'stopped' : 'running'
-  // The step the chain stopped at: a stage name, `fix`, or `finish` when every stage ran.
-  const stoppedAt = status !== 'stopped' ? undefined : !lastRun ? 'fix' : isAllStarted && lastStage === AUTOPILOT_STAGES.length - 1 ? 'finish' : AUTOPILOT_STAGES[lastStage].replace(/^cops:pr-/, '')
+  // Whether note's comments are posted, or the view can't tell (another PR); a draft PR with none means note never finished.
+  const isNoteDone = view.status !== 'ready' || view.url !== url || view.hasNotes
+  // The step the chain stopped at: a stage name, `fix`, or `finish` when every stage ran and note finished.
+  const stoppedAt = status !== 'stopped' ? undefined : !lastRun ? 'fix' : isAllStarted && lastStage === AUTOPILOT_STAGES.length - 1 && isNoteDone ? 'finish' : AUTOPILOT_STAGES[lastStage].replace(/^cops:pr-/, '')
 
   const spinner = SPINNER[Math.floor(now / SPINNER_MS) % SPINNER.length]
   const mark = ({ step, stage }: { step: string, stage: number }): string => {

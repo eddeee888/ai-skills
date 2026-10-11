@@ -12,8 +12,8 @@ const skill = ({ name, args = '', at }: { name: string; args?: string; at: numbe
 }
 const start = ({ at }: { at: number }): SkillRun => skill({ name: 'cops:pr-start', args: '--autopilot fix the thing', at })
 const stage = ({ name, at }: { name: string; at: number }): SkillRun => skill({ name: `cops:pr-${name}`, args: SUFFIX, at })
-const view = ({ isDraft = true, url = URL }: { isDraft?: boolean; url?: string } = {}): Threads => ({
-  status: 'ready', pr: 81, url, state: 'OPEN', threads: [], isReviewed: false, hasNotes: false, isDraft,
+const view = ({ isDraft = true, url = URL, hasNotes = false }: { isDraft?: boolean; url?: string; hasNotes?: boolean } = {}): Threads => ({
+  status: 'ready', pr: 81, url, state: 'OPEN', threads: [], isReviewed: false, hasNotes, isDraft,
 })
 const describe_ = ({ runs, turnEndedAt, v = view(), now = 0 }: { runs: SkillRun[]; turnEndedAt?: number | null; v?: Threads; now?: number }): ReturnType<typeof describeChain> =>
   describeChain({ runs, calls: [], view: v, turnEndedAt, now })
@@ -84,11 +84,19 @@ describe('describeChain', () => {
 
   test('all stages done but still a draft reads stopped at finish with no button', () => {
     const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
-    const chain = describe_({ runs, turnEndedAt: 7 })
+    const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: true }) })
     expect(chain?.line).toContain('note ✓ → ready ·')
     expect(chain?.line).toContain('stopped at finish')
     expect(chain?.pickUp).toBeUndefined()
     expect(chain?.ownsNext).toBe(true)
+  })
+
+  test('a stop in the note stage, with no notes posted, reads stopped at note and fills the stage', () => {
+    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const chain = describe_({ runs, turnEndedAt: 7 })
+    expect(chain?.line).toContain('note ■')
+    expect(chain?.line).toContain('stopped at note')
+    expect(chain?.pickUp).toBe(`/cops:pr-note ${URL} `)
   })
 
   test('a stop leaves the Next slot once the view is another PR', () => {
