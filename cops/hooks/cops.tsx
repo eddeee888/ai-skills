@@ -104,7 +104,7 @@ const readMemory = async ($: EngineInterface, { context }: { context: string }):
 // No upstream leaves `unpushed` out.
 const readMemoryGit = async ($: EngineInterface, { root }: { root: string }): Promise<MemoryGit | undefined> => {
   const [status, ahead] = await Promise.all([
-    run($, ['git', '-C', root, 'status', '--porcelain']),
+    run($, ['git', '--no-optional-locks', '-C', root, 'status', '--porcelain', '--untracked-files=all']),
     run($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD']),
   ])
   if (status?.exitCode !== 0) {

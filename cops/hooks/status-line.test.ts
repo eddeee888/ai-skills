@@ -94,7 +94,7 @@ describe('memory git changes', () => {
     const { status, argvs } = world(on, { memory: MEMORY_ON, files, porcelain: ' M a.md\n', ahead: '2\n' })
     await start($)
     expect(await status).toBe('memory: octocat · self 12/200 · team 40/200 · 1 uncommitted · 2 unpushed')
-    expect(argvs).toContainEqual(['git', '-C', '/memory', 'status', '--porcelain'])
+    expect(argvs).toContainEqual(['git', '--no-optional-locks', '-C', '/memory', 'status', '--porcelain', '--untracked-files=all'])
     expect(argvs).toContainEqual(['git', '-C', '/memory', 'rev-list', '--count', '@{u}..HEAD'])
   })
 
