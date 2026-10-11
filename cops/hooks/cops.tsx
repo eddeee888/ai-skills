@@ -540,7 +540,7 @@ export const register: Register = (on, options) => {
       try {
         const found = parseSuffixes({ text: ran.text ?? '', modes: call.modes })
         const pluginRoot = $.plugin.root
-        let context: Awaited<ReturnType<typeof run>>
+        let context
         if (found.length > 0) {
           context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
         }
