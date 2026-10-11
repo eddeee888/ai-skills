@@ -37,7 +37,7 @@ Size from that answer. Do not re-read the files the survey read.
 
 ## Classify size
 
-Size with `CONVENTIONS-pr-metadata.md` → "Task size": its two axes, contract beats diff size, and escalate only. Never report “small with an asterisk.” For a bug:
+Size with `CONVENTIONS-pr-metadata.md` → "Task size": its two axes, contract beats diff size, and escalate only. Never report “small with an asterisk.” That section defines the sizes; for a bug they look like this:
 
 - **Small** — once verified, confined to one function/file with no documented/public contract change, such as a missing null check, off-by-one, or wrong condition.
 - **Medium** — touches a shared helper or more than one package/file without changing the documented contract for callers that do not hit the bug.

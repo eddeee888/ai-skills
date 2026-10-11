@@ -31,9 +31,10 @@ Size a task Small, Medium or Large, the name written in full: `Size: Medium — 
 - **Blast radius** — one place (a function or file; for an additive feature, one package), versus several files, packages or a shared helper.
 - **Contract** — whether existing documented or public behavior changes.
 
-Small is one place with no contract change. Medium reaches further, with no contract change. Large changes the contract. A skill's own rubric may add cases.
+Small is one place with no contract change. Medium reaches further, with no contract change. Large changes the contract.
 
 - **Contract beats diff size.** A change to existing public or documented behavior is Large even when the diff is tiny, as is anything needing a design decision first.
+- **Also Large.** It reaches most consumers; is tangled into a core assumption spanning packages; or needs an RFC, deprecation window, migration guide or proactive announcement.
 - **Escalate only.** One Large element makes the whole task Large.
 - **Reasons.** Give one or two concrete reasons; a size without them is incomplete.
 

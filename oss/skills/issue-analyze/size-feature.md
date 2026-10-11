@@ -38,7 +38,7 @@ Size from that answer. Do not re-read the files the survey read.
 
 ## Classify size
 
-Size with `CONVENTIONS-pr-metadata.md` → "Task size": its two axes, contract beats diff size, and escalate only. For a feature:
+Size with `CONVENTIONS-pr-metadata.md` → "Task size": its two axes, contract beats diff size, and escalate only. That section defines the sizes; for a feature they look like this:
 
 - **Small** — additive, backward-compatible, and confined to one package/file: a safe-default config option, optional parameter, or new export. Existing callers that change nothing are unaffected.
 - **Medium** — additive and non-breaking but spans files/packages, such as shared-type plumbing, a new package, or coordinated monorepo changes.

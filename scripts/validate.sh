@@ -299,7 +299,7 @@ validate_budgets() {
   check_budget "CONVENTIONS-orchestration.md" 1200 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
-  check_budget "CONVENTIONS-pr-metadata.md" 733 "convention file"
+  check_budget "CONVENTIONS-pr-metadata.md" 752 "convention file"
 
   while IFS= read -r -d '' path; do
     check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"

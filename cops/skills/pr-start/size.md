@@ -15,6 +15,7 @@ Use only what the card already says — Goal, Done when, In scope and Approach �
 - **Blast radius** — count what In scope names against the profile's package map: one place as that section defines it, or several files, packages or a shared helper.
 - **Contract** — whether the Goal, Approach or Done when names a change to an existing public API, exported type, CLI flag, config shape or documented behavior.
 - **Design decision** — an Approach that still rests on a decision nobody has made is Large.
+- **Also Large** — the Goal or Approach reaches most consumers, rests on a core assumption spanning packages, or names an RFC, deprecation window, migration guide or proactive announcement.
 - **Options** — when the card shows options instead of one Approach, size each one from its own Changes, Affects and Risk and write it on that option's `Size:` line, so every size is seen before the user picks. The card's `Size:` line reads `Size: per option, below` until then, and takes the picked option's size once one is picked.
 - **Can't tell** between two sizes from the card → take the larger and name what is unknown as the reason.
 
