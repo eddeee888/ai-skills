@@ -57,18 +57,7 @@ const world = (
       return { value: undefined }
     })
   })
-  return { argvs, status, statuses, toasts, reads, clock, setPorcelain: (next: string) => { porcelain = next } }
-}
-
-// Background work settles over a few turns of the event loop.
-const until = async (check: () => boolean): Promise<void> => {
-  for (let tries = 0; tries < 3000; tries++) {
-    if (check()) {
-      return
-    }
-    await new Promise(resolve => setTimeout(resolve, 0))
-  }
-  throw new Error('never happened')
+  return { argvs, status, statuses, toasts, reads, clock, setPorcelain: ({ next }: { next: string }): void => { porcelain = next } }
 }
 
 const start = ($: Engine) => $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
@@ -149,8 +138,15 @@ describe('memory git changes', () => {
   })
 
   describe('after a pr-oracle call', () => {
-    const oracle = async ($: Engine, { mode }: { mode: string }): Promise<void> => {
-      await $.tool.call({ tool: 'Agent', description: mode, subagent_type: 'cops:pr-oracle', prompt: `mode: ${mode}` })
+    // Background work settles over a few turns of the event loop.
+    const until = async ({ check }: { check: () => boolean }): Promise<void> => {
+      for (let tries = 0; tries < 3000; tries++) {
+        if (check()) {
+          return
+        }
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+      throw new Error('never happened')
     }
     const answerAgents = (on: On): void => {
       on('tool.call', { tool: 'Agent' }, ($, e) => ({
@@ -166,12 +162,12 @@ describe('memory git changes', () => {
       const { statuses, argvs, setPorcelain } = world(on, { memory: MEMORY_ON, files, porcelain: '' })
       answerAgents(on)
       await start($)
-      await until(() => statuses.length === 1)
+      await until({ check: () => statuses.length === 1 })
       expect(statuses[0]).toBe('memory: octocat · self 12/200 · team 40/200')
-      setPorcelain(' M a.md\n')
+      setPorcelain({ next: ' M a.md\n' })
       const before = argvs.filter(argv => argv.includes('status')).length
-      await oracle($, { mode: 'learn-feedback' })
-      await until(() => statuses.length === 2)
+      await $.tool.call({ tool: 'Agent', description: 'learn-feedback', subagent_type: 'cops:pr-oracle', prompt: 'mode: learn-feedback' })
+      await until({ check: () => statuses.length === 2 })
       expect(statuses[1]).toBe('memory: octocat · self 12/200 · team 40/200 · 1 uncommitted')
       expect(argvs.filter(argv => argv.includes('status')).length).toBe(before + 1)
     })
@@ -180,9 +176,9 @@ describe('memory git changes', () => {
       const { statuses, argvs } = world(on, { memory: MEMORY_ON, files, porcelain: '' })
       answerAgents(on)
       await start($)
-      await until(() => statuses.length === 1)
+      await until({ check: () => statuses.length === 1 })
       const before = argvs.filter(argv => argv.includes('status')).length
-      await oracle($, { mode: 'brief-task' })
+      await $.tool.call({ tool: 'Agent', description: 'brief-task', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
       await new Promise(resolve => setTimeout(resolve, 20))
       expect(statuses.length).toBe(1)
       expect(argvs.filter(argv => argv.includes('status')).length).toBe(before)
