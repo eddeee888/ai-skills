@@ -108,8 +108,9 @@ const readMemory = async ($: EngineInterface, { context }: { context: string }):
 // Uncommitted and unpushed changes in the memory repository, read-only; undefined when git can't say.
 // No upstream leaves `unpushed` out.
 const readMemoryGit = async ($: EngineInterface, { root }: { root: string }): Promise<MemoryGit | undefined> => {
-  const status = await run($, ['git', '--no-optional-locks', '-C', root, 'status', '--porcelain', '--untracked-files=all'])
-  const ahead = await run($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD'])
+  const statusRun = run($, ['git', '--no-optional-locks', '-C', root, 'status', '--porcelain', '--untracked-files=all'])
+  const aheadRun = run($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD'])
+  const [status, ahead] = await Promise.all([statusRun, aheadRun])
   if (status?.exitCode !== 0) {
     return undefined
   }
