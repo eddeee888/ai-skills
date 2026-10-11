@@ -99,7 +99,7 @@ In Claude Code, a pane with a Threads section (its `Next:` line sits right under
 
 The threads refresh at session start, after Bash commands that switch, commit, push, or pull branches or run `gh pr`, and every two minutes. No model is called; the grouping comes from who commented last.
 
-All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts), [`hooks/pr-panel.ts`](hooks/pr-panel.ts), [`hooks/memory-inbox.ts`](hooks/memory-inbox.ts) and [`hooks/rule-band.ts`](hooks/rule-band.ts). Cursor doesn't load the module.
+All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What they say is worked out in [`hooks/status-line.ts`](hooks/status-line.ts), [`hooks/pr-panel.ts`](hooks/pr-panel.ts), [`hooks/memory-inbox.ts`](hooks/memory-inbox.ts) and [`hooks/rule-band.ts`](hooks/rule-band.ts), plus [`hooks/autopilot-chain.ts`](hooks/autopilot-chain.ts) for the autopilot strip. Cursor doesn't load the module.
 
 ## Agents
 

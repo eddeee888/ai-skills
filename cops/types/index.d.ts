@@ -19,10 +19,10 @@ export type Thread = {
 export type Threads =
   | { status: 'loading' | 'no-repo' | 'no-pr' | 'needs-gh' }
   /**
-   * `url` is the PR's web page; `state` is whether it's still open. `isMine`: the viewer opened the PR (undefined when unknown);
+   * `url` is the PR's web page; `state` is whether it's still open. `isMine`: the viewer opened the PR (undefined when unknown); `isDraft`: the PR is still a draft (undefined when unknown);
    * `isReviewed`: someone else commented in a thread; `hasNotes`: the author left a `Note:` / `Drive-by:`.
    */
-  | { status: 'ready'; pr: number; url: string; state: 'OPEN' | 'MERGED' | 'CLOSED'; threads: Thread[]; isMine?: boolean; isReviewed: boolean; hasNotes: boolean }
+  | { status: 'ready'; pr: number; url: string; state: 'OPEN' | 'MERGED' | 'CLOSED'; threads: Thread[]; isMine?: boolean; isDraft?: boolean; isReviewed: boolean; hasNotes: boolean }
 
 /** One subagent call this session, a cops agent's or any other. */
 export type AgentCall = {
@@ -140,6 +140,8 @@ declare module 'claude-code' {
       checklist: { skill: string; ticked: string[] } | null
       /** The COPS HQ pane's tab: `hq` shows threads, activity and inbox; `rules` shows remembered rules' usage; `stats` shows what the cops agents cost. */
       paneTab: 'hq' | 'rules' | 'stats'
+      /** `$.clock.now()` when the main chat's last turn ended (not a subagent's); null before one has. */
+      turnEndedAt: number | null
       /** The rules of the personal and team MEMORY.md, without their evidence, as the status line last read them. */
       memoryRules: { rule: string; source: 'personal' | 'team' }[]
     }
