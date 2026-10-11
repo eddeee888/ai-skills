@@ -10,11 +10,23 @@ Which skill fits depends on whose PR it is and where it is in review. In lifecyc
 
 | When | Skill | What it does |
 | --- | --- | --- |
-| You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). The card carries a `Size:` line — Small, Medium or Large, with the reason — for you to see; it gates nothing. |
+| You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). The card carries a `Size:` line — Small, Medium or Large, with the reason — for you to see; it gates only autopilot. With `--autopilot`, or the autopilot choice offered on a Small or Medium card, it goes on to a ready-for-review PR: see [Autopilot](#autopilot). |
 | Someone else's PR, or yours as a self-review | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. On your own PR, **Fix, no post** fixes the chosen findings and pushes instead of posting them. |
 | Your PR, branch moved on | [`pr-sync`](skills/pr-sync/SKILL.md) | Rebases the PR and refreshes its title, description, and changeset. |
 | Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. Run it last, on the final diff. |
 | Your PR, reviewers have commented | [`pr-address`](skills/pr-address/SKILL.md) | Addresses unresolved review threads on your PR. |
+
+### Autopilot
+
+`/cops:pr-start --autopilot <task>` carries one confirmed task card to a ready-for-review PR without another prompt. Without the flag, the confirm screen offers it as a choice when the card is Small or Medium. The rules are in [`skills/pr-start/autopilot.md`](skills/pr-start/autopilot.md).
+
+- **Consent:** the task card is the only prompt. It lists every outward action it authorises: push, open PR, post review, push fixes, edit title and body, post notes, assign you, mark ready.
+- **Gate:** autopilot is refused, and the normal run offered, unless you have write access and the repo already has an `autopilot` label (the skill never creates it). At the card, a Large size, a Done when that is an observable behavior rather than a test or a command, or a scope touching security or auth, data loss, infrastructure or a public API (at any size) refuses it too.
+- **The run:** the fix loop and sweep as usual, then a draft PR with the `autopilot` label and a first body line saying it was opened on autopilot and not yet read by a human. Then four skills run in a fixed order, each as its own skill run: `pr-review` posts a self-review, `pr-address` handles its threads, `pr-sync` rebases and refreshes the title and description, and `pr-note` posts notes on the final diff. Last, the PR is marked ready and assigned to you.
+- **Self-review threads:** a `Question:` stays open for you; a `Suggestion:` is applied if low risk; a `Test:` adds the missing case; an `Issue:` is fixed test first if low risk, and stays open if critical. High-risk work is never automatic. Threads are never resolved, and a skipped one gets no reply.
+- **Stops:** any failure or subagent question ends the run; nothing is asked mid-run. The PR stays a draft, is assigned to you, and the report names the stage reached.
+- **Signatures:** autopilot posts carry the skill signature without `Approved:`, since you haven't seen the text.
+- **Bot tokens:** where `gh api user` doesn't return a person, pass your login as `--autopilot <login>`; without it the card asks for one.
 
 The [COPS HQ pane](#cops-hq-pane) works out the same thing from the PR: its `Next:` line names the skill, and its Activity section lists what ran this session.
 
@@ -118,11 +130,12 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
   the title prefix, the PR template, and the remembered rules for the
   sidekick) before you confirm the task card, then `sweep-diff` on the
   commits the fix loop makes, before anything is pushed or the draft PR
-  opens.
-- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
+  opens. On [autopilot](#autopilot), each of the four skills it runs next
+  makes its own oracle calls, as listed here.
+- `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm (an autopilot stage posts it unconfirmed). `pr-sync` and
   `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
   `Question:` one of them already answers.
-- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review. With **Fix, no post** on your own PR, a sidekick fixes the chosen findings instead, and `sweep-diff` checks its commits before they're pushed.
+- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review (an autopilot stage posts it unconfirmed). With **Fix, no post** on your own PR, a sidekick fixes the chosen findings instead (a `Question:` is put to you first and fixed from your answer; an `Issue:` is fixed test first), and `sweep-diff` checks its commits before they're pushed.
 - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
   threads, the rules each matches, and how to run tests), then
   `sweep-diff` on each batch. A subagent implements low-risk asks, up

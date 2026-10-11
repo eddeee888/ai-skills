@@ -14,9 +14,10 @@ High-risk work is never automatic. Even when the user acknowledged the thread, p
 
 - The PR is not the user's → `needs the user first`, regardless of comment author or content.
 - Only the PR's author has commented, and the opening comment starts with `Note:` or `Drive-by:` in bold or plain form → `handled`: it is an explanation, not an ask (`CONVENTIONS-posts.md` → "Comment labels" and "Author notes"). If anyone else replied, classify from the last comment instead.
+- A `cops:pr-review` comment signed without `Approved:` opens the thread → `needs the user first`, with the reason that the user has not seen its text: it is not the user's ask or go-ahead, even though it appears under their login. This comes before the rules below unless the user replied after it. When the caller passes `autopilot: yes`, "Autopilot runs" decides instead.
 - Only the user has commented on their own PR → the comment is both ask and go-ahead. If low risk, it is `automatic`; if high risk, `needs the user first`. If there are several user comments, later comments are normally replies already posted by this skill, so mark the thread `handled`; the exception is when the last comment is clearly a new ask, which becomes the current ask.
 - The last comment has a valid skill signature and no label → `handled`, even though it appears under the user's login. It is the skill's own reply, never a go-ahead or new ask (`CONVENTIONS-posts.md` → "Skill signature").
-- A signed last comment with an ask label (`Question:`, `Suggestion:`, `Issue:`, or `Test:`, bold or plain) is the user's own ask. Apply the same rule as any other user comment.
+- A signed last comment with an ask label (`Question:`, `Suggestion:`, `Issue:`, or `Test:`, bold or plain) is the user's own ask only when its signature carries `Approved:`. Apply the same rule as any other user comment.
 - A reviewer commented → `automatic` only when the last comment is the user's short go-ahead and the ask is low risk. Examples include “Ok”, “let's do it”, and “let me check”. A paragraph that already answers the reviewer is not a short go-ahead.
 - The user's full answer or instruction as the last comment means the thread is `handled`; note it and do not ask again.
 - Any other last comment from someone other than the user, including a reviewer ask with no user reply, → `needs the user first`.
@@ -29,6 +30,19 @@ Tag by the original comment's nature, not by the later go-ahead:
 - `authoritative` — an instruction, correction, or fenced `suggestion` block, such as “add a null check” or “use X instead”.
 - `why-question` — asks for reasoning or research, such as “why this approach?” or “should this handle X too?”.
 - A question plus an instruction that depends on the answer is a `why-question`. Answer it first; the dependent instruction waits for a new user go-ahead on that answer.
+
+## Autopilot runs
+
+Apply this section only when the caller passes the line `autopilot: yes`: the run is a pr-start autopilot stage. Nobody is asked, so every thread ends as `automatic` or left open, and the risk gate above still beats everything here.
+
+Only threads opened by the run's own self-review, signed `cops:pr-review` under the authenticated login with nobody else in them, can be `automatic`. Every other unresolved thread is left open. For those self-review threads the opening label decides:
+
+- `Question:` → left open for the user; the agent never answers its own question. No `why-question` is tagged.
+- `Suggestion:` → `automatic`, `authoritative`, if low risk.
+- `Test:` → `automatic`, `authoritative`: add the named missing case.
+- `Issue:` → `automatic`, `authoritative`, if low risk, fixed test first. A critical one (`CONVENTIONS-posts.md` → "Critical changes") is left open.
+
+Return a left-open thread in `needs the user first` with its reason; the caller lists it in the run's report and posts no reply on it.
 
 ## Required output per thread
 

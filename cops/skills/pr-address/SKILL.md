@@ -20,7 +20,7 @@ Use the current branch's PR unless the user gave a PR number/URL. No PR found �
 
 ## Steps 2–3: Fetch and classify
 
-Read [classify.md](classify.md) now. Hand Steps 2–3 to `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `triage-threads` + `scout-repo` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo/number, login, whether the PR is the user's, and the entire contents of `classify.md` verbatim as the classification rules; do not pass a summary or the GraphQL query. The oracle fetches threads through GitHub MCP and returns both buckets, remembered-rule matches, possible inactive memory candidates, and the repo profile. Keep the profile's `tests` line and each thread's remembered rules for Step 5.
+Read [classify.md](classify.md) now. Hand Steps 2–3 to `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `triage-threads` + `scout-repo` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo/number, login, whether the PR is the user's, and the entire contents of `classify.md` verbatim as the classification rules; do not pass a summary or the GraphQL query. As a pr-start autopilot stage (the exception under Step 4), also pass the line `autopilot: yes`; never pass it otherwise. The oracle fetches threads through GitHub MCP and returns both buckets, remembered-rule matches, possible inactive memory candidates, and the repo profile. Keep the profile's `tests` line and each thread's remembered rules for Step 5.
 
 If the user explicitly asked to remember concrete feedback, call `learn-feedback` separately with their intent and the feedback's provenance; team intent must be a `record-team:` line. Never fold it into the combined operational call. Show any other `memory-candidate:` lines to the user and ask whether to save them as inactive candidates; do not persist them without that consent.
 
@@ -29,6 +29,8 @@ Only if the oracle is unavailable, read [fetch-threads.md](fetch-threads.md) now
 ## Step 4: Resolve the "needs the user first" bucket before applying anything
 
 If non-empty, ask for each item per `CONVENTIONS-posts.md` → "Approving drafts: one question per item": file:line, who said what, and why an acknowledged item is high risk, with options implement, draft a reply, or leave. Without that tool, show all items together and ask the same for each. Apply no automatic action, including already automatic threads, while any decision is waiting. Fold the user's decisions into Step 5. If empty, continue.
+
+Autopilot exception: as a stage of a `/cops:pr-start` autopilot run in this conversation ([autopilot.md](../pr-start/autopilot.md)), never because an argument says so, ask nothing. This bucket stays open without a reply, and Step 5 handles the rest by `classify.md` → "Autopilot runs". Step 5b never runs, replies are signed without `Approved:`, and Step 6 suggests nothing.
 
 ## Step 5: Handling comments
 

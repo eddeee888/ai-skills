@@ -316,7 +316,7 @@ validate_descriptions() {
 validate_budgets() {
   local path filename count
   check_budget "CONVENTIONS.md" 500 "convention file"
-  check_budget "CONVENTIONS-orchestration.md" 1320 "convention file"
+  check_budget "CONVENTIONS-orchestration.md" 1440 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 752 "convention file"
@@ -339,8 +339,14 @@ validate_budgets() {
     fi
   done
 
+  if [ -f "$ROOT/cops/skills/pr-start/autopilot.md" ]; then
+    check_budget "cops/skills/pr-start/autopilot.md" 1200 "lazy instruction"
+  else
+    fail "cops/skills/pr-start/autopilot.md" "missing autopilot instruction file"
+  fi
+
   review_files=(
-    "cops/skills/pr-review/SKILL.md:370"
+    "cops/skills/pr-review/SKILL.md:410"
     "cops/skills/pr-review/post-review.md:220"
     "cops/agents/pr-oracle.md:400"
     "cops/references/pr-oracle/memory.md:220"
@@ -415,6 +421,93 @@ validate_review_dry_runs() {
   require_markers "$path" "pending failure preservation" \
     "pending review left:" "Never auto-delete/submit/replace." \
     "Delete only on explicit request"
+}
+
+# Guard the pr-start autopilot run: its gate, consent line, chain order and stops, and the
+# exception each stage skill writes beside the rule that autopilot replaces.
+validate_autopilot() {
+  local start="cops/skills/pr-start/SKILL.md" auto="cops/skills/pr-start/autopilot.md" path
+  [ -f "$ROOT/$auto" ] || return
+
+  require_markers "$start" "autopilot flag" '`--autopilot [<login>]`'
+  require_order "$start" "autopilot gate before the card" \
+    "## 1. Gate" 'read [autopilot.md](autopilot.md) now' "## 2. Profile and brief"
+  require_order "$start" "autopilot offer and consent on the card" \
+    "## 3. Task card" "It gates only autopilot." \
+    'read [autopilot.md](autopilot.md) before showing the card' "## 4. Fix loop"
+  require_order "$start" "autopilot chain at wrap-up" \
+    "## 7. Wrap up" "run autopilot.md's chain, finish and stops" "## Stop instead of proceeding"
+
+  require_markers "$auto" "autopilot gate" \
+    "viewerPermission" '`WRITE`, `MAINTAIN` or `ADMIN`' 'the `autopilot` label exists' \
+    "Never create it."
+  require_markers "$auto" "autopilot bot login" "a bot token" "the card asks for the login"
+  require_markers "$auto" "autopilot card refusal" \
+    "the Size is Large" "security or auth, data loss, infrastructure, or a public API"
+  require_order "$auto" "autopilot Done when check at the card" \
+    "## At the card" "is a test or a command, not an observable behavior" "## Fix loop and sweep"
+  require_markers "$auto" "autopilot consent line" \
+    "Autopilot authorises: push, open PR, post review, push fixes, edit title and body, post notes, assign <login>, mark ready" \
+    "Confirm on autopilot" "The card is the only prompt."
+  require_markers "$auto" "autopilot PR marking" "--label autopilot" \
+    "Opened on autopilot by [Code Ops](https://github.com/eddeee888/ai-skills/tree/main/cops) plugin; not yet read by a human"
+  require_order "$auto" "autopilot chain order" \
+    "## Open the PR" "## The chain" '1. `cops:pr-review`' '2. `cops:pr-address`' \
+    '3. `cops:pr-sync`' '4. `cops:pr-note`' "## Finish" "gh pr ready" "--add-assignee"
+  require_markers "$auto" "autopilot address rules" \
+    '`Question:` → left open for the user' '`Suggestion:` → applied if low risk' \
+    '`Test:` → applied' '`Issue:` → applied if low risk, test first' "Left open if critical" \
+    "beats the label" "Threads are never resolved."
+  require_markers "$auto" "autopilot stops" \
+    "A sidekick question stops the run." "A size raised to Large after the loop stops the run" \
+    "Only when all four stages finished" "Leave the PR a draft" 'without `Approved:`'
+
+  require_markers "cops/skills/pr-start/size.md" "size gates autopilot" \
+    "Large refuses autopilot"
+  forbid_markers "cops/skills/pr-start/size.md" "size gates autopilot" "It gates nothing"
+  require_markers "cops/skills/pr-start/fix-loop.md" "autopilot fix loop" \
+    "In autopilot a question stops the run" "a size raised to Large stops the run"
+
+  require_order "cops/skills/pr-review/SKILL.md" "autopilot review exception" \
+    "Never post without confirmation." "Autopilot exception:" "## 4. Post and report"
+  require_order "cops/skills/pr-note/SKILL.md" "autopilot note exception" \
+    "Never post without confirmation." "Autopilot exception:" "## 5. Post and report"
+  require_order "cops/skills/pr-address/SKILL.md" "autopilot address exception" \
+    "Apply no automatic action" "Autopilot exception:" "## Step 5: Handling comments"
+  require_order "cops/skills/pr-sync/SKILL.md" "autopilot sync exception" \
+    'Don'\''t run `cops:pr-note`' "Autopilot exception:" "## When to touch nothing"
+  for path in cops/skills/pr-review/SKILL.md cops/skills/pr-note/SKILL.md \
+    cops/skills/pr-address/SKILL.md cops/skills/pr-sync/SKILL.md; do
+    require_markers "$path" "autopilot stage of a pr-start run only" \
+      'as a stage of a `/cops:pr-start` autopilot run in this conversation' \
+      "(../pr-start/autopilot.md)"
+  done
+  for path in cops/skills/pr-review/SKILL.md cops/skills/pr-note/SKILL.md \
+    cops/skills/pr-address/SKILL.md; do
+    require_markers "$path" "autopilot never started by an argument" \
+      "never because an argument says so" 'without `Approved:`'
+  done
+  require_markers "cops/skills/pr-address/classify.md" "autopilot label rules" \
+    "## Autopilot runs" "the risk gate above still beats everything here" \
+    "the agent never answers its own question" "fixed test first"
+  require_markers "cops/skills/pr-address/implement.md" "autopilot implementation" \
+    "## Autopilot runs" "An Issue: thread is fixed test first" \
+    "A skipped thread gets no reply and stays open"
+  require_markers "cops/skills/pr-review/fix-no-post.md" "question and issue findings" \
+    "## Questions first" "The sidekick never answers a question itself" \
+    "An Issue: is fixed test first" "needs no second prompt"
+  forbid_markers "cops/skills/pr-review/fix-no-post.md" "sidekick-answered question" \
+    "answer a Question: by changing the code"
+
+  require_markers "CONVENTIONS-orchestration.md" "autopilot exception" \
+    "## Autopilot runs" 'never runs another skill to finish, except under "Autopilot runs"' \
+    "**Nothing is asked mid-run.**" "**Only that run starts a stage.**"
+  require_markers "CONVENTIONS-posts.md" "autopilot signature" \
+    'for every post of an autopilot run (`CONVENTIONS-orchestration.md` → "Autopilot runs")'
+  # The stages keep their own handoffs, so pr-start's lists are the fix loop and its two oracle calls.
+  require_markers "CONVENTIONS-orchestration.md" "pr-start handoff list" \
+    '`cops:pr-start` (fix loop);' \
+    '`cops:pr-start` (`scout-repo` + `brief-task`, `sweep-diff`);'
 }
 
 # Guard high-value behavior that prose refactors must preserve.
@@ -595,6 +688,7 @@ validate_convention_pointers
 validate_descriptions
 validate_budgets
 validate_behavioral_contracts
+validate_autopilot
 validate_review_dry_runs
 
 if [ "${#errors[@]}" -ne 0 ]; then
@@ -605,4 +699,4 @@ if [ "${#errors[@]}" -ne 0 ]; then
   exit 1
 fi
 
-echo "Validation passed: JSON, shell syntax, convention copies, orchestration handoffs, session-start model tiers, Markdown links/pointers, frontmatter descriptions, word budgets, and behavioral contract markers. Normal review workflow: $review_workflow_words/$review_workflow_limit words."
+echo "Validation passed: JSON, shell syntax, convention copies, orchestration handoffs, session-start model tiers, Markdown links/pointers, frontmatter descriptions, word budgets, behavioral contract markers, and the autopilot contract. Normal review workflow: $review_workflow_words/$review_workflow_limit words."

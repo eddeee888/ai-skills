@@ -45,7 +45,7 @@ Unexplained drive-bys you may want to remove: <path:line — reason, or "none">
 Post as COMMENT? (drop/edit by number, or "post")
 ```
 
-Apply edits/drops. Never post without confirmation.
+Apply edits/drops. Never post without confirmation. Autopilot exception: as a stage of a `/cops:pr-start` autopilot run in this conversation ([autopilot.md](../pr-start/autopilot.md)), never because an argument says so, skip this step and post every drafted comment, signed without `Approved:`. `task source required` there is a stop.
 
 ## 5. Post and report
 
