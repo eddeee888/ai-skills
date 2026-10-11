@@ -42,6 +42,8 @@ export type AgentCall = {
   mayRewrite?: boolean
   /** The id of the subagent's loop, which its tool calls carry; set once it spawned. */
   agentId?: string
+  /** The model the engine resolved the call to (an alias or an id); unset until the spawn or the result names it. */
+  resolvedModel?: string
   /** The files a pr-oracle reply's `loaded:` lacks; none = all there; unset until the reply. */
   missingLoads?: string[]
   /** The rules the agent's tool calls broke, each once. */

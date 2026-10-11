@@ -163,6 +163,30 @@ describe('agents', () => {
     await ui.unmount()
   })
 
+  test('names the model a call resolved to after inherit, and keeps a set alias alone', async ($, on) => {
+    world(on)
+    on('tool.call', { tool: 'Agent' }, ($, e) => ({
+      result: {
+        status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 3000, totalTokens: 500, prompt: e.prompt,
+        resolvedModel: e.subagent_type === 'Explore' ? undefined : 'claude-opus-5-5',
+        usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
+      },
+      text: 'done',
+    }))
+    await start($)
+    await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    await $.tool.call({ tool: 'Agent', description: 'fix', subagent_type: 'cops:pr-sidekick', model: 'sonnet', prompt: 'Rules that apply: none' })
+    await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('3 agents'))
+    const drawn = await text(ui)
+    expect(drawn).toContain('✓ 🔮 Oracle · inherit (claude-opus-5-5) · brief-task · 3s')
+    expect(drawn).toContain('✓ 🦸 Sidekick · sonnet · no rules · 3s')
+    expect(drawn).not.toContain('sonnet (')
+    expect(drawn).toContain('✓ Explore · inherit · 3s')
+    await ui.unmount()
+  })
+
   test('spins while a call runs, then shows ✓ when done and ✗ when failed', async ($, on) => {
     const { clock } = world(on)
     on('tool.call', { tool: 'Agent' }, async ($, e) => {

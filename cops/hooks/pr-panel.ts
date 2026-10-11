@@ -221,10 +221,11 @@ export const describeOutcome = (text: string): string => {
   return snippet(text) || 'no output'
 }
 
-// One pane row per call, led by its status, then the agent and the model it ran with (`inherit` when unset):
+// One pane row per call, led by its status, then the agent and the model it ran with (`inherit` when unset, with the model it resolved to when known):
 //   running, now 0   → `⠋ 🔮 Oracle · inherit · brief-task` (the frame steps every 100ms of `now`)
 //   running, now 100 → `⠙ 🔮 Oracle · inherit · brief-task`
 //   two modes        → `⠋ 🔮 Oracle · inherit · triage-threads + scout-repo`
+//   resolved         → `⠋ 🔮 Oracle · inherit (claude-opus-5-5) · brief-task`
 //   model set        → `⠋ 🦸 Sidekick · sonnet · 6 rules`
 //   done             → `✓ 🔮 Oracle · haiku · brief-task · ✓ loaded · 3s · 12k tokens · CHECKPOINT_FOUND abc1234`
 //   loaded: short    → `✓ 🔮 Oracle · inherit · sweep-diff · ⚠ loaded lacks modes/sweep-diff.md · 3s · …`
@@ -240,7 +241,7 @@ export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): 
   const names: Record<string, string> = { 'cops:pr-oracle': '🔮 Oracle', 'cops:pr-sidekick': '🦸 Sidekick' }
   const line = [
     names[call.agent] ?? call.agent.replace(/^cops:/, ''),
-    call.model || 'inherit',
+    call.model || (call.resolvedModel ? `inherit (${call.resolvedModel})` : 'inherit'),
     call.modes?.join(' + '),
     call.missingLoads && (call.missingLoads.length === 0 ? '✓ loaded' : `⚠ loaded lacks ${call.missingLoads.join(', ')}`),
     call.rules !== undefined && (call.rules === 0 ? 'no rules' : `${call.rules} rule${call.rules === 1 ? '' : 's'}`),

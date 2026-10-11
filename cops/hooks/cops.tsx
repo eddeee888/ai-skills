@@ -489,7 +489,7 @@ export const register: Register = (on, options) => {
     if (ran.deny !== undefined || ran.isError === true) {
       await setCall($, call.id, { state: 'failed', durationMs, outcome: snippet(ran.deny ?? ran.text ?? '') || 'failed' })
     } else if ('status' in ran.result && ran.result.status === 'async_launched') {
-      await setCall($, call.id, { state: 'background', durationMs, outcome: 'running in the background' })
+      await setCall($, call.id, { state: 'background', durationMs, outcome: 'running in the background', ...(ran.result.resolvedModel && { resolvedModel: ran.result.resolvedModel }) })
     } else {
       const result = ran.result
       const totals = 'status' in result && result.status === 'completed' ? { durationMs: result.totalDurationMs, tokens: result.totalTokens } : { durationMs }
@@ -500,7 +500,7 @@ export const register: Register = (on, options) => {
       //   `deviations: a; b; c`     → 3
       const entries = /^deviations:[ \t]*(.*)$/mi.exec(ran.text ?? '')?.[1]?.split(';').map(one => one.trim()).filter(Boolean) || []
       const deviations = entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
-      await setCall($, call.id, { state: 'done', ...totals, ...(isCops && { deviations }), outcome: describeOutcome(ran.text ?? '') })
+      await setCall($, call.id, { state: 'done', ...totals, ...(isCops && { deviations }), ...('resolvedModel' in result && result.resolvedModel && { resolvedModel: result.resolvedModel }), outcome: describeOutcome(ran.text ?? '') })
       if (!isCops) return ran
       // Adds a completed call's time and tokens to its mode's or job's usage, split by model.
       try {
@@ -583,7 +583,7 @@ export const register: Register = (on, options) => {
     return ran
   }).catch(($, e, next) => next(e))
 
-  // Ticks the handoffs a main-chat spawn makes, and links a cops agent's call to its loop.
+  // Ticks the handoffs a main-chat spawn makes, records the model every agent call resolved to, and links a cops agent's call to its loop.
   on('agent.spawn', async ($, e, next) => {
     const spawned = await next(e)
     try {
@@ -592,7 +592,9 @@ export const register: Register = (on, options) => {
         ? tickedBy({ skill: running.skill, agent: e.subagentType, modes: describeCall({ agent: e.subagentType, prompt: e.prompt }).modes || [] })
         : []
       if (running && ticked.length > 0) await update($, checklist, () => ({ ...running, ticked: [...new Set([...running.ticked, ...ticked])] }))
-      if (spawned.deny === undefined && spawned.agentId && e.subagentType.startsWith('cops:')) await setCall($, e.tool_use_id, { agentId: spawned.agentId })
+      if (spawned.deny === undefined) {
+        await setCall($, e.tool_use_id, { resolvedModel: spawned.model, ...(spawned.agentId && e.subagentType.startsWith('cops:') && { agentId: spawned.agentId }) })
+      }
       if (ticked.length > 0) $.ui.invalidate('ui.render')
     } catch (error) {
       reportFailure($, { step: 'handoff-tick', what: 'tick the Handoffs checklist', error })
