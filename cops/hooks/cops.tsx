@@ -739,35 +739,46 @@ export const register: Register = (on, options) => {
       )
     }
 
+    const skillRow = (run: typeof runs[number]) => {
+      const { counter, command, args, detail } = describeSkill({ run, now })
+      return <Text wrap="truncate-end">{counter} <Text bold>{command}</Text>{args ? ` ${args}` : ''} · {detail}</Text>
+    }
+
+    const nextRow = hint && (
+      <Box flexDirection="row" gap={1}>
+        <Text wrap="truncate-end">
+          <Text bold>Next:</Text> /{hint.skill} · {hint.why}
+          {lastRun && <Text dimColor> · ran as {lastRun.n}.</Text>}
+        </Text>
+        <Button key="next-skill" label="Use" onPress={async () => {
+          if (!(await $.prompt.fill({ text: `/${hint.skill} ` })).isFilled) $.ui.toast(`Couldn't fill the prompt — type /${hint.skill}`)
+        }} />
+      </Box>
+    )
+
     return (
       <Box flexDirection="column" gap={1}>
         {tabs}
         {view.status === 'ready' ? (
           <Box flexDirection="column" gap={1}>
             <Text bold>Threads · <Link href={view.url}>{`PR #${view.pr}`}</Link>{view.state !== 'OPEN' && ` (${view.state.toLowerCase()})`}</Text>
+            {nextRow}
             {group('Needs you', view.threads.filter(one => one.move === 'you'))}
             {group('Waiting on reviewer', view.threads.filter(one => one.move === 'reviewer'))}
           </Box>
         ) : (
-          <Text dimColor>{waiting[view.status]}</Text>
-        )}
-        {hint && (
-          <Box flexDirection="row" gap={1}>
-            <Text wrap="truncate-end">
-              <Text bold>Next:</Text> /{hint.skill} · {hint.why}
-              {lastRun && <Text dimColor> · ran as #{lastRun.n}</Text>}
-            </Text>
-            <Button key="next-skill" label="Use" onPress={async () => {
-              if (!(await $.prompt.fill({ text: `/${hint.skill} ` })).isFilled) $.ui.toast(`Couldn't fill the prompt — type /${hint.skill}`)
-            }} />
+          <Box flexDirection="column" gap={1}>
+            <Text dimColor>{waiting[view.status]}</Text>
+            {nextRow}
           </Box>
         )}
+        <Text dimColor wrap="truncate-end">{'─'.repeat(80)}</Text>
         <Box flexDirection="column">
           <Text bold>{describeActivity({ runs: runs.length, calls: calls.length })}</Text>
           {activity.loose.map(call => agentRow(call, ''))}
           {activity.groups.map(({ run, calls: inRun }) => (
             <Box key={`skill-${run.n}`} flexDirection="column">
-              <Text wrap="truncate-end">{describeSkill({ run, now })}</Text>
+              {skillRow(run)}
               {inRun.map(call => agentRow(call, '   '))}
               {running && checklistRun === run && (
                 <Box flexDirection="column">
