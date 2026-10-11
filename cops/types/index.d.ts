@@ -140,9 +140,9 @@ declare module 'claude-code' {
       checklist: { skill: string; ticked: string[] } | null
       /** The COPS HQ pane's tab: `hq` shows threads, activity and inbox; `rules` shows remembered rules' usage; `stats` shows what the cops agents cost. */
       paneTab: 'hq' | 'rules' | 'stats'
-      /** The rules of the personal and team MEMORY.md, without their evidence, as the status line last read them. */
       /** `$.clock.now()` when the main chat's last turn ended (not a subagent's); null before one has. */
       turnEndedAt: number | null
+      /** The rules of the personal and team MEMORY.md, without their evidence, as the status line last read them. */
       memoryRules: { rule: string; source: 'personal' | 'team' }[]
     }
   }
