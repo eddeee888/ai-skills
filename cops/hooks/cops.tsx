@@ -630,7 +630,7 @@ export const register: Register = (on, options) => {
     const done = await read($, handled)
     const calls = await read($, agents)
     const runs = await read($, skills)
-    const hint = describeNext({ view, handled: done })
+    const hint = describeNext({ view, handled: done, ran: runs.map(one => one.skill) })
     const lastRun = hint && runs.findLast(one => isSameSkill({ a: one.skill, b: hint.skill }))
     const activity = groupActivity({ runs, calls })
     const running = await read($, checklist)

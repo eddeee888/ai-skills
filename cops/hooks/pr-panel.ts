@@ -102,9 +102,10 @@ export const summarize = ({ response }: { response: ThreadsResponse }): { isMine
 //   merged or closed PR                   → /cops:pr-start
 //   someone else's PR                     → /cops:pr-review
 //   your PR, threads need you             → /cops:pr-address (threads marked handled don't count)
-//   your PR, no review and no notes yet   → /cops:pr-note
+//   your PR, no review and no notes yet   → /cops:pr-review, then /cops:pr-sync, then /cops:pr-note,
+//                                           each once the one before it ran this session (`ran`)
 //   anything else (waiting, unknown)      → nothing
-export const describeNext = ({ view, handled }: { view: Threads; handled: string[] }): { skill: string; why: string } | undefined => {
+export const describeNext = ({ view, handled, ran = [] }: { view: Threads; handled: string[]; ran?: string[] }): { skill: string; why: string } | undefined => {
   if (view.status === 'no-pr') return { skill: 'cops:pr-start', why: 'this branch has no PR yet' }
   if (view.status !== 'ready') return undefined
   if (view.state !== 'OPEN') return { skill: 'cops:pr-start', why: `PR #${view.pr} is ${view.state.toLowerCase()}, start the next task` }
@@ -112,7 +113,11 @@ export const describeNext = ({ view, handled }: { view: Threads; handled: string
   if (!view.isMine) return { skill: 'cops:pr-review', why: 'someone else’s PR' }
   const waiting = view.threads.filter(one => one.move === 'you' && !handled.includes(one.id)).length
   if (waiting > 0) return { skill: 'cops:pr-address', why: `${waiting} thread${waiting === 1 ? ' needs' : 's need'} you` }
-  if (!view.isReviewed && !view.hasNotes) return { skill: 'cops:pr-note', why: 'your PR, no review or notes yet' }
+  if (view.isReviewed || view.hasNotes) return undefined
+  const hasRun = (skill: string): boolean => ran.some(one => isSameSkill({ a: one, b: skill }))
+  if (!hasRun('cops:pr-review')) return { skill: 'cops:pr-review', why: 'your PR, self-review it first' }
+  if (!hasRun('cops:pr-sync')) return { skill: 'cops:pr-sync', why: 'self-reviewed, refresh the description' }
+  return { skill: 'cops:pr-note', why: 'your PR, no review or notes yet' }
   return undefined
 }
 

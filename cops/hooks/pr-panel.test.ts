@@ -300,7 +300,11 @@ describe('next step', () => {
     expect(describeNext({ view: ready({ isMine: true }), handled: [] })?.why).toBe('2 threads need you')
     expect(describeNext({ view: ready({ isMine: true }), handled: ['t1'] })?.why).toBe('1 thread needs you')
     expect(describeNext({ view: ready({ isMine: true }), handled: ['t1', 't4'] })).toBeUndefined()
-    expect(describeNext({ view: { ...ready({ isMine: true, isReviewed: false }), threads: [] }, handled: [] })?.skill).toBe('cops:pr-note')
+    const fresh = { ...ready({ isMine: true, isReviewed: false }), threads: [] }
+    expect(describeNext({ view: fresh, handled: [] })).toEqual({ skill: 'cops:pr-review', why: 'your PR, self-review it first' })
+    expect(describeNext({ view: fresh, handled: [], ran: ['cops:pr-review'] })).toEqual({ skill: 'cops:pr-sync', why: 'self-reviewed, refresh the description' })
+    expect(describeNext({ view: fresh, handled: [], ran: ['pr-review', 'pr-sync'] })?.skill).toBe('cops:pr-note')
+    expect(describeNext({ view: fresh, handled: [], ran: ['cops:pr-sync'] })?.skill).toBe('cops:pr-review')
     expect(describeNext({ view: { ...ready({ isMine: true, isReviewed: false, hasNotes: true }), threads: [] }, handled: [] })).toBeUndefined()
     expect(describeNext({ view: ready({ isMine: false }), handled: [] })?.skill).toBe('cops:pr-review')
     expect(describeNext({ view: { ...ready({ isMine: true }), state: 'MERGED' }, handled: [] })).toEqual({ skill: 'cops:pr-start', why: 'PR #7 is merged, start the next task' })
