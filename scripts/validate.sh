@@ -440,10 +440,12 @@ validate_autopilot() {
 
   require_markers "$auto" "autopilot gate" \
     "viewerPermission" '`WRITE`, `MAINTAIN` or `ADMIN`' 'the `autopilot` label exists' \
-    "Never create it." "is a test or a command, not an observable behavior"
+    "Never create it."
   require_markers "$auto" "autopilot bot login" "a bot token" "the card asks for the login"
   require_markers "$auto" "autopilot card refusal" \
     "the Size is Large" "security or auth, data loss, infrastructure, or a public API"
+  require_order "$auto" "autopilot Done when check at the card" \
+    "## At the card" "is a test or a command, not an observable behavior" "## Fix loop and sweep"
   require_markers "$auto" "autopilot consent line" \
     "Autopilot authorises: push, open PR, post review, push fixes, edit title and body, post notes, assign <login>, mark ready" \
     "Confirm on autopilot" "The card is the only prompt."

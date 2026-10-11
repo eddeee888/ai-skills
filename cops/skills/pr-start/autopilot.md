@@ -24,7 +24,6 @@ gh label list --search autopilot --json name --jq '.[].name'
 
 - **Write access:** the permission is `WRITE`, `MAINTAIN` or `ADMIN`.
 - **Label:** the `autopilot` label exists in the repo (MCP: `get_label`). Never create it.
-- **Done when** is a test or a command, not an observable behavior.
 
 A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, make no offer. The normal run then goes on from Step 2 as SKILL.md says.
 
@@ -32,8 +31,9 @@ A failed check refuses autopilot: with the flag, say which check failed and offe
 
 Refuse autopilot, with or without the flag, when:
 
-- the Size is Large; or
-- the scope is high risk: security or auth, data loss, infrastructure, or a public API. This holds even when the Size is Small.
+- the Size is Large;
+- the scope is high risk: security or auth, data loss, infrastructure, or a public API. This holds even when the Size is Small; or
+- Done when is an observable behavior. Autopilot needs one that is a test or a command, not an observable behavior.
 
 Say why and show the normal card.
 
@@ -85,7 +85,7 @@ A stage follows its own SKILL.md, including its handoffs and its `Handoffs:` lis
 
 - It asks nothing. A point where it would ask or wait for the user is a stop, except the confirmations autopilot replaces: the review, the notes, and the address rules.
 - Its posts carry the skill signature without `Approved:`, since the user has not seen the text (`CONVENTIONS-posts.md` → "Skill signature").
-- A `memory-candidate:` line, from a stage or from pr-start's own steps, is not a stop: hold it, save nothing, and show it in the final report, where the user is asked whether to save it.
+- A `memory-candidate:` line, from a stage or pr-start's own steps, is not a stop: hold it, save nothing, and show it in the final report for the user to decide.
 - It suggests no next step; the chain goes on to the next stage.
 - A stage with nothing to do (no findings, no threads, already current, nothing unexplained) has finished.
 - `cops:pr-sync` keeps the banner as the body's first line. It gets the card's Goal and Why as the motivation.
