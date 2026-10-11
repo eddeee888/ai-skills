@@ -11,6 +11,7 @@ import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
 import { countUses, describeRules, describeUse, hashRule, matchEntries, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
+import { addUsage, describeUsage, keyCall, toUsage } from './usage-stats.ts'
 
 // The plugin's one hooks module: the status line, the COPS HQ pane of threads,
 // the next skill, skill runs with their agent calls and orchestration checks, and the memory inbox, its Rules tab of
@@ -31,6 +32,8 @@ const DROPPED = 'dropped'
 const DROPPED_LIMIT = 200
 // The `$.store` key of how often each remembered rule matched a brief-task or sweep-diff reply, kept across sessions.
 const RULE_USAGE = 'ruleUsage'
+// The `$.store` key of what finished cops agent calls cost per mode or job, kept across sessions.
+const USAGE = 'usage'
 
 const threads = atom({ plugin: 'cops', key: 'threads' } as const, { status: 'loading' })
 const handled = atom({ plugin: 'cops', key: 'handled' } as const, [])
@@ -461,7 +464,7 @@ export const register: Register = (on, options) => {
     try {
       startedAt = await $.clock.now()
       call = {
-        id: e.tool_use_id, agent, startedAt, state: 'running', ...(isCops && describeCall({ agent, prompt: e.prompt })),
+        id: e.tool_use_id, agent, startedAt, state: 'running', model: e.model, ...(isCops && describeCall({ agent, prompt: e.prompt })),
         mayRewrite: agent === 'cops:pr-sidekick' && /\brebase\b|\bforce[- ]push/i.test(e.prompt),
       }
       await update($, agents, list => [...list, call].slice(-50))
@@ -496,6 +499,24 @@ export const register: Register = (on, options) => {
       const deviations = entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
       await setCall($, call.id, { state: 'done', ...totals, ...(isCops && { deviations }), outcome: describeOutcome(ran.text ?? '') })
       if (!isCops) return ran
+      // Adds the call's time and tokens to its mode's or job's usage, split by model.
+      try {
+        if (agent === 'cops:pr-oracle' || agent === 'cops:pr-sidekick') {
+          const running = await read($, checklist)
+          const job = running ? tickedBy({ skill: running.skill, agent, modes: [] })[0] : undefined
+          await $.store.set(USAGE, addUsage({
+            usage: toUsage({ stored: await $.store.get(USAGE) }),
+            key: keyCall({ agent, modes: call.modes, job }),
+            model: e.model || 'inherit',
+            durationMs: totals.durationMs,
+            tokens: 'tokens' in totals ? totals.tokens : 0,
+            now: await $.clock.now(),
+          }))
+          $.ui.invalidate('ui.render')
+        }
+      } catch (error) {
+        reportFailure($, { step: 'usage', what: 'add the call to the usage stats', error })
+      }
       // Keeps the result's memory lines in the inbox while memory is on.
       try {
         const found = parseSuffixes({ text: ran.text ?? '', modes: call.modes })
@@ -645,7 +666,7 @@ export const register: Register = (on, options) => {
       </Box>
     )
     const isOn = await read($, isMemoryOn)
-    // The Rules tab shows only while memory is on.
+    // The Rules and Stats tabs show only while memory is on.
     const tab = isOn ? await read($, paneTab) : 'hq'
     // A store that can't be read hides the inbox, not the pane.
     // The inbox stays in the store while memory is off, and shows again once it's on.
@@ -662,6 +683,7 @@ export const register: Register = (on, options) => {
     const rules = tab === 'rules'
       ? describeRules({ entries: sources.map(one => one.rule), usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE).catch(() => undefined) }), now })
       : undefined
+    const usage = tab === 'stats' ? toUsage({ stored: await $.store.get(USAGE).catch(() => undefined) }) : undefined
 
     const row = (thread: Thread) => {
       const isHandled = done.includes(thread.id)
@@ -706,13 +728,35 @@ export const register: Register = (on, options) => {
       'needs-gh': 'Threads: needs gh, logged in.',
     }
 
-    // HQ | Rules, while memory is on; the tab shown is drawn as the primary button.
+    // HQ | Rules | Stats, while memory is on; the tab shown is drawn as the primary button.
     const tabs = isOn && (
       <Box flexDirection="row" gap={1}>
         <Button key="tab-hq" label="HQ" variant={tab === 'hq' ? 'primary' : undefined} dimColor={tab !== 'hq'} onPress={() => update($, paneTab, () => 'hq')} />
         <Button key="tab-rules" label="Rules" variant={tab === 'rules' ? 'primary' : undefined} dimColor={tab !== 'rules'} onPress={() => update($, paneTab, () => 'rules')} />
+        <Button key="tab-stats" label="Stats" variant={tab === 'stats' ? 'primary' : undefined} dimColor={tab !== 'stats'} onPress={() => update($, paneTab, () => 'stats')} />
       </Box>
     )
+
+    if (tab === 'stats') {
+      const usageRows = describeUsage({ usage })
+      return (
+        <Box flexDirection="column" gap={1}>
+          {tabs}
+          <Box flexDirection="column">
+            <Box flexDirection="row" gap={1}>
+              <Text bold>Usage</Text>
+              <Button key="reset-usage" label="Reset" onPress={async () => {
+                await $.store.set(USAGE, { since: await $.clock.now(), keys: {} })
+                $.ui.invalidate('ui.render')
+              }} />
+              {usage && <Text dimColor>since {new Date(usage.since).toISOString().slice(0, 10)}</Text>}
+            </Box>
+            <Text dimColor>Average time and tokens per call, by pr-oracle mode or pr-sidekick job.</Text>
+            {usageRows.length === 0 ? <Text dimColor>none</Text> : usageRows.map(one => <Text key={`usage-${one.key}`} wrap="truncate-end">{one.text}</Text>)}
+          </Box>
+        </Box>
+      )
+    }
 
     if (rules) {
       return (
