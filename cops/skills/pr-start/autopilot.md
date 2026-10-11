@@ -51,10 +51,11 @@ The card is the only prompt. An edit that makes the card Large or high risk, or 
 
 ## Fix loop and sweep
 
-Steps 4 and 5 run as SKILL.md and fix-loop.md say: at most 3 attempts, then stop with the work uncommitted. Two differences:
+Steps 4 and 5 run as SKILL.md and fix-loop.md say: at most 3 attempts, then stop with the work uncommitted. Three differences:
 
 - A sidekick question stops the run. Nothing is asked mid-run; report the question.
 - A size raised to Large after the loop stops the run before Step 5.
+- A bug reply that says Done when holds without a failing-before result stops the run.
 
 A sweep flag that SKILL.md would bring to the user stops the run too.
 
@@ -84,6 +85,7 @@ A stage follows its own SKILL.md, including its handoffs and its `Handoffs:` lis
 
 - It asks nothing. A point where it would ask or wait for the user is a stop, except the confirmations autopilot replaces: the review, the notes, and the address rules.
 - Its posts carry the skill signature without `Approved:`, since the user has not seen the text (`CONVENTIONS-posts.md` → "Skill signature").
+- A `memory-candidate:` line, from a stage or from pr-start's own steps, is not a stop: hold it, save nothing, and show it in the final report, where the user is asked whether to save it.
 - It suggests no next step; the chain goes on to the next stage.
 - A stage with nothing to do (no findings, no threads, already current, nothing unexplained) has finished.
 - `cops:pr-sync` keeps the banner as the body's first line. It gets the card's Goal and Why as the motivation.
@@ -109,7 +111,7 @@ gh pr ready <number>
 gh pr edit <number> --add-assignee <login>
 ```
 
-Then report as Step 7 says, adding each stage's result in one line and the list of threads left open, each with its label and `path:line`. The `autopilot` label and the banner stay for the human who reads the PR.
+Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines. The `autopilot` label and the banner stay for the human who reads the PR.
 
 ## Stops
 
@@ -117,7 +119,7 @@ Any failure or question, at any stage, ends the run:
 
 - Leave the PR a draft if one exists, and assign the user to it with the `gh pr edit` line above. A stop before the PR exists has nothing to assign.
 - Don't retry the stage, start a later one, or undo what was already pushed or posted.
-- Report the stage reached, what stopped it, what was pushed and posted so far, and the command that picks up from there (`/cops:pr-address`, `/cops:pr-sync`, …).
+- Report the stage reached, what stopped it, what was pushed and posted so far, the held `memory-candidate:` lines, and the command that picks up from there (`/cops:pr-address`, `/cops:pr-sync`, …).
 
 ## Handoffs
 
