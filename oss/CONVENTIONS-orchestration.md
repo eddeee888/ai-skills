@@ -61,7 +61,7 @@ Without `cops`, give only a manual-update `pr-sync` line.
 Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
 - Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle`, waits, and supplies the mode plus every listed input because it starts blank.
-- **Model by tier.** A call's tier is its mode's, or the highest of a combined call's modes; a fallback subagent for a mode takes the same tier. Pass its model as "Hand long loops to a subagent" says.
+- **Model by tier.** A call takes its mode's tier, or a combined call's highest; a mode's fallback subagent takes the same. Pass the model as "Hand long loops to a subagent" says.
 
   | Tier | For | Modes |
   | --- | --- | --- |
