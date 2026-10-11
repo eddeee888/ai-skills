@@ -24,6 +24,8 @@ const world = (
   const argvs: string[][] = []
   const toasts: string[] = []
   const reads: string[] = []
+  const statuses: (string | undefined)[] = []
+  let porcelain = answers.porcelain
   const clock = mock.clock(on)
   on('fs.read', ($, e) => {
     reads.push(e.path)
@@ -40,7 +42,7 @@ const world = (
   on('process.run', ($, e) => {
     argvs.push([...e.argv])
     if (e.argv[0] === 'git' && e.argv.includes('status')) {
-      return { value: answers.porcelain === undefined ? failed('fatal: not a git repository') : ok(answers.porcelain) }
+      return { value: porcelain === undefined ? failed('fatal: not a git repository') : ok(porcelain) }
     }
     if (e.argv[0] === 'git' && e.argv.includes('rev-list')) {
       return { value: answers.ahead === undefined ? failed('fatal: no upstream configured') : ok(answers.ahead) }
@@ -50,11 +52,23 @@ const world = (
   })
   const status = new Promise<string | undefined>(resolve => {
     on('ui.status', ($, e) => {
+      statuses.push(e.text)
       resolve(e.text)
       return { value: undefined }
     })
   })
-  return { argvs, status, toasts, reads, clock }
+  return { argvs, status, statuses, toasts, reads, clock, setPorcelain: (next: string) => { porcelain = next } }
+}
+
+// Background work settles over a few turns of the event loop.
+const until = async (check: () => boolean): Promise<void> => {
+  for (let tries = 0; tries < 3000; tries++) {
+    if (check()) {
+      return
+    }
+    await new Promise(resolve => setTimeout(resolve, 0))
+  }
+  throw new Error('never happened')
 }
 
 const start = ($: Engine) => $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
@@ -116,6 +130,47 @@ describe('memory git changes', () => {
     await start($)
     await $.session.end({ cwd: '/repo' })
     expect(toasts).toEqual(['COPS memory: 1 uncommitted change in the memory repository; commit them or they stay local.'])
+  })
+
+  describe('after a pr-oracle call', () => {
+    const oracle = async ($: Engine, { mode }: { mode: string }): Promise<void> => {
+      await $.tool.call({ tool: 'Agent', description: mode, subagent_type: 'cops:pr-oracle', prompt: `mode: ${mode}` })
+    }
+    const answerAgents = (on: On): void => {
+      on('tool.call', { tool: 'Agent' }, ($, e) => ({
+        result: {
+          status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 1000, totalTokens: 100, prompt: e.prompt,
+          usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
+        },
+        text: '',
+      }))
+    }
+
+    test('a learn-feedback call reads the git counts again', async ($, on) => {
+      const { statuses, argvs, setPorcelain } = world(on, { memory: MEMORY_ON, files, porcelain: '' })
+      answerAgents(on)
+      await start($)
+      await until(() => statuses.length === 1)
+      expect(statuses[0]).toBe('memory: octocat · self 12/200 · team 40/200')
+      setPorcelain(' M a.md\n')
+      const before = argvs.filter(argv => argv.includes('status')).length
+      await oracle($, { mode: 'learn-feedback' })
+      await until(() => statuses.length === 2)
+      expect(statuses[1]).toBe('memory: octocat · self 12/200 · team 40/200 · 1 uncommitted')
+      expect(argvs.filter(argv => argv.includes('status')).length).toBe(before + 1)
+    })
+
+    test('a brief-task call does not', async ($, on) => {
+      const { statuses, argvs } = world(on, { memory: MEMORY_ON, files, porcelain: '' })
+      answerAgents(on)
+      await start($)
+      await until(() => statuses.length === 1)
+      const before = argvs.filter(argv => argv.includes('status')).length
+      await oracle($, { mode: 'brief-task' })
+      await new Promise(resolve => setTimeout(resolve, 20))
+      expect(statuses.length).toBe(1)
+      expect(argvs.filter(argv => argv.includes('status')).length).toBe(before)
+    })
   })
 
   test('runs no git command while memory is off', async ($, on) => {
