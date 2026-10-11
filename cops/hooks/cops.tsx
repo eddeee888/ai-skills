@@ -269,18 +269,45 @@ const setCall = async ($: EngineInterface, id: string, change: Partial<AgentCall
 // What a skill run in flight was started by, so `skill.prompt` can tell who asked:
 // the last slash command typed, and the Skill tool calls still running.
 let typed: { command: string; args: string } | undefined
-const calling: { skill: string; args?: string }[] = []
+const calling: { skill: string; args?: string; isPrompted?: boolean }[] = []
 
-const recordSkill = async ($: EngineInterface, { skill }: { skill: string }): Promise<void> => {
+// `source` is set when `skill.prompt` never fired for the run (a managed plugin above can skip it),
+// naming the hook that recorded it instead.
+const recordSkill = async ($: EngineInterface, { skill, source }: { skill: string; source?: SkillRun['source'] }): Promise<void> => {
   const byModel = calling.find(one => isSameSkill({ a: one.skill, b: skill }))
   const byYou = !byModel && typed && isSameSkill({ a: typed.command, b: skill }) ? typed : undefined
+  if (byModel && !source) byModel.isPrompted = true
   if (byYou) typed = undefined
   const args = (byModel?.args ?? byYou?.args)?.trim() || undefined
   const at = await $.clock.now()
   const by = byModel ? 'model' : byYou ? 'you' : 'other'
   // Numbered from the last run kept, so a number stays put once older runs drop off.
-  await update($, skills, list => [...list, { n: (list.at(-1)?.n ?? 0) + 1, skill, ...(args && { args }), by, at } satisfies SkillRun].slice(-50))
+  await update($, skills, list => [...list, { n: (list.at(-1)?.n ?? 0) + 1, skill, ...(args && { args }), by, ...(source && { source }), at } satisfies SkillRun].slice(-50))
   $.ui.invalidate('ui.render')
+}
+
+// Records the run in Activity and starts its Handoffs checklist: a cops skill with handoffs (EXPECTED_HANDOFFS)
+// starts its own, any other skill clears it. Never throws, so the skill's prompt or call goes on untouched.
+const startRun = async ($: EngineInterface, { skill, source }: { skill: string; source?: SkillRun['source'] }): Promise<void> => {
+  try {
+    await recordSkill($, { skill, source })
+  } catch (error) {
+    reportFailure($, { step: 'record', what: `record /${skill} in Activity`, error })
+  }
+  try {
+    const handoffs = [skill, `cops:${skill}`].find(one => EXPECTED_HANDOFFS[one])
+    await update($, checklist, () => (handoffs ? { skill: handoffs, ticked: [] } : null))
+    $.ui.invalidate('ui.render')
+  } catch (error) {
+    reportFailure($, { step: 'checklist', what: `start the Handoffs checklist for /${skill}`, error })
+  }
+}
+
+// Whether a typed command is a skill, by the skill listing the session gives the model.
+// The `summary` breakdown is counted locally, with no request sent.
+const isSkill = async ($: EngineInterface, { command }: { command: string }): Promise<boolean> => {
+  const usage = await $.session.usage({ breakdown: 'summary' })
+  return (usage.context.breakdown?.skills?.skillFrontmatter ?? []).some(one => isSameSkill({ a: one.name, b: command }))
 }
 
 // Each running cops agent's Bash commands this run, by its agentId, for the 4th-try check.
@@ -303,7 +330,7 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     const started = await next(e)
     // Immediate: opening the pane touches nothing the running turn holds.
-    await $.command.register({ name: 'cops-hq', description: 'Show the PR’s open review threads, the next cops skill, and this session’s cops agents and skill runs', immediate: true })
+    await $.command.register({ name: 'cops-hq', description: 'Show the PR’s open review threads, the next cops skill, and this session’s agent calls and skill runs', immediate: true })
     void refreshAll($, memory)
     $.clock.every(REFRESH_MS, () => refreshAll($, memory))
     return started
@@ -382,37 +409,37 @@ export const register: Register = (on, options) => {
   })
 
   // A typed `/name args`; `skill.prompt` claims it when `name` turns out to be a skill.
+  // Left unclaimed, as when a managed plugin above skips `skill.prompt`, a skill is recorded here.
   on('command.run', async ($, e, next) => {
-    if (e.origin.kind !== 'plugin') typed = { command: e.command, args: e.args }
-    return next(e)
+    if (e.origin.kind === 'plugin') return next(e)
+    const entry = { command: e.command, args: e.args }
+    typed = entry
+    const ran = await next(e)
+    try {
+      if (typed === entry && (await isSkill($, { command: e.command }))) await startRun($, { skill: e.command, source: 'typed' })
+    } catch (error) {
+      reportFailure($, { step: 'typed', what: `tell whether /${e.command} is a skill`, error })
+    }
+    return ran
   })
 
+  // A Skill call `skill.prompt` didn't see, as when a managed plugin above skips it, is recorded here.
   on('tool.call', { tool: 'Skill' }, async ($, e, next) => {
-    const entry = { skill: e.skill, args: e.args }
+    const entry: (typeof calling)[number] = { skill: e.skill, args: e.args }
     calling.push(entry)
     try {
-      return await next(e)
+      const ran = await next(e)
+      if (!entry.isPrompted && ran.deny === undefined && ran.isError !== true) await startRun($, { skill: e.skill, source: 'tool.call' })
+      return ran
     } finally {
       calling.splice(calling.indexOf(entry), 1)
     }
   })
 
   // Every skill reaches the model through here: typed, called by the model, or preloaded.
-  // A cops skill with handoffs (EXPECTED_HANDOFFS) also starts its checklist; any other skill clears it.
   on('skill.prompt', async ($, e, next) => {
     const expanded = await next(e)
-    try {
-      await recordSkill($, { skill: e.skill })
-    } catch (error) {
-      reportFailure($, { step: 'record', what: `record /${e.skill} in Activity`, error })
-    }
-    try {
-      const skill = [e.skill, `cops:${e.skill}`].find(one => EXPECTED_HANDOFFS[one])
-      await update($, checklist, () => (skill ? { skill, ticked: [] } : null))
-      $.ui.invalidate('ui.render')
-    } catch (error) {
-      reportFailure($, { step: 'checklist', what: `start the Handoffs checklist for /${e.skill}`, error })
-    }
+    await startRun($, { skill: e.skill })
     return expanded
   })
 
@@ -423,16 +450,18 @@ export const register: Register = (on, options) => {
     return ran
   }).catch(($, e, next) => next(e))
 
+  // Every agent call gets a row; the pane opening by itself, the rule counts, deviations,
+  // memory lines and rule usage are a cops agent's alone.
   on('tool.call', { tool: 'Agent' }, async ($, e, next) => {
-    const agent = e.subagent_type ?? ''
-    if (!agent.startsWith('cops:')) return next(e)
+    const agent = e.subagent_type || 'general-purpose'
+    const isCops = agent.startsWith('cops:')
     let startedAt: number
     let call: AgentCall
     // A row that can't be added leaves the call to run untracked.
     try {
       startedAt = await $.clock.now()
       call = {
-        id: e.tool_use_id, agent, startedAt, state: 'running', ...describeCall({ agent, prompt: e.prompt }),
+        id: e.tool_use_id, agent, startedAt, state: 'running', ...(isCops && describeCall({ agent, prompt: e.prompt })),
         mayRewrite: agent === 'cops:pr-sidekick' && /\brebase\b|\bforce[- ]push/i.test(e.prompt),
       }
       await update($, agents, list => [...list, call].slice(-50))
@@ -440,7 +469,7 @@ export const register: Register = (on, options) => {
       reportFailure($, { step: 'agent-add', what: `add a row for ${agent}`, error })
       return next(e)
     }
-    void autoOpen($)
+    if (isCops) void autoOpen($)
     // Redraws the pane so the running call's spinner moves.
     const spin = $.clock.every(SPINNER_MS, () => $.ui.invalidate('ui.render'))
     const ran = await next(e)
@@ -465,7 +494,8 @@ export const register: Register = (on, options) => {
       //   `deviations: a; b; c`     → 3
       const entries = /^deviations:[ \t]*(.*)$/mi.exec(ran.text ?? '')?.[1]?.split(';').map(one => one.trim()).filter(Boolean) || []
       const deviations = entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
-      await setCall($, call.id, { state: 'done', ...totals, deviations, outcome: describeOutcome(ran.text ?? '') })
+      await setCall($, call.id, { state: 'done', ...totals, ...(isCops && { deviations }), outcome: describeOutcome(ran.text ?? '') })
+      if (!isCops) return ran
       // Keeps the result's memory lines in the inbox while memory is on.
       try {
         const found = parseSuffixes({ text: ran.text ?? '', modes: call.modes })

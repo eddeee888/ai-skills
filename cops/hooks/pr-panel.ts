@@ -128,11 +128,12 @@ export const isSameSkill = ({ a, b }: { a: string; b: string }): boolean => {
 //   typed      → `#1 /cops:pr-review https://github.com/o/r/pull/7 · you · 3m ago`
 //   model      → `#2 /cops:pr-address · model · just now`
 //   other      → `#3 /oss:issue-fix · preloaded · 1h ago` (expanded with no command or Skill call, e.g. into a subagent)
+//   fallback   → `#4 /cops:pr-sync · you (source:typed) · just now` (recorded without `skill.prompt`)
 export const describeSkill = ({ run, now }: { run: SkillRun; now: number }): string => {
   const by = { you: 'you', model: 'model', other: 'preloaded' }
   const ms = Math.max(0, now - run.at)
   const ago = ms < 60_000 ? 'just now' : ms < 3_600_000 ? `${Math.floor(ms / 60_000)}m ago` : `${Math.floor(ms / 3_600_000)}h ago`
-  return [`#${run.n} /${run.skill}${run.args ? ` ${snippet(run.args)}` : ''}`, by[run.by], ago].join(' · ')
+  return [`#${run.n} /${run.skill}${run.args ? ` ${snippet(run.args)}` : ''}`, `${by[run.by]}${run.source ? ` (source:${run.source})` : ''}`, ago].join(' · ')
 }
 
 // The pane's Activity section: each agent call under the skill run it started in,
