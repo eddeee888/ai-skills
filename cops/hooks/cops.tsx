@@ -2,6 +2,8 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { AgentCall, InboxItem, SkillRun, Thread, Threads } from '../types'
+import { parseMemoryGit } from './memory-git.ts'
+import type { MemoryGit } from './memory-git.ts'
 import { parseSuffixes } from './memory-inbox.ts'
 import { checkLoaded, checkTool, EXPECTED_HANDOFFS, tickedBy } from './orchestration.ts'
 import { describeActivity, describeAgent, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, snippet, SPINNER_MS, summarize, THREADS_QUERY, toThreads } from './pr-panel.ts'
@@ -98,6 +100,19 @@ const readMemory = async ($: EngineInterface, { context }: { context: string }):
   }
 }
 
+// Uncommitted and unpushed changes in the memory repository, read-only; undefined when git can't say.
+// No upstream leaves `unpushed` out.
+const readMemoryGit = async ($: EngineInterface, { root }: { root: string }): Promise<MemoryGit | undefined> => {
+  const [status, ahead] = await Promise.all([
+    run($, ['git', '-C', root, 'status', '--porcelain']),
+    run($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD']),
+  ])
+  if (status?.exitCode !== 0) {
+    return undefined
+  }
+  return parseMemoryGit({ porcelain: status.stdout, ahead: ahead?.exitCode === 0 ? ahead.stdout : undefined })
+}
+
 // Status line
 
 let hasWarnedCapacity = false
@@ -110,8 +125,13 @@ const memoryPart = async ($: EngineInterface, { path, login }: { path: string; l
     // The pane shows the memory inbox only while memory is on.
     $.ui.invalidate('ui.render')
   }
-  if (ran?.exitCode !== 0) return undefined
+  if (ran?.exitCode !== 0) {
+    return undefined
+  }
   const files = await readMemory($, { context: ran.stdout })
+  // The script's resolved root, the one memory is on for.
+  const root = /^COPS memory root: (.+)$/m.exec(ran.stdout)?.[1]
+  const git = isOn && root ? await readMemoryGit($, { root }) : undefined
   const usage = {
     personal: files.personal === undefined ? undefined : countLines({ text: files.personal }),
     team: files.team === undefined ? undefined : countLines({ text: files.team }),
@@ -126,7 +146,7 @@ const memoryPart = async ($: EngineInterface, { path, login }: { path: string; l
     hasWarnedCapacity = true
     $.ui.toast(warning)
   }
-  return describeMemory({ context: ran.stdout, usage })
+  return describeMemory({ context: ran.stdout, usage, git })
 }
 
 type Memory = { path: string; login: string }
@@ -287,6 +307,21 @@ export const register: Register = (on, options) => {
     void refreshAll($, memory)
     $.clock.every(REFRESH_MS, () => refreshAll($, memory))
     return started
+  })
+
+  // Toasts if the memory repository has changes that aren't committed, while memory is on.
+  on('session.end', async ($, e, next) => {
+    try {
+      const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+      const root = ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:') ? /^COPS memory root: (.+)$/m.exec(ran.stdout)?.[1] : undefined
+      const git = root ? await readMemoryGit($, { root }) : undefined
+      if (git?.uncommitted) {
+        $.ui.toast(`COPS memory: ${git.uncommitted} uncommitted change${git.uncommitted === 1 ? '' : 's'} in the memory repository; commit them or they stay local.`)
+      }
+    } catch (error) {
+      reportFailure($, { step: 'memory-git', what: 'check the memory repository for uncommitted changes', error })
+    }
+    return next(e)
   })
 
   on('command.run', { command: 'cops-hq' }, async $ => {
@@ -463,6 +498,10 @@ export const register: Register = (on, options) => {
         }
       } catch (error) {
         reportFailure($, { step: 'inbox', what: 'collect memory lines for the inbox', error })
+      }
+      // A learn-feedback call may have written memory, so the status line's git counts are read again.
+      if (agent === 'cops:pr-oracle' && call.modes?.includes('learn-feedback')) {
+        void refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error }))
       }
       // Counts the remembered rules a plain brief-task or a sweep-diff reply cites, while memory is on.
       // A `for: pr-sidekick` brief lists every rule that could apply, so it doesn't show which rules fire.

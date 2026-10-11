@@ -1,5 +1,8 @@
 // What the status line says about COPS memory: its state, and how full each MEMORY.md is.
 
+import { describeMemoryGit } from './memory-git.ts'
+import type { MemoryGit } from './memory-git.ts'
+
 // The oracle reads only the first MEMORY_LIMIT lines of each MEMORY.md.
 export const MEMORY_LIMIT = 200
 const MEMORY_WARN = 180
@@ -14,15 +17,18 @@ export const countLines = ({ text }: { text: string }): number =>
 
 // Reads memory state from the session-start hook's own output, so both agree.
 // A missing file counts as 0 lines, since the oracle reads nothing from it:
-// { personal: 12, team: 40 } → 'memory: octocat (12/200,40/200)'
-// { personal: 12 } → 'memory: octocat (12/200,0/200)'
-export const describeMemory = ({ context, usage = {} }: { context: string; usage?: MemoryUsage }): string => {
+// { personal: 12, team: 40 } → 'memory: octocat · self 12/200 · team 40/200'
+// { personal: 12 } → 'memory: octocat · self 12/200 · team 0/200'
+// { personal: 12, team: 40 }, git { uncommitted: 1, unpushed: 2 } → 'memory: octocat · self 12/200 · team 40/200 · 1 uncommitted · 2 unpushed'
+export const describeMemory = ({ context, usage = {}, git }: { context: string; usage?: MemoryUsage; git?: MemoryGit }): string => {
   if (!context.includes('COPS memory root:')) {
     return context.includes('not configured') ? 'memory: ✗ (off)' : 'memory: ✗ (bad path)'
   }
   const login = /^COPS memory login: (\S+)$/m.exec(context)?.[1]
-  if (!login) return 'memory: ✗ (no login)'
-  return `memory: ${login} (${usage.personal ?? 0}/${MEMORY_LIMIT},${usage.team ?? 0}/${MEMORY_LIMIT})`
+  if (!login) {
+    return 'memory: ✗ (no login)'
+  }
+  return `memory: ${login} · self ${usage.personal ?? 0}/${MEMORY_LIMIT} · team ${usage.team ?? 0}/${MEMORY_LIMIT}${describeMemoryGit({ git })}`
 }
 
 // A toast's text once a MEMORY.md nears the lines the oracle reads:
