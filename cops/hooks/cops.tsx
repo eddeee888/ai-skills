@@ -836,7 +836,9 @@ export const register: Register = (on, options) => {
           {lastRun && <Text dimColor> · ran as {lastRun.n}.</Text>}
         </Text>
         <Button key="next-skill" label="Use" onPress={async () => {
-          if (!(await $.prompt.fill({ text: `/${hint.skill} ` })).isFilled) $.ui.toast(`Couldn't fill the prompt — type /${hint.skill}`)
+          if (!(await $.prompt.fill({ text: `/${hint.skill} ` })).isFilled) {
+            $.ui.toast(`Couldn't fill the prompt — type /${hint.skill}`)
+          }
         }} />
       </Box>
     )

@@ -50,12 +50,12 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   if (!fix && !first) {
     return undefined
   }
-  const index = (run: SkillRun): number => AUTOPILOT_STAGES.findIndex(stage => isSameSkill({ a: run.skill, b: stage }))
+  const index = ({ run }: { run: SkillRun }): number => AUTOPILOT_STAGES.findIndex(stage => isSameSkill({ a: run.skill, b: stage }))
   // Per stage, where its first run sits among the chain's runs; -1 when it never ran.
-  const order = AUTOPILOT_STAGES.map((stage, at) => chainRuns.findIndex(one => index(one) === at))
+  const order = AUTOPILOT_STAGES.map((stage, at) => chainRuns.findIndex(one => index({ run: one }) === at))
   const started = order.map(one => one !== -1)
   const lastRun = chainRuns.at(-1)
-  const lastStage = lastRun ? index(lastRun) : -1
+  const lastStage = lastRun ? index({ run: lastRun }) : -1
   const last = lastRun || fix
   // Only to satisfy type safety: `fix` or `first` is set past the check above, so `last` is never undefined.
   if (!last) {
@@ -68,12 +68,12 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   const busy = calls.some(one => one.startedAt >= last.at && (one.state === 'running' || one.state === 'background'))
   const isEnded = turnEndedAt !== undefined && turnEndedAt !== null && turnEndedAt >= last.at && !busy
   const isAllStarted = started.every(Boolean)
-  const status: Chain['status'] = isReady ? 'ready' : plain ? 'resumed' : isEnded ? 'stopped' : 'running'
+  const status = isReady ? 'ready' : plain ? 'resumed' : isEnded ? 'stopped' : 'running'
   // The step the chain stopped at: a stage name, `fix`, or `finish` when every stage ran.
   const stoppedAt = status !== 'stopped' ? undefined : !lastRun ? 'fix' : isAllStarted && lastStage === AUTOPILOT_STAGES.length - 1 ? 'finish' : AUTOPILOT_STAGES[lastStage].replace(/^cops:pr-/, '')
 
   const spinner = SPINNER[Math.floor(now / SPINNER_MS) % SPINNER.length]
-  const mark = (step: string, stage: number): string => {
+  const mark = ({ step, stage }: { step: string, stage: number }): string => {
     if (stage === -1) {
       return lastRun ? '' : status === 'stopped' ? '■' : status === 'running' ? spinner : ''
     }
@@ -90,7 +90,7 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
     return spinner
   }
   const stages = AUTOPILOT_STAGES.map(stage => stage.replace(/^cops:pr-/, ''))
-  const steps = ['fix', ...stages].map((step, at) => `${step} ${mark(step, at - 1)}`.trim())
+  const steps = ['fix', ...stages].map((step, at) => `${step} ${mark({ step, stage: at - 1 })}`.trim())
   const readyMark = isReady ? '✓' : isReadyKnown ? '·' : '?'
   const pr = url === undefined ? undefined : url.match(/\/pull\/(\d+)/)?.[1]
   const line = [
