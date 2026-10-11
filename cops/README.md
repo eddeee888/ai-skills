@@ -71,6 +71,22 @@ In Claude Code, when you type a prompt with a rule-like sentence — one that op
 
 You edit and send the filled prompt yourself; the band never writes memory or calls `learn-feedback`. It stays quiet for prompts that already say "remember" or `record-team:`, slash commands, prompts that didn't come from you (a plugin's, a scheduled task's), and sessions where memory is off.
 
+## What the Claude Code mod does
+
+The hooks module [`hooks/cops.tsx`](hooks/cops.tsx) draws the COPS HQ pane and the status line. It runs only in Claude Code.
+
+- **Programs it starts.** Each runs through Claude Code's process API with a 15-second limit, and a failure leaves the last view up:
+  - `git rev-parse --abbrev-ref HEAD` — tells whether the working directory is a git repository, for the Threads section.
+  - `gh pr view --json number,url,state,isDraft` — finds the current branch's PR, for the Threads heading and the `Next:` line.
+  - `gh api graphql -F owner={owner} -F name={repo} -F number=<n> -f query=<review-threads query>` — reads the PR's review threads, for the Threads section.
+  - `git remote get-url origin` — names the repository (`ai-skills#59`) on lines collected into the memory inbox.
+  - `bash <plugin>/hooks/memory-context.sh claude <memory_path> <memory_login>` — asks the plugin's own script whether memory is on and where its root is, for the status line, the Rules and Inbox sections, and the rule band.
+  - `git --no-optional-locks -C <memory root> status --porcelain --untracked-files=all` — counts uncommitted changes in the memory repository, for the status line and the session-end toast.
+  - `git -C <memory root> rev-list --count @{u}..HEAD` — counts unpushed commits there, for the status line.
+- **What it sends out.** Only the two `gh` commands above reach the network, and they send only what reading the current PR and its review threads takes, to GitHub's API. Your conversation and local data (prompts, agent calls, skill runs, memory files) stay on your machine and are read only to draw the pane and the status line. The git commands and `memory-context.sh` run locally; the memory repository is only read, never fetched, pulled, committed or pushed.
+- **Credentials.** It uses your existing `gh` login through the `gh` CLI. It reads and stores no token itself; without a `gh` login, the Threads section says so.
+- **Its hooks.** It hooks `command.run`, `agent.spawn`, `tool.call`, `skill.prompt` and `prompt.submit`, among others (`session.start`, `session.end`, `turn.complete`, `ui.close` and `ui.render`). They record activity for the pane and pass each event on unchanged, and it never makes a permission decision: it never denies or allows a command, tool call, skill, agent or prompt. It keeps its own state, such as the activity, inbox and usage totals, in Claude Code's per-plugin store.
+
 ## COPS HQ pane
 
 In Claude Code, a pane with a Threads section (its `Next:` line sits right under the heading, or under the waiting text on a branch without a PR), a separator, an Activity section, and a third section while the memory inbox holds lines, opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.

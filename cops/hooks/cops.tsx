@@ -108,10 +108,8 @@ const readMemory = async ($: EngineInterface, { context }: { context: string }):
 // Uncommitted and unpushed changes in the memory repository, read-only; undefined when git can't say.
 // No upstream leaves `unpushed` out.
 const readMemoryGit = async ($: EngineInterface, { root }: { root: string }): Promise<MemoryGit | undefined> => {
-  const [status, ahead] = await Promise.all([
-    run($, ['git', '--no-optional-locks', '-C', root, 'status', '--porcelain', '--untracked-files=all']),
-    run($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD']),
-  ])
+  const status = await run($, ['git', '--no-optional-locks', '-C', root, 'status', '--porcelain', '--untracked-files=all'])
+  const ahead = await run($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD'])
   if (status?.exitCode !== 0) {
     return undefined
   }
@@ -123,7 +121,9 @@ const readMemoryGit = async ($: EngineInterface, { root }: { root: string }): Pr
 let hasWarnedCapacity = false
 
 const memoryPart = async ($: EngineInterface, { path, login }: { path: string; login: string }): Promise<string | undefined> => {
-  const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', path, login])
+  const pluginRoot = $.plugin.root
+  const script = `${pluginRoot}/hooks/memory-context.sh`
+  const ran = await run($, ['bash', script, 'claude', path, login])
   const isOn = ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')
   if ((await read($, isMemoryOn)) !== isOn) {
     await update($, isMemoryOn, () => isOn)
@@ -245,10 +245,9 @@ const refreshThreads = async ($: EngineInterface): Promise<void> => {
 
 // Refreshes run in the background; one that fails leaves the last view up.
 const refreshAll = async ($: EngineInterface, memory: Memory) => {
-  await Promise.all([
-    refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error })),
-    refreshThreadsReported($),
-  ])
+  const status = refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error }))
+  const threadsRefresh = refreshThreadsReported($)
+  await Promise.all([status, threadsRefresh])
 }
 
 const refreshThreadsReported = ($: EngineInterface): Promise<void> =>
@@ -347,7 +346,8 @@ export const register: Register = (on, options) => {
   // Toasts if the memory repository has changes that aren't committed, while memory is on.
   on('session.end', async ($, e, next) => {
     try {
-      const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+      const pluginRoot = $.plugin.root
+      const ran = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
       const root = ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:') ? /^COPS memory root: (.+)$/m.exec(ran.stdout)?.[1] : undefined
       const git = root ? await readMemoryGit($, { root }) : undefined
       if (git?.uncommitted) {
@@ -391,7 +391,8 @@ export const register: Register = (on, options) => {
       if (submitted.drop !== undefined) return submitted
       const sentence = findRule({ text: e.text, origin: e.origin.kind })
       if (!sentence) return submitted
-      const ran = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+      const pluginRoot = $.plugin.root
+      const ran = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
       if (ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')) await update($, ruleOffer, () => sentence)
     } catch (error) {
       reportFailure($, { step: 'rule-offer', what: 'offer to remember the rule you typed', error })
@@ -538,7 +539,11 @@ export const register: Register = (on, options) => {
       // Keeps the result's memory lines in the inbox while memory is on.
       try {
         const found = parseSuffixes({ text: ran.text ?? '', modes: call.modes })
-        const context = found.length > 0 ? await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login]) : undefined
+        const pluginRoot = $.plugin.root
+        let context: Awaited<ReturnType<typeof run>>
+        if (found.length > 0) {
+          context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+        }
         if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
           const inbox = await readInbox($)
           const asked = await read($, openItems)
@@ -577,7 +582,8 @@ export const register: Register = (on, options) => {
       try {
         const isSidekickBrief = /^for:\s*pr-sidekick\b/mi.test(e.prompt)
         if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !isSidekickBrief))) {
-          const context = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+          const pluginRoot = $.plugin.root
+          const context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
           if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
             const { rules } = await readMemory($, { context: context.stdout })
             const keys = matchEntries({ entries: rules.map(one => one.rule), cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
@@ -719,7 +725,8 @@ export const register: Register = (on, options) => {
     let version: string | undefined
     if (tab === 'stats') {
       try {
-        const manifest = JSON.parse(await $.fs.read(`${$.plugin.root}/.claude-plugin/plugin.json`))
+        const pluginRoot = $.plugin.root
+        const manifest = JSON.parse(await $.fs.read(`${pluginRoot}/.claude-plugin/plugin.json`))
         if (typeof manifest?.version === 'string') {
           version = manifest.version
         }
