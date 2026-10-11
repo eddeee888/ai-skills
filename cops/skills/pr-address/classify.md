@@ -14,9 +14,10 @@ High-risk work is never automatic. Even when the user acknowledged the thread, p
 
 - The PR is not the user's → `needs the user first`, regardless of comment author or content.
 - Only the PR's author has commented, and the opening comment starts with `Note:` or `Drive-by:` in bold or plain form → `handled`: it is an explanation, not an ask (`CONVENTIONS-posts.md` → "Comment labels" and "Author notes"). If anyone else replied, classify from the last comment instead.
+- A `cops:pr-review` comment signed without `Approved:` opens the thread → `needs the user first`, with the reason that the user has not seen its text: it is not the user's ask or go-ahead, even though it appears under their login. This comes before the rules below unless the user replied after it. In an autopilot stage, "Autopilot runs" decides instead.
 - Only the user has commented on their own PR → the comment is both ask and go-ahead. If low risk, it is `automatic`; if high risk, `needs the user first`. If there are several user comments, later comments are normally replies already posted by this skill, so mark the thread `handled`; the exception is when the last comment is clearly a new ask, which becomes the current ask.
 - The last comment has a valid skill signature and no label → `handled`, even though it appears under the user's login. It is the skill's own reply, never a go-ahead or new ask (`CONVENTIONS-posts.md` → "Skill signature").
-- A signed last comment with an ask label (`Question:`, `Suggestion:`, `Issue:`, or `Test:`, bold or plain) is the user's own ask. Apply the same rule as any other user comment.
+- A signed last comment with an ask label (`Question:`, `Suggestion:`, `Issue:`, or `Test:`, bold or plain) is the user's own ask only when its signature carries `Approved:`. Apply the same rule as any other user comment.
 - A reviewer commented → `automatic` only when the last comment is the user's short go-ahead and the ask is low risk. Examples include “Ok”, “let's do it”, and “let me check”. A paragraph that already answers the reviewer is not a short go-ahead.
 - The user's full answer or instruction as the last comment means the thread is `handled`; note it and do not ask again.
 - Any other last comment from someone other than the user, including a reviewer ask with no user reply, → `needs the user first`.

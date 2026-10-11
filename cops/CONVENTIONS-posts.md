@@ -52,7 +52,7 @@ If the user approved the post or reported work, append inside italics:
 
 **Reading.** A final line before host footer matching this `<sub>` format, `Skill: <plugin>:<skill>`, and linked into `github.com/eddeee888/ai-skills` identifies skill-authored text even under the user's login. The label determines meaning:
 
-- `Question:`/`Suggestion:`/`Issue:`/`Test:` → user's ask.
+- `Question:`/`Suggestion:`/`Issue:`/`Test:` → user's ask only when the signature carries `Approved:`; without it the user has not seen the text, and outside an autopilot stage it waits for them.
 - `Note:`/`Drive-by:` → explanation.
 - No label → skill reply: never go-ahead, new ask, or preference; if last in a thread, that thread is handled.
 
