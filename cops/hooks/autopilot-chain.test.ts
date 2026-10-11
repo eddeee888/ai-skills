@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'claude-code/testing'
-import type { SkillRun, Threads } from '../types'
+import type { AgentCall, SkillRun, Threads } from '../types'
 import { AUTOPILOT_STAGES, describeChain } from './autopilot-chain.ts'
 
 const URL = 'https://github.com/o/r/pull/81'
@@ -15,8 +15,10 @@ const stage = ({ name, at }: { name: string; at: number }): SkillRun => skill({ 
 const view = ({ isDraft = true, url = URL, hasNotes = false }: { isDraft?: boolean; url?: string; hasNotes?: boolean } = {}): Threads => ({
   status: 'ready', pr: 81, url, state: 'OPEN', threads: [], isReviewed: false, hasNotes, isDraft,
 })
-const describe_ = ({ runs, turnEndedAt, v = view(), now = 0 }: { runs: SkillRun[]; turnEndedAt?: number | null; v?: Threads; now?: number }): ReturnType<typeof describeChain> =>
-  describeChain({ runs, calls: [], view: v, turnEndedAt, now })
+const call = ({ startedAt, state }: { startedAt: number; state: AgentCall['state'] }): AgentCall =>
+  ({ id: `call-${startedAt}`, agent: 'cops:pr-sidekick', isLeak: false, startedAt, state })
+const describe_ = ({ runs, calls = [], turnEndedAt, v = view(), now = 0 }: { runs: SkillRun[]; calls?: AgentCall[]; turnEndedAt?: number | null; v?: Threads; now?: number }): ReturnType<typeof describeChain> =>
+  describeChain({ runs, calls, view: v, turnEndedAt, now })
 
 describe('describeChain', () => {
   test('exports the stages in the order autopilot.md runs them', () => {
@@ -48,6 +50,15 @@ describe('describeChain', () => {
 
   test('a turn ended before the stage began does not stop it', () => {
     expect(describe_({ runs: [start({ at: 5 }), stage({ name: 'review', at: 6 })], turnEndedAt: 4 })?.status).toBe('running')
+  })
+
+  test('a turn ending while a subagent call runs does not stop the stage until the call is done', () => {
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 3 })]
+    for (const state of ['running', 'background'] as const) {
+      expect(describe_({ runs, calls: [call({ startedAt: 4, state })], turnEndedAt: 5 })?.status).toBe('running')
+    }
+    expect(describe_({ runs, calls: [call({ startedAt: 4, state: 'done' })], turnEndedAt: 5 })?.status).toBe('stopped')
+    expect(describe_({ runs, calls: [call({ startedAt: 2, state: 'running' })], turnEndedAt: 5 })?.status).toBe('stopped')
   })
 
   test('a stop in the fix stage has no button', () => {
