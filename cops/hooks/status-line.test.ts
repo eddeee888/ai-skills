@@ -132,6 +132,22 @@ describe('memory git changes', () => {
     expect(toasts).toEqual(['COPS memory: 1 uncommitted change in the memory repository; commit them or they stay local.'])
   })
 
+  test('clean repository gives no toast at session end', async ($, on) => {
+    const { toasts } = world(on, { memory: MEMORY_ON, files, porcelain: '', ahead: '0\n' })
+    on('session.end', () => ({ sessionId: 'test' }))
+    await start($)
+    await $.session.end({ cwd: '/repo' })
+    expect(toasts).toEqual([])
+  })
+
+  test('runs no git command at session end while memory is off', async ($, on) => {
+    const { argvs } = world(on, { memory: MEMORY_OFF, porcelain: ' M a.md\n', ahead: '1\n' })
+    on('session.end', () => ({ sessionId: 'test' }))
+    await start($)
+    await $.session.end({ cwd: '/repo' })
+    expect(argvs.some(argv => argv.includes('-C'))).toBe(false)
+  })
+
   describe('after a pr-oracle call', () => {
     const oracle = async ($: Engine, { mode }: { mode: string }): Promise<void> => {
       await $.tool.call({ tool: 'Agent', description: mode, subagent_type: 'cops:pr-oracle', prompt: `mode: ${mode}` })
