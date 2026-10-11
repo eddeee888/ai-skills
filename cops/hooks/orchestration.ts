@@ -29,6 +29,8 @@ export const EXPECTED_HANDOFFS: Record<string, Handoff[]> = {
   ],
   'cops:pr-review': [
     { label: 'review-pr', agents: ORACLE },
+    { label: 'fix loop', agents: SIDEKICK },
+    { label: 'sweep-diff', agents: ORACLE },
   ],
   'cops:pr-note': [
     { label: 'draft-author-notes', agents: ORACLE },

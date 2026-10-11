@@ -112,7 +112,7 @@ On the MCP route, call `create_pull_request` with `draft: true` and the two file
 
 ## 7. Wrap up
 
-Report the PR link, the commits, and the Done when result. Show `memory-candidate:` lines and ask whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Don't run another skill; suggest `/cops:pr-note` per `CONVENTIONS-orchestration.md` → "Suggesting next steps" — the PR body now carries the task source it needs. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second `fix loop` for a sweep follow-up), `sweep-diff` (a second `sweep-diff` for the follow-up's commit), and `learn-feedback` when run.
+Report the PR link, the commits, and the Done when result. Show `memory-candidate:` lines and ask whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Don't run another skill; suggest `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps" — the PR body now carries the task source it needs. End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second `sweep-diff` for the follow-up's commit), and `learn-feedback` when run.
 
 ## Stop instead of proceeding
 

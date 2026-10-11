@@ -11,10 +11,10 @@ Which skill fits depends on whose PR it is and where it is in review. In lifecyc
 | When | Skill | What it does |
 | --- | --- | --- |
 | You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). |
-| Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. |
-| Someone else's PR | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. |
-| Your PR, reviewers have commented | [`pr-address`](skills/pr-address/SKILL.md) | Addresses unresolved review threads on your PR. |
+| Someone else's PR, or yours as a self-review | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. On your own PR, **Fix, no post** fixes the chosen findings and pushes instead of posting them. |
 | Your PR, branch moved on | [`pr-sync`](skills/pr-sync/SKILL.md) | Rebases the PR and refreshes its title, description, and changeset. |
+| Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. Run it last, on the final diff. |
+| Your PR, reviewers have commented | [`pr-address`](skills/pr-address/SKILL.md) | Addresses unresolved review threads on your PR. |
 
 The [COPS HQ pane](#cops-hq-pane) works out the same thing from the PR: its `Next:` line names the skill, and its Activity section lists what ran this session.
 
@@ -64,7 +64,7 @@ You edit and send the filled prompt yourself; the band never writes memory or ca
 In Claude Code, a pane with a Threads section (its `Next:` line sits right under the heading, or under the waiting text on a branch without a PR), a separator, an Activity section, and a third section while the memory inbox holds lines, opens by itself when a review thread needs you or a `cops` agent starts. Close it and it stays closed for the session; `/cops-hq` opens it again, even while Claude is working. In a terminal narrower than 144 columns, a pane that opens by itself waits until the terminal widens; `/cops-hq` shows it at any width.
 
 - **Threads:** the open review threads on the current branch's PR, grouped by whose move it is. The `PR #<n>` heading links to the PR, and each thread's `path:line` links to its last comment. A merged or closed PR is marked in the heading (`PR #7 (merged)`), and its threads don't open the pane by themselves. **Needs you** means a reviewer commented last; **waiting on reviewer** means the PR author did. Outdated threads are marked. Press `[ ]` beside a thread to mark it handled locally; the marks clear after the next successful `git push`. Resolved threads are left out, and so are your own `Note:` / `Drive-by:` threads once you 👍 them (they return if someone replies). It needs `gh` logged in; without it, the section says so.
-- **Next:** the cops skill that fits the branch's PR right now, with why, and a **Use** button that puts it in the prompt box (when it can't, a toast names the skill to type). `/cops:pr-start` on a branch without a PR or whose PR is merged or closed, `/cops:pr-review` on someone else's PR, and on your own `/cops:pr-address` while threads need you (threads marked handled don't count), or `/cops:pr-note` before anyone has reviewed it or you've left notes. Otherwise it's left out, as it is when `gh` can't say who you are. `pr-sync` is never suggested: whether a description is stale isn't something the pane can see. When that skill already ran this session, the line says which run (`ran as 2.`).
+- **Next:** the cops skill that fits the branch's PR right now, with why, and a **Use** button that puts it in the prompt box (when it can't, a toast names the skill to type). `/cops:pr-start` on a branch without a PR or whose PR is merged or closed, `/cops:pr-review` on someone else's PR, and on your own `/cops:pr-address` while threads need you (threads marked handled don't count). Before anyone has reviewed your PR or you've left notes, it walks the lifecycle: `/cops:pr-review` to self-review, then `/cops:pr-sync` once a `pr-review` has run this session, then `/cops:pr-note` once a `pr-sync` has. Otherwise it's left out, as it is when `gh` can't say who you are. The pane can't see whether a description is stale, so it suggests `pr-sync` only at that step. When that skill already ran this session, the line says which run (`ran as 2.`).
 - **Activity:** every skill that ran this session, cops or not, with the agent calls each one made nested under it, so you can cross-check what ran against the `Next:` line:
 
   ```text
@@ -122,7 +122,7 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
 - `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
   `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
   `Question:` one of them already answers.
-- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review.
+- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review. With **Fix, no post** on your own PR, a sidekick fixes the chosen findings instead, and `sweep-diff` checks its commits before they're pushed.
 - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
   threads, the rules each matches, and how to run tests), then
   `sweep-diff` on each batch. A subagent implements low-risk asks, up
