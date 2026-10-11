@@ -378,6 +378,15 @@ export const register: Register = (on, options) => {
   // The offer stays until the person takes or dismisses it, or a later rule replaces it.
   on('prompt.submit', async ($, e, next) => {
     const submitted = await next(e)
+    // A prompt starts a turn, so a chain that was stopped at the last turn's end counts as running again.
+    try {
+      if (submitted.drop === undefined) {
+        await update($, turnEndedAt, () => null)
+        $.ui.invalidate('ui.render')
+      }
+    } catch (error) {
+      reportFailure($, { step: 'turn-start', what: 'note that a turn started', error })
+    }
     try {
       if (submitted.drop !== undefined) return submitted
       const sentence = findRule({ text: e.text, origin: e.origin.kind })
