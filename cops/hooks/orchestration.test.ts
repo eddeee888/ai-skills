@@ -99,6 +99,22 @@ describe('handoff checklist', () => {
   })
 })
 
+describe('running row model', () => {
+  test('names the spawn-resolved model on a still-running row, cops or not', async ($, on) => {
+    let drawn = ''
+    const peek = async ({ $ }: { $: Engine }): Promise<void> => {
+      const ui = await mount({ $ })
+      drawn += await text({ ui })
+      await ui.unmount()
+    }
+    world({ $, on, runs: { 'mode: brief-task': { does: peek }, 'find things': { does: peek } } })
+    await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
+    expect(drawn).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] 🔮 Oracle · inherit \(sonnet\) · brief-task/)
+    expect(drawn).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] Explore · inherit \(sonnet\)/)
+  })
+})
+
 describe('oracle loaded check', () => {
   test('names the files loaded: lacks', () => {
     expect(checkLoaded({ text: 'fix: t1\nloaded: memory.md, modes/sweep-diff.md', modes: ['sweep-diff'] })).toEqual([])
