@@ -4,7 +4,7 @@ Read this only after the user chose `Fix, no post` in Step 3, on their own PR. N
 
 ## Fix loop
 
-Pass the approved items, after edits and drops, to `pr-sidekick` in one handoff (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"). Model: `sonnet`; unset when an item spans packages or needs design judgment. Note the commit before the loop (`git rev-parse HEAD`) for the sweep. The PR's head branch must be checked out; otherwise stop and say so.
+Pass the approved items, after edits and drops, to `pr-sidekick` in one handoff (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"). Model: `standard` tier; `deep` when an item spans packages or needs design judgment. Note the commit before the loop (`git rev-parse HEAD`) for the sweep. The PR's head branch must be checked out; otherwise stop and say so.
 
 ```text
 Repo <owner>/<repo>, PR #<number>, branch <headRefName> (checked out).
@@ -37,7 +37,7 @@ The user's Step 3 choice is the approval (`CONVENTIONS-pr-metadata.md` → "Comm
 
 ## Sweep and push
 
-Call `pr-oracle` in `sweep-diff` mode over the new commits, from the commit before the loop through `HEAD`, with `memory-root:` / `memory-login:`.
+Call `pr-oracle` in `sweep-diff` mode over the new commits, from the commit before the loop through `HEAD`, with `memory-root:` / `memory-login:`, on its tier's model (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent").
 
 - `clean` → `git push`.
 - In-scope flags → one follow-up sidekick handoff with only those flags and the commit SHAs; it commits and does not push. Sweep that commit once more: `clean` → push; any flag → stop and bring it to the user.

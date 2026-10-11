@@ -109,9 +109,8 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
   of the main chat. It never reads or writes `memory/`: the oracle picks
   the remembered rules for each job and the skill puts them in its prompt.
   It follows that prompt template and returns a few lines. The calling skill
-  picks its model per job — Haiku for mechanical edits, Sonnet for scoped
-  changes, the main chat's model for anything needing more judgment. See
-  [`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#hand-long-loops-to-a-subagent).
+  picks its tier per job — `light` for mechanical edits, `standard` for scoped
+  changes, `deep` for anything needing more judgment ([Subagent models](#subagent-models)).
 
 ### When the skills consult the oracle
 
@@ -152,6 +151,28 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
   skip it; add the same line to your `~/.claude/CLAUDE.md` to make it
   stick. Shared convention rules (title prefix, non-closing issue
   references) and the `pr-note` suggestion only come with the skills.
+
+### Subagent models
+
+Every subagent call has a tier: `light` (sorting, extracting, formatting; mechanical edits), `standard` (reading, summarising, drafting; scoped changes), or `deep` (finding bugs, judging trade-offs; cross-file judgment). An oracle call takes its mode's tier, or the highest of a combined call's modes; the table is in [`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#consulting-the-pr-oracle-agent).
+
+The session-start hook prints each tier's model as `COPS models: light=… standard=… deep=…`, and the skills pass a call's tier value as that subagent's model. Set a tier with `COPS_MODEL_LIGHT`, `COPS_MODEL_STANDARD`, or `COPS_MODEL_DEEP`:
+
+- **Values are host-specific.** Use whatever your host accepts as a subagent's model for one call; `inherit` runs the call on the session's model.
+- **Unset, empty, or not a plain model name → the host default.** On Claude Code that is `light=haiku`, `standard=sonnet`, `deep=opus`.
+- **Cursor** sets a subagent's model only in its agent file, not per call, so every tier there is `inherit`.
+
+For example, to keep deep work on your session's model in Claude Code, in `~/.claude/settings.json`:
+
+```json
+{
+  "env": {
+    "COPS_MODEL_LIGHT": "haiku",
+    "COPS_MODEL_STANDARD": "sonnet",
+    "COPS_MODEL_DEEP": "inherit"
+  }
+}
+```
 
 ### Workspace memory
 

@@ -4,7 +4,7 @@ The caller has already enforced the author-only, open-PR, and pre-review gates.
 
 ## Draft
 
-Call `pr-oracle` in `draft-author-notes` mode with:
+Call `pr-oracle` in `draft-author-notes` mode, on its tier's model (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), with:
 
 - owner/repo, PR number and URL;
 - the full saved `headRefOid`, login, selected GitHub route, and checkout path/status;
