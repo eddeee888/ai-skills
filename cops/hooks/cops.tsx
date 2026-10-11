@@ -740,8 +740,8 @@ export const register: Register = (on, options) => {
     }
 
     const skillRow = (run: typeof runs[number]) => {
-      const { counter, command, detail } = describeSkill({ run, now })
-      return <Text wrap="truncate-end">{counter} <Text bold>{command}</Text> {detail}</Text>
+      const { counter, command, args, detail } = describeSkill({ run, now })
+      return <Text wrap="truncate-end">{counter} <Text bold>{command}</Text>{args ? ` ${args}` : ''} · {detail}</Text>
     }
 
     const nextRow = hint && (
