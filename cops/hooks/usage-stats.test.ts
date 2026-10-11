@@ -49,13 +49,17 @@ const world = ({ on, memory = MEMORY_ON, files = FILES, replies = {}, stored = {
     return { isFilled: true }
   })
   on('skill.prompt', ($, e) => ({ text: e.text }))
-  // A prompt of `fail` throws; `background` launches the agent without waiting.
+  // A prompt of `fail` throws; `background` launches the agent without waiting; `unfinished` returns without a token count.
   on('tool.call', { tool: 'Agent' }, ($, e) => {
     if (e.prompt === 'fail') {
       throw new Error('boom')
     }
     if (e.prompt === 'background') {
       return { result: { status: 'async_launched', agentId: 'b1', description: 'x', prompt: 'x' }, text: '' }
+    }
+    if (e.prompt === 'unfinished') {
+      // The kit's Agent result type has no finished-but-not-completed shape, so the cast builds one.
+      return { result: { status: 'error' }, text: '' } as never
     }
     return {
     result: {
@@ -131,6 +135,20 @@ describe('recording usage', () => {
     await $.skill.prompt({ skill: 'cops:pr-start', text: 'Start.' })
     await $.tool.call({ tool: 'Agent', description: 'x', subagent_type: 'cops:pr-sidekick', prompt: 'do it' })
     expect(Object.keys(toUsage({ stored: stored.usage })?.keys || {}).sort()).toEqual(['fix loop', 'pr-sidekick'])
+  })
+
+  test('two calls finishing together are both stored', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored })
+    await Promise.all([oracle({ $, mode: 'sweep-diff' }), oracle({ $, mode: 'sweep-diff' })])
+    expect(toUsage({ stored: stored.usage })?.keys['sweep-diff']).toMatchObject({ calls: 2, durationMs: 2000, tokens: 200 })
+  })
+
+  test('a finished call without a token count adds nothing', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored })
+    await $.tool.call({ tool: 'Agent', description: 'x', subagent_type: 'cops:pr-oracle', prompt: 'unfinished' })
+    expect(stored.usage).toBeUndefined()
   })
 
   test('totals survive a new session', MEMORY, async ($, on) => {
@@ -213,6 +231,18 @@ describe('usage-stats', () => {
     expect(keyCall({ agent: 'cops:pr-oracle' })).toBe('pr-oracle')
     expect(keyCall({ agent: 'cops:pr-sidekick', job: 'fix loop' })).toBe('fix loop')
     expect(keyCall({ agent: 'cops:pr-sidekick' })).toBe('pr-sidekick')
+  })
+
+  test('lists a key\'s models with the most tokens first', () => {
+    let usage = addUsage({ usage: undefined, key: 'sweep-diff', model: 'sonnet', durationMs: 1000, tokens: 10, now: 5 })
+    usage = addUsage({ usage, key: 'sweep-diff', model: 'opus', durationMs: 1000, tokens: 90, now: 6 })
+    expect(describeUsage({ usage })[0]?.text).toEndWith(' · opus, sonnet')
+  })
+
+  test('drops stored keys and models that are not totals', () => {
+    const totals = { calls: 1, durationMs: 1000, tokens: 10 }
+    const usage = toUsage({ stored: { since: 5, keys: { a: 'junk', b: { ...totals, models: { sonnet: 'junk', opus: totals } } } } })
+    expect(usage).toEqual({ since: 5, keys: { b: { ...totals, models: { opus: totals } } } })
   })
 
   test('describes no usage as no rows', () => {

@@ -170,6 +170,9 @@ const refreshStatus = async ($: EngineInterface, memory: Memory) => {
 
 let hasToastedInbox = false
 
+// The last read-add-write of the stored usage; each next one starts when it ends, so no update is lost.
+let usageWrites: Promise<void> = Promise.resolve()
+
 // What the store holds under INBOX; anything there that isn't an item is left out.
 const readInbox = async ($: EngineInterface): Promise<InboxItem[]> => {
   const isItem = (value: unknown): value is InboxItem =>
@@ -499,19 +502,23 @@ export const register: Register = (on, options) => {
       const deviations = entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
       await setCall($, call.id, { state: 'done', ...totals, ...(isCops && { deviations }), outcome: describeOutcome(ran.text ?? '') })
       if (!isCops) return ran
-      // Adds the call's time and tokens to its mode's or job's usage, split by model.
+      // Adds a completed call's time and tokens to its mode's or job's usage, split by model.
       try {
-        if (agent === 'cops:pr-oracle' || agent === 'cops:pr-sidekick') {
+        if ((agent === 'cops:pr-oracle' || agent === 'cops:pr-sidekick') && 'tokens' in totals) {
           const running = await read($, checklist)
           const job = running ? tickedBy({ skill: running.skill, agent, modes: [] })[0] : undefined
-          await $.store.set(USAGE, addUsage({
-            usage: toUsage({ stored: await $.store.get(USAGE) }),
-            key: keyCall({ agent, modes: call.modes, job }),
-            model: e.model || 'inherit',
-            durationMs: totals.durationMs,
-            tokens: 'tokens' in totals ? totals.tokens : 0,
-            now: await $.clock.now(),
-          }))
+          const written = usageWrites.then(async (): Promise<void> => {
+            await $.store.set(USAGE, addUsage({
+              usage: toUsage({ stored: await $.store.get(USAGE) }),
+              key: keyCall({ agent, modes: call.modes, job }),
+              model: e.model || 'inherit',
+              durationMs: totals.durationMs,
+              tokens: totals.tokens,
+              now: await $.clock.now(),
+            }))
+          })
+          usageWrites = written.catch(() => undefined)
+          await written
           $.ui.invalidate('ui.render')
         }
       } catch (error) {
@@ -746,8 +753,16 @@ export const register: Register = (on, options) => {
             <Box flexDirection="row" gap={1}>
               <Text bold>Usage</Text>
               <Button key="reset-usage" label="Reset" onPress={async () => {
-                await $.store.set(USAGE, { since: await $.clock.now(), keys: {} })
-                $.ui.invalidate('ui.render')
+                try {
+                  const written = usageWrites.then(async (): Promise<void> => {
+                    await $.store.set(USAGE, { since: await $.clock.now(), keys: {} })
+                  })
+                  usageWrites = written.catch(() => undefined)
+                  await written
+                  $.ui.invalidate('ui.render')
+                } catch (error) {
+                  reportFailure($, { step: 'usage', what: 'reset the usage stats', error })
+                }
               }} />
               {usage && <Text dimColor>since {new Date(usage.since).toISOString().slice(0, 10)}</Text>}
             </Box>
