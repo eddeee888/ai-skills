@@ -23,7 +23,7 @@ gh label list --search autopilot --json name --jq '.[].name'
 ```
 
 - **Write access:** the permission is `WRITE`, `MAINTAIN` or `ADMIN`.
-- **Label:** the `autopilot` label exists in the repo. Never create it.
+- **Label:** the `autopilot` label exists in the repo (MCP: `get_label`). Never create it.
 - **Done when** is a test or a command, not an observable behavior.
 
 A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, make no offer. The normal run then goes on from Step 2 as SKILL.md says.
@@ -63,7 +63,7 @@ A sweep flag that SKILL.md would bring to the user stops the run too.
 
 Step 6, with two additions:
 
-- `gh pr create --draft --label autopilot ...` (MCP: add the label after `create_pull_request`).
+- `gh pr create --draft --label autopilot ...` (MCP: add the label after `create_pull_request`, with `issue_write` `update` and `labels`).
 - The first line of the body file, above the template or `## Why`, is the banner:
 
   ```markdown
@@ -111,13 +111,15 @@ gh pr ready <number>
 gh pr edit <number> --add-assignee <login>
 ```
 
+MCP: `update_pull_request` with `draft: false`, then `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").
+
 Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines. The `autopilot` label and the banner stay for the human who reads the PR.
 
 ## Stops
 
 Any failure or question, at any stage, ends the run:
 
-- Leave the PR a draft if one exists, and assign the user to it with the `gh pr edit` line above. A stop before the PR exists has nothing to assign.
+- Leave the PR a draft if one exists, and assign the user to it as "Finish" does. A stop before the PR exists has nothing to assign.
 - Don't retry the stage, start a later one, or undo what was already pushed or posted.
 - Report the stage reached, what stopped it, what was pushed and posted so far, the held `memory-candidate:` lines, and the command that picks up from there (`/cops:pr-address`, `/cops:pr-sync`, …).
 

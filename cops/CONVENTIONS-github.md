@@ -14,6 +14,10 @@
 | `gh pr view [<number>] --json …` | `pull_request_read` method `get`; without number, find PR first |
 | `gh pr create --draft --title … --body-file …` | `create_pull_request` with `draft: true`, `head`, `base` |
 | `gh pr edit <number> --title … --body-file …` | `update_pull_request` with `title`, `body` |
+| `gh pr ready <number>` | `update_pull_request` with `draft: false` |
+| `gh pr edit <number> --add-assignee <login>` | `issue_write` `update` with `issue_number`, `assignees` |
+| `gh pr create … --label <name>` | after `create_pull_request`: `issue_write` `update` with `issue_number`, `labels` |
+| `gh label list --search <name> --json name` | `get_label` with `owner`, `repo`, `name`; not found → the label does not exist |
 | `gh pr diff <number>` | `pull_request_read` method `get_diff` |
 | `gh api repos/<o>/<r>/pulls/<n>/reviews --input <file>` | `pull_request_review_write` `create` without `event`, `add_comment_to_pending_review` per comment, then `submit_pending` with `event` |
 | review threads (`gh api graphql --paginate` … `reviewThreads`) | `pull_request_read` `get_review_comments`; follow `after` while `pageInfo.hasNextPage`; drop `is_resolved: true`; ID is digits after `#discussion_r` in `html_url`; absent `line` uses `original_line` |
