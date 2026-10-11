@@ -109,9 +109,8 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
   of the main chat. It never reads or writes `memory/`: the oracle picks
   the remembered rules for each job and the skill puts them in its prompt.
   It follows that prompt template and returns a few lines. The calling skill
-  picks its model per job — Haiku for mechanical edits, Sonnet for scoped
-  changes, the main chat's model for anything needing more judgment. See
-  [`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#hand-long-loops-to-a-subagent).
+  picks its tier per job — `light` for mechanical edits, `standard` for scoped
+  changes, `deep` for anything needing more judgment ([Subagent models](#subagent-models)).
 
 ### When the skills consult the oracle
 
@@ -153,24 +152,24 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
   stick. Shared convention rules (title prefix, non-closing issue
   references) and the `pr-note` suggestion only come with the skills.
 
-### Oracle models
+### Subagent models
 
-Each oracle mode has a tier: `light` (sorting, extracting, formatting), `standard` (reading, summarising, drafting), or `deep` (finding bugs, judging trade-offs). A combined call takes the highest tier of its modes. The mode-to-tier table is in [`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#consulting-the-pr-oracle-agent).
+Every subagent call has a tier: `light` (sorting, extracting, formatting; mechanical edits), `standard` (reading, summarising, drafting; scoped changes), or `deep` (finding bugs, judging trade-offs; cross-file judgment). An oracle call takes its mode's tier, or the highest of a combined call's modes; the table is in [`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#consulting-the-pr-oracle-agent).
 
-You pick the model for each tier with three environment variables: `COPS_MODEL_LIGHT`, `COPS_MODEL_STANDARD`, and `COPS_MODEL_DEEP`. The session-start hook prints them as `COPS models: light=… standard=… deep=…`, and the skills pass a call's tier value as that oracle call's model.
+The session-start hook prints each tier's model as `COPS models: light=… standard=… deep=…`, and the skills pass a call's tier value as that subagent's model. Set a tier with `COPS_MODEL_LIGHT`, `COPS_MODEL_STANDARD`, or `COPS_MODEL_DEEP`:
 
-- **Values are host-specific.** Use whatever your host accepts as a subagent's model for one call.
-- **Unset, empty, or not a plain model name → `inherit`.** The call runs on the session's model, as it did before tiers existed, so setting nothing changes nothing.
-- **Cursor** sets a subagent's model only in its agent file, not per call, so oracle calls there always inherit.
+- **Values are host-specific.** Use whatever your host accepts as a subagent's model for one call; `inherit` runs the call on the session's model.
+- **Unset, empty, or not a plain model name → the host default.** On Claude Code that is `light=haiku`, `standard=sonnet`, `deep=opus`.
+- **Cursor** sets a subagent's model only in its agent file, not per call, so every tier there is `inherit`.
 
-Claude Code accepts the aliases `haiku`, `sonnet`, and `opus` for a subagent call. For example, in `~/.claude/settings.json`:
+For example, to keep deep work on your session's model in Claude Code, in `~/.claude/settings.json`:
 
 ```json
 {
   "env": {
     "COPS_MODEL_LIGHT": "haiku",
     "COPS_MODEL_STANDARD": "sonnet",
-    "COPS_MODEL_DEEP": "opus"
+    "COPS_MODEL_DEEP": "inherit"
   }
 }
 ```

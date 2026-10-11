@@ -31,12 +31,12 @@ canonical_path() {
   [ -d "$1" ] && (cd "$1" 2>/dev/null && pwd -P)
 }
 
-# A tier's model as the user set it, or `inherit` when unset, empty, or not a plain model name.
+# A tier's model as the user set it; unset, empty, or not a plain model name falls back to the default.
 model_value() {
   if printf '%s' "$1" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,99}$'; then
     printf '%s' "$1"
   else
-    printf 'inherit'
+    printf '%s' "$2"
   fi
 }
 
@@ -75,10 +75,16 @@ COPS memory login unset: PR_MEMORY_LOGIN is missing or not a GitHub login. Pass 
   fi
 fi
 
-# Which model each pr-oracle tier runs on, from the user's COPS_MODEL_* variables; `inherit` keeps the session's model.
+# Which model each subagent tier runs on, from the user's COPS_MODEL_* variables; `inherit` keeps the session's model.
+# Claude Code's per-call aliases fill unset tiers; Cursor can't set a model per call, so its tiers inherit.
+if [ "$mode" = cursor ]; then
+  default_light=inherit default_standard=inherit default_deep=inherit
+else
+  default_light=haiku default_standard=sonnet default_deep=opus
+fi
 context="$context
-COPS models: light=$(model_value "${COPS_MODEL_LIGHT:-}") standard=$(model_value "${COPS_MODEL_STANDARD:-}") deep=$(model_value "${COPS_MODEL_DEEP:-}")
-Pass a call's tier value as the subagent model, or omit the model for \`inherit\` (\`CONVENTIONS-orchestration.md\` → \"Consulting the \`pr-oracle\` agent\")."
+COPS models: light=$(model_value "${COPS_MODEL_LIGHT:-}" "$default_light") standard=$(model_value "${COPS_MODEL_STANDARD:-}" "$default_standard") deep=$(model_value "${COPS_MODEL_DEEP:-}" "$default_deep")
+Pass a call's tier value as the subagent model, or omit the model for \`inherit\` (\`CONVENTIONS-orchestration.md\` → \"Hand long loops to a subagent\")."
 
 if [ "$mode" = cursor ]; then
   if [ -n "$context" ]; then

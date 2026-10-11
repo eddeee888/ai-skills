@@ -5,7 +5,7 @@
 When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems pure overhead, say so and ask; never silently skip.
 
 - **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Other read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
-- **The caller picks the model.** Where supported: `haiku` for mechanical work (also say "mechanical"), `sonnet` for a scoped change/survey, unset for cross-file judgment. Mostly-design work stays in main chat.
+- **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from session context's `COPS models:` line as the call's model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
 - **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes needed output, with `for: pr-sidekick` on `brief-task`.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
@@ -61,7 +61,7 @@ Without `cops`, give only a manual-update `pr-sync` line.
 Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
 - Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle`, waits, and supplies the mode plus every listed input because it starts blank.
-- **Model by tier.** A call's tier is its mode's, or the highest of a combined call's modes; a fallback subagent for a mode takes the same tier. Session context's `COPS models:` line gives each tier's value: pass it as the call's model, and omit the model for `inherit`, with no such line, or where the host can't set one per call (Cursor).
+- **Model by tier.** A call's tier is its mode's, or the highest of a combined call's modes; a fallback subagent for a mode takes the same tier. Pass its model as "Hand long loops to a subagent" says.
 
   | Tier | For | Modes |
   | --- | --- | --- |

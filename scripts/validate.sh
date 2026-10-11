@@ -111,16 +111,16 @@ validate_memory_context_models() {
   local script="$ROOT/cops/hooks/memory-context.sh" out expected
   out="$(env -u COPS_MODEL_LIGHT -u COPS_MODEL_STANDARD -u COPS_MODEL_DEEP -u PR_MEMORY_PATH \
     -u CLAUDE_PLUGIN_OPTION_MEMORY_PATH bash "$script" claude 2>&1)"
-  expected="COPS models: light=inherit standard=inherit deep=inherit"
+  expected="COPS models: light=haiku standard=sonnet deep=opus"
   printf '%s\n' "$out" | grep -Fxq "$expected" ||
-    fail "$script" "unset COPS_MODEL_* must print '$expected'; got: $out"
-  out="$(env -u PR_MEMORY_PATH -u CLAUDE_PLUGIN_OPTION_MEMORY_PATH COPS_MODEL_LIGHT=a \
+    fail "$script" "unset COPS_MODEL_* on Claude Code must print '$expected'; got: $out"
+  out="$(env -u PR_MEMORY_PATH -u CLAUDE_PLUGIN_OPTION_MEMORY_PATH COPS_MODEL_LIGHT=inherit \
     COPS_MODEL_STANDARD='' COPS_MODEL_DEEP='b c' bash "$script" claude 2>&1)"
-  expected="COPS models: light=a standard=inherit deep=inherit"
+  expected="COPS models: light=inherit standard=sonnet deep=opus"
   printf '%s\n' "$out" | grep -Fxq "$expected" ||
     fail "$script" "set, empty, and invalid COPS_MODEL_* must print '$expected'; got: $out"
-  out="$(env -u PR_MEMORY_PATH -u CLAUDE_PLUGIN_OPTION_MEMORY_PATH COPS_MODEL_DEEP=d \
-    bash "$script" cursor 2>&1)"
+  out="$(env -u COPS_MODEL_LIGHT -u COPS_MODEL_STANDARD -u PR_MEMORY_PATH \
+    -u CLAUDE_PLUGIN_OPTION_MEMORY_PATH COPS_MODEL_DEEP=d bash "$script" cursor 2>&1)"
   expected='light=inherit standard=inherit deep=d'
   printf '%s' "$out" | grep -Fq "$expected" && printf '%s' "$out" | jq -e .additional_context >/dev/null 2>&1 ||
     fail "$script" "cursor output must be JSON with '$expected'; got: $out"
@@ -316,7 +316,7 @@ validate_descriptions() {
 validate_budgets() {
   local path filename count
   check_budget "CONVENTIONS.md" 500 "convention file"
-  check_budget "CONVENTIONS-orchestration.md" 1300 "convention file"
+  check_budget "CONVENTIONS-orchestration.md" 1320 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 752 "convention file"

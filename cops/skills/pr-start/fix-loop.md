@@ -13,7 +13,7 @@ Each call gets `memory-root:` / `memory-login:` and its tier's model from sessio
 
 ## Fix-loop handoff
 
-Spawn `cops:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor. Model: `sonnet` when the card's scope is one package or a few files; unset when the Approach spans packages or needs design judgment. Note the commit before the loop (`git rev-parse HEAD`) for the sweep.
+Spawn `cops:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor. Model: `standard` tier when the card's scope is one package or a few files; `deep` when the Approach spans packages or needs design judgment. Note the commit before the loop (`git rev-parse HEAD`) for the sweep.
 
 ```text
 Repo <owner>/<repo>, branch <branch> (checked out), base <default branch>.
