@@ -187,6 +187,17 @@ describe('agents', () => {
     await ui.unmount()
   })
 
+  test('names the model a background launch resolved to', async ($, on) => {
+    world(on)
+    on('tool.call', { tool: 'Agent' }, () => ({ result: { status: 'async_launched', agentId: 'a', description: 'd', resolvedModel: 'claude-opus-5-5' }, text: '' }) as never)
+    await start($)
+    await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('1 agent'))
+    expect(await text(ui)).toContain('🔮 Oracle · inherit (claude-opus-5-5) · brief-task · 0s · running in the background')
+    await ui.unmount()
+  })
+
   test('spins while a call runs, then shows ✓ when done and ✗ when failed', async ($, on) => {
     const { clock } = world(on)
     on('tool.call', { tool: 'Agent' }, async ($, e) => {
