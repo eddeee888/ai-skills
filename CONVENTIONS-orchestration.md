@@ -15,7 +15,7 @@ When a skill names a handoff and the host can spawn a subagent, make it every ti
 - **Resume, don't restart.** After a question, carry question+answer and resume at that step, checking completed rebase/commit/push work.
 - **No way to spawn** means no subagent tool at all, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
 
-Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-sync` (Steps 2–6); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
+Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-sync` (Steps 2–6); `cops:pr-review` (`review-pr`, fix loop); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
 
 ## Handoffs in the final report
 
@@ -50,10 +50,11 @@ Final-report users: every `cops` and `oss` skill.
 
 A skill never runs another skill to finish; it only suggests each applicable step once before `Handoffs:`, and only for the user's own PR, determined by `gh api user --jq .login` or `get_me`.
 
+- PR just opened → `Self-review with /cops:pr-review; "fix, no post" fixes without posting.` (`/pr-review` on Cursor).
 - Existing PR was pushed and title/body may be stale (not a PR just opened) → `The PR's title and description may now be stale; /cops:pr-sync will update them.` (`/pr-sync` on Cursor).
 - Review threads contain no comment by anyone else and no user `Note:`/`Drive-by:` in either label form → `/cops:pr-note will post the reasoning behind the PR's choices, and any drive-by change, as inline comments for reviewers.` (`/pr-note` on Cursor).
 
-If `cops` is absent, replace the first with manual-update wording and omit `pr-note`.
+Without `cops`, keep only a manual-update `pr-sync` line.
 
 ## Consulting the `pr-oracle` agent
 
@@ -71,4 +72,4 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
 
 Review modes scout repository context, read complete PR evidence, verify new-side changed-line anchors, return structured YAML, and never write GitHub or memory. If the oracle is unavailable but a subagent tool exists, run one general read-only subagent with the oracle mode contract. No subagent capability → run it inline. Never replace review with `sweep-diff`.
 
-Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-sync` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`review-pr`); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (`scout-repo` + `brief-task`, `sweep-diff`); `oss:issue-analyze` and `oss:issue-create` (`scout-repo`); `oss:issue-verify` (`scout-repo`, `brief-task`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).
+Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-sync` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`review-pr`, `sweep-diff`); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (`scout-repo` + `brief-task`, `sweep-diff`); `oss:issue-analyze` and `oss:issue-create` (`scout-repo`); `oss:issue-verify` (`scout-repo`, `brief-task`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).

@@ -11,10 +11,10 @@ Which skill fits depends on whose PR it is and where it is in review. In lifecyc
 | When | Skill | What it does |
 | --- | --- | --- |
 | You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). |
-| Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. |
-| Someone else's PR | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. |
-| Your PR, reviewers have commented | [`pr-address`](skills/pr-address/SKILL.md) | Addresses unresolved review threads on your PR. |
+| Someone else's PR, or yours as a self-review | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. On your own PR, **Fix, no post** fixes the chosen findings and pushes instead of posting them. |
 | Your PR, branch moved on | [`pr-sync`](skills/pr-sync/SKILL.md) | Rebases the PR and refreshes its title, description, and changeset. |
+| Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. Run it last, on the final diff. |
+| Your PR, reviewers have commented | [`pr-address`](skills/pr-address/SKILL.md) | Addresses unresolved review threads on your PR. |
 
 The [COPS HQ pane](#cops-hq-pane) works out the same thing from the PR: its `Next:` line names the skill, and its Activity section lists what ran this session.
 
@@ -122,7 +122,7 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
 - `pr-note` — `draft-author-notes` runs on the user's own PR before anyone else has commented. It applies active memory, drafts `Note:` / `Drive-by:` comments, and identifies unexplained drive-bys to remove; the skill shows the draft and posts at most one review once you confirm. `pr-sync` and
   `oss:issue-fix` suggest it on a PR that has none yet. `pr-address` leaves both alone, and `pr-review` won't ask a
   `Question:` one of them already answers.
-- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review.
+- `pr-review` — `review-pr` applies active memory, scouts the repository, reads complete PR and outside-diff context, verifies anchors, and returns structured `Question:` / `Suggestion:` / `Issue:` / `Test:` drafts for confirmation before the skill posts one review. With **Fix, no post** on your own PR, a sidekick fixes the chosen findings instead, and `sweep-diff` checks its commits before they're pushed.
 - `pr-address` — `triage-threads` + `scout-repo` in one call (the unresolved
   threads, the rules each matches, and how to run tests), then
   `sweep-diff` on each batch. A subagent implements low-risk asks, up

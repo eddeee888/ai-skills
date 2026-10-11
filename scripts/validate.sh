@@ -320,7 +320,7 @@ validate_budgets() {
   done
 
   review_files=(
-    "cops/skills/pr-review/SKILL.md:350"
+    "cops/skills/pr-review/SKILL.md:370"
     "cops/skills/pr-review/post-review.md:220"
     "cops/agents/pr-oracle.md:400"
     "cops/references/pr-oracle/memory.md:220"
@@ -450,9 +450,9 @@ validate_behavioral_contracts() {
   done
 
   require_order "docs/memory-flow.html" "COPS skills in PR lifecycle order" \
-    ">pr-start<" ">pr-note<" ">pr-review<" ">pr-address<" ">pr-sync<"
+    ">pr-start<" ">pr-review<" ">pr-sync<" ">pr-note<" ">pr-address<"
   require_order "cops/README.md" "COPS skills in PR lifecycle order" \
-    '| [`pr-start`]' '| [`pr-note`]' '| [`pr-review`]' '| [`pr-address`]' '| [`pr-sync`]'
+    '| [`pr-start`]' '| [`pr-review`]' '| [`pr-sync`]' '| [`pr-note`]' '| [`pr-address`]'
 
   require_markers "cops/skills/pr-start/SKILL.md" "slash-only skill" \
     "disable-model-invocation: true"

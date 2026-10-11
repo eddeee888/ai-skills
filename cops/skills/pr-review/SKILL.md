@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: 'Draft labeled PR comments, show them, and post one confirmed `COMMENT` review. Use for “review this PR,” “leave review comments,” or “review <PR URL>.”'
+description: 'Draft labeled PR comments and post one confirmed `COMMENT` review, or fix them unposted on the user’s own PR. Use for “review this PR,” “self-review my PR,” “leave review comments,” or “review <PR URL>.”'
 ---
 
 # Review a pull request
@@ -16,15 +16,15 @@ gh api user --jq .login
 
 MCP obtains equivalent `files` through the shared route contract.
 
-Use the named PR or the current branch's. Missing/closed/merged → stop. Keep `headRefOid` (full SHA). On the user's PR, mention `/cops:pr-address` and impossible self-approval.
+Use the named PR or the current branch's. Missing/closed/merged → stop. Keep `headRefOid` (full SHA). On the user's PR, mention impossible self-approval.
 
 ## 2. Review
 
-Call `pr-oracle` once in `review-pr` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent") with owner/repo, number, URL, saved SHA, login, selected route, checkout path/status, title/body, and changed files. Do not call `brief-task` or `sweep-diff`.
+Call `pr-oracle` once in `review-pr` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent") with owner/repo, number, URL, saved SHA, login, selected route, checkout path/status, title/body, and changed files. Only fix-no-post.md calls `sweep-diff`; never `brief-task`.
 
 Oracle unavailable but subagents exist → give `../../agents/pr-oracle.md`, its `review-pr` mode and review-evidence references, and the prompt to a general read-only subagent. No subagent capability → run the same contract inline. Mark Handoffs. Use separate `learn-feedback` only for explicit concrete feedback with provenance and personal or `record-team:` intent.
 
-Never post `unverified`; valid verified comments may continue. Reject non-new-side anchors and comments beyond 10. Accept `review_body` only for a verified whole-PR finding inherently lacking an anchor (e.g. a missing changeset), never for an invalid inline anchor. No comments/body → post nothing.
+Never post `unverified`; valid verified comments may continue. Reject non-new-side anchors and comments beyond 10. Accept `review_body` only for a verified whole-PR finding lacking any anchor (e.g. a missing changeset), never an invalid inline anchor. No comments/body → post nothing.
 
 ## 3. Confirm
 
@@ -36,13 +36,13 @@ Body: <kind>: <body, or "empty">
 1. <path>:<line>  Question: <body>
 2. <path>:<start>-<end>  Suggestion: <body>  [+ suggestion block]
 ...
-Post as COMMENT? (drop/edit by number, or "post")
+Post as COMMENT? (drop/edit by number, "post", or "fix, no post" on your PR)
 ```
 
-Apply edits/drops. Unless asked otherwise, the event is always `COMMENT`. Never post without confirmation.
+Apply edits/drops. `Fix, no post` (user's PR only; per item `Fix`) → follow [fix-no-post.md](fix-no-post.md) instead of Step 4. Unless asked otherwise, the event is always `COMMENT`. Never post without confirmation.
 
 ## 4. Post and report
 
-After confirmation, sign each comment and non-empty `review_body` with `cops:pr-review` and `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"), then follow [post-review.md](post-review.md), passing the signed `review_body` as the one review's top-level body. Never approve, request changes, resolve, or reply on another's thread unless asked.
+After confirmation, sign each comment and non-empty `review_body` with `cops:pr-review` and `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"), then follow [post-review.md](post-review.md) with the signed `review_body` as the top-level body. Never approve, request changes, resolve, or reply on another's thread unless asked.
 
 Report link, kind counts, `dropped`, `unverified`; don't repeat comments. End with Handoffs (`CONVENTIONS-orchestration.md`), labels `review-pr` and optional `learn-feedback`.
