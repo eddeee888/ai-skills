@@ -14,7 +14,11 @@ export const keyCall = ({ agent, modes, job }: { agent: string; modes?: string[]
   return modes && modes.length > 0 ? modes.join(' + ') : agent.replace(/^cops:/, '')
 }
 
-// What the store holds under `usage`; anything that isn't usage reads as none.
+// What the store holds under `usage`; anything that isn't usage reads as none:
+//   { since: 5, keys: { 'fix loop': { calls: 1, durationMs: 9, tokens: 3, models: { sonnet: { calls: 1, durationMs: 9, tokens: 3 } } } } } → the same usage
+//   'junk', or { since: 5 } with no keys, or { since: 'x', keys: {} }                                                                     → undefined
+//   { since: 5, keys: { a: 'junk', b: { calls: 1, durationMs: 9, tokens: 3, models: {} } } }                                              → { since: 5, keys: { b: … } }, 'a' dropped
+//   a key whose models hold { sonnet: 'junk' }                                                                                            → that key kept with the 'sonnet' model dropped
 export const toUsage = ({ stored }: { stored: unknown }): Usage | undefined => {
   const isTotals = (value: unknown): value is UsageTotals =>
     typeof value === 'object' && value !== null

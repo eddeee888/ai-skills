@@ -1,7 +1,6 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
-import type { Usage } from '../types'
 import { addUsage, describeUsage, keyCall, toUsage } from './usage-stats.ts'
 
 const DAY = 86_400_000
@@ -135,7 +134,7 @@ describe('recording usage', () => {
   })
 
   test('totals survive a new session', MEMORY, async ($, on) => {
-    const stored: Record<string, unknown> = { usage: addUsage({ usage: undefined, key: 'sweep-diff', model: 'inherit', durationMs: 500, tokens: 50, now: DAY }) }
+    const stored = { usage: addUsage({ usage: undefined, key: 'sweep-diff', model: 'inherit', durationMs: 500, tokens: 50, now: DAY }) }
     world({ on, stored })
     await $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
     await oracle({ $, mode: 'sweep-diff' })
@@ -156,7 +155,7 @@ describe('recording usage', () => {
 
 describe('Stats tab', () => {
   test('draws a Usage section with a row per mode or job, most tokens first', MEMORY, async ($, on) => {
-    const usage: Usage = {
+    const usage = {
       since: 50 * DAY,
       keys: {
         'sweep-diff': { calls: 1, durationMs: 65_000, tokens: 800, models: { inherit: { calls: 1, durationMs: 65_000, tokens: 800 } } },
@@ -192,7 +191,7 @@ describe('Stats tab', () => {
   })
 
   test('Reset clears the stored usage at once and sets a new since date', MEMORY, async ($, on) => {
-    const stored: Record<string, unknown> = {
+    const stored = {
       usage: addUsage({ usage: undefined, key: 'sweep-diff', model: 'inherit', durationMs: 500, tokens: 50, now: DAY }),
     }
     world({ on, stored })
