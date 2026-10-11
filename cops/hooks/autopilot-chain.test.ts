@@ -136,4 +136,11 @@ describe('describeChain', () => {
     ]
     expect(describe_({ runs })?.line).toContain('PR #81 · fix → review ⠋ → address ·')
   })
+
+  test('a second autopilot run shows from its fix stage', () => {
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), start({ at: 3 })]
+    const chain = describe_({ runs })
+    expect(chain?.line).toBe('Autopilot · fix ⠋ → review · → address · → sync · → note · → ready ?')
+    expect(describe_({ runs, turnEndedAt: 4 })?.line).toContain('stopped at fix')
+  })
 })

@@ -41,8 +41,10 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   turnEndedAt?: number | null
   now: number
 }): Chain | undefined => {
+  // A later `--autopilot` run starts a new chain, so stage runs from before it belong to an earlier one.
+  const latestStart = runs.findLast(one => isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && /^\s*--autopilot\b/.test(one.args || ''))
   const stageRuns = runs
-    .filter(one => SUFFIX.test(one.args || '') && AUTOPILOT_STAGES.some(stage => isSameSkill({ a: one.skill, b: stage })))
+    .filter(one => one.n > (latestStart?.n ?? 0) && SUFFIX.test(one.args || '') && AUTOPILOT_STAGES.some(stage => isSameSkill({ a: one.skill, b: stage })))
     .map(one => ({ run: one, url: ((one.args || '').replace(SUFFIX, '').match(/https?:\/\/\S+/) || [])[0] }))
   const url = stageRuns.at(-1)?.url
   const chainRuns = stageRuns.filter(one => one.url === url).map(one => one.run)
