@@ -14,7 +14,7 @@ High-risk work is never automatic. Even when the user acknowledged the thread, p
 
 - The PR is not the user's → `needs the user first`, regardless of comment author or content.
 - Only the PR's author has commented, and the opening comment starts with `Note:` or `Drive-by:` in bold or plain form → `handled`: it is an explanation, not an ask (`CONVENTIONS-posts.md` → "Comment labels" and "Author notes"). If anyone else replied, classify from the last comment instead.
-- A `cops:pr-review` comment signed without `Approved:` opens the thread → `needs the user first`, with the reason that the user has not seen its text: it is not the user's ask or go-ahead, even though it appears under their login. This comes before the rules below unless the user replied after it. In an autopilot stage, "Autopilot runs" decides instead.
+- A `cops:pr-review` comment signed without `Approved:` opens the thread → `needs the user first`, with the reason that the user has not seen its text: it is not the user's ask or go-ahead, even though it appears under their login. This comes before the rules below unless the user replied after it. When the caller passes `autopilot: yes`, "Autopilot runs" decides instead.
 - Only the user has commented on their own PR → the comment is both ask and go-ahead. If low risk, it is `automatic`; if high risk, `needs the user first`. If there are several user comments, later comments are normally replies already posted by this skill, so mark the thread `handled`; the exception is when the last comment is clearly a new ask, which becomes the current ask.
 - The last comment has a valid skill signature and no label → `handled`, even though it appears under the user's login. It is the skill's own reply, never a go-ahead or new ask (`CONVENTIONS-posts.md` → "Skill signature").
 - A signed last comment with an ask label (`Question:`, `Suggestion:`, `Issue:`, or `Test:`, bold or plain) is the user's own ask only when its signature carries `Approved:`. Apply the same rule as any other user comment.
@@ -33,7 +33,7 @@ Tag by the original comment's nature, not by the later go-ahead:
 
 ## Autopilot runs
 
-Apply this section only when the caller says the run is a pr-start autopilot stage. Nobody is asked, so every thread ends as `automatic` or left open, and the risk gate above still beats everything here.
+Apply this section only when the caller passes the line `autopilot: yes`: the run is a pr-start autopilot stage. Nobody is asked, so every thread ends as `automatic` or left open, and the risk gate above still beats everything here.
 
 Only threads opened by the run's own self-review, signed `cops:pr-review` under the authenticated login with nobody else in them, can be `automatic`. Every other unresolved thread is left open. For those self-review threads the opening label decides:
 
