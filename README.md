@@ -53,7 +53,7 @@ docs/memory-flow.png, then commit and push.
 
 ## Install
 
-After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally attach a memory repository to the workspace.
+After installing `cops`, follow its [Setup](cops/README.md#setup), or the short version in [Environment setup](#environment-setup) below.
 
 ### Claude Code
 
@@ -85,3 +85,80 @@ cursor-agent plugin marketplace add https://github.com/eddeee888/ai-skills
 **Official public listing (optional):** submit this repo at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Manual review; the repo must stay public and open source.
 
 Local checkout for development: copy `oss` and `cops` into `~/.cursor/plugins/local/` (do not symlink from outside that folder) and reload the window.
+
+## Environment setup
+
+Everything here is optional except GitHub access: with nothing configured, the skills run without memory on the host's default models.
+
+### GitHub access
+
+- **`gh` CLI** — the skills use it when it's logged in (`gh auth login`); the [COPS HQ pane](cops/README.md#cops-hq-pane) needs it for review threads.
+- **GitHub MCP server** — the skills fall back to it without `gh`, and the `pr-oracle` agent reads GitHub only through it, so connect it even if you have `gh`.
+
+### Memory repository
+
+`pr-oracle` keeps remembered rules in a separate Git repository you own; COPS never creates, clones, pulls, commits, or pushes it. Details: [Workspace memory](cops/README.md#workspace-memory).
+
+1. Create a Git repository (e.g. `agent-memory`). The oracle writes under:
+
+   ```text
+   memory/users/<github-login>/MEMORY.md     # your active rules
+   memory/users/<github-login>/candidates.md # reviewer-derived, inactive until promoted
+   memory/team/MEMORY.md                     # shared rules, written only on `record-team:`
+   ```
+
+2. Make it available next to the code repository:
+   - **Local:** clone it anywhere, e.g. `~/code/agent-memory`.
+   - **Claude Code on the web / cloud sessions:** add it as an extra repository on the environment (or session), so it's checked out beside the main repo, directly under the home directory (e.g. `~/agent-memory`).
+   - **Cursor:** include it in the workspace.
+3. Point COPS at it:
+
+   | Setting | Claude Code | Cursor | Value |
+   | --- | --- | --- | --- |
+   | Memory path | plugin option `memory_path`, or env `PR_MEMORY_PATH` | plugin variable `PR_MEMORY_PATH` | Git root of the memory repo: absolute, `~/…`, or `$HOME/…` |
+   | Memory login | plugin option `memory_login`, or env `PR_MEMORY_LOGIN` | plugin variable `PR_MEMORY_LOGIN` | Your GitHub login; names `memory/users/<login>/`. Never guessed — unset means team memory only |
+
+   The env variables win over the plugin options. In a cloud environment, set them in the environment's variables, e.g.:
+
+   ```text
+   PR_MEMORY_PATH=~/agent-memory
+   PR_MEMORY_LOGIN=<your-github-login>
+   ```
+
+4. Commit and push memory changes yourself; the [status line](cops/README.md#status-line) shows uncommitted and unpushed counts. In a cloud session, push before the container is reclaimed or the changes are lost.
+
+The session-start hook prints the result: `COPS memory root: …` and `COPS memory login: …` when both are valid, or `COPS memory not configured` / `COPS memory unavailable` (the path isn't a Git root) / `COPS memory login unset`.
+
+### Subagent models
+
+Each subagent call runs at a tier; set a tier's model with an env variable ([Subagent models](cops/README.md#subagent-models)):
+
+| Variable | Used for | Claude Code default |
+| --- | --- | --- |
+| `COPS_MODEL_LIGHT` | sorting, extracting, mechanical edits | `haiku` |
+| `COPS_MODEL_STANDARD` | reading, drafting, scoped changes | `sonnet` |
+| `COPS_MODEL_DEEP` | finding bugs, cross-file judgment | `opus` |
+
+Any model name the host accepts for a subagent works; `inherit` runs on the session's model. Unset, empty, or invalid values fall back to the default. Cursor can't set a model per call, so every tier there is `inherit`. The session-start hook prints the resolved values as `COPS models: light=… standard=… deep=…`.
+
+### Putting it together
+
+Claude Code, in `~/.claude/settings.json` (or a cloud environment's variables):
+
+```json
+{
+  "env": {
+    "PR_MEMORY_PATH": "~/agent-memory",
+    "PR_MEMORY_LOGIN": "<your-github-login>",
+    "COPS_MODEL_LIGHT": "haiku",
+    "COPS_MODEL_STANDARD": "sonnet",
+    "COPS_MODEL_DEEP": "inherit"
+  }
+}
+```
+
+Then run a skill, e.g. `/cops:pr-review <PR URL>`: its report ends with a `Handoffs:` list, where `✓` means the agents ran and `inline (…)` means a step ran in the main chat instead.
+
+### Development tools
+
+`bash scripts/validate.sh` needs Bash, `jq`, and Perl; rendering the diagram also needs pnpm (see [Development](#development)).
