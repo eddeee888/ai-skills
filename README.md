@@ -4,15 +4,39 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ## Plugins
 
-- <img src="oss/assets/logo.svg" alt="" width="40" height="40" align="top"> [`oss/`](oss/) — maintaining and contributing to open source projects: sizing, filing, verifying, and fixing issues. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`.
-- <img src="cops/assets/logo.svg" alt="" width="40" height="40" align="top"> [`cops/`](cops/) **Code Ops** — working with pull requests: starting a draft PR from a task, reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
+### OSS
 
-`cops` also ships two agents, used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
+<img src="oss/assets/logo.svg" alt="OSS logo" width="40" height="40">
+
+[`oss/`](oss/) — maintaining and contributing to open source projects. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`. Works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
+
+#### Skills
+
+- [`issue-analyze`](oss/skills/issue-analyze/SKILL.md) — sizes an issue and reasons about its root cause, read-only.
+- [`issue-create`](oss/skills/issue-create/SKILL.md) — drafts and files a bug report after you confirm it.
+- [`issue-verify`](oss/skills/issue-verify/SKILL.md) — reproduces an issue and pushes the failing test as a checkpoint.
+- [`issue-fix`](oss/skills/issue-fix/SKILL.md) — fixes a verified issue from that checkpoint, after you pick an option.
+
+### Code Ops
+
+<img src="cops/assets/logo.svg" alt="Code Ops logo" width="40" height="40">
+
+[`cops/`](cops/) — working with pull requests. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
+
+#### Skills
+
+- [`pr-start`](cops/skills/pr-start/SKILL.md) — turns a confirmed task into a pushed draft PR.
+- [`pr-review`](cops/skills/pr-review/SKILL.md) — drafts labeled review comments and posts one review after you confirm.
+- [`pr-sync`](cops/skills/pr-sync/SKILL.md) — rebases an open PR and updates its title, description, and changeset.
+- [`pr-note`](cops/skills/pr-note/SKILL.md) — leaves inline notes explaining choices on your own PR.
+- [`pr-address`](cops/skills/pr-address/SKILL.md) — addresses unresolved review threads on your PR.
+
+#### Agents
+
+Used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
 
 - [`pr-oracle`](cops/agents/pr-oracle.md) — remembers recurring review themes, profiles repository setup, and drafts complete PR reviews and author notes.
 - [`pr-sidekick`](cops/agents/pr-sidekick.md) — runs the implement/test/commit loops skills hand off, applying the remembered rules the oracle picks for each job.
-
-`oss` works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
 
 ![How skills, pr-oracle, pr-sidekick, and memory connect: the main chat runs each skill, pr-oracle is the only agent that reads memory, and pr-sidekick gets remembered rules only through its prompt](docs/memory-flow.png)
 
