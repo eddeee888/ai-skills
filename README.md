@@ -53,7 +53,7 @@ docs/memory-flow.png, then commit and push.
 
 ## Install
 
-After installing `cops`, follow its [Setup](cops/README.md#setup): connect the GitHub MCP server for the oracle, and optionally attach a memory repository to the workspace.
+After installing `cops`, follow its [Setup](cops/README.md#setup), or the short version in [Environment setup](#environment-setup) below.
 
 ### Claude Code
 
@@ -85,3 +85,89 @@ cursor-agent plugin marketplace add https://github.com/eddeee888/ai-skills
 **Official public listing (optional):** submit this repo at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Manual review; the repo must stay public and open source.
 
 Local checkout for development: copy `oss` and `cops` into `~/.cursor/plugins/local/` (do not symlink from outside that folder) and reload the window.
+
+## Environment setup
+
+> [!NOTE]
+> `oss` on its own needs only [GitHub access](#github-access); it has no settings. Everything else here belongs to `cops`, and `oss` skills pick it up when `cops` is installed too: memory reaches them through `pr-oracle`, and the model tiers apply to the subagents they call. With nothing configured, the skills run without memory on the host's default models.
+
+### GitHub access
+
+- **`gh` CLI** — the skills use it when it's logged in (`gh auth login`); the [COPS HQ pane](cops/README.md#cops-hq-pane) needs it for review threads.
+- **GitHub MCP server** — the skills fall back to it without `gh`, and the `pr-oracle` agent reads GitHub only through it, so connect it even if you have `gh`.
+
+### Memory repository
+
+`pr-oracle` keeps remembered rules in a separate Git repository you own; COPS never creates, clones, pulls, commits, or pushes it. Details: [Workspace memory](cops/README.md#workspace-memory).
+
+1. Create a Git repository (e.g. `agent-memory`). The oracle writes under:
+
+   ```text
+   memory/users/<github-login>/MEMORY.md     # your active rules
+   memory/users/<github-login>/candidates.md # reviewer-derived, inactive until promoted
+   memory/team/MEMORY.md                     # shared rules, written only on `record-team:`
+   ```
+
+2. Make it available next to the code repository:
+   - **Local:** clone it anywhere, e.g. `~/code/agent-memory`.
+   - **Claude Code on the web / cloud sessions:** add it as an extra repository on the environment (or session), so it's checked out beside the main repo, at `/home/user/<repo-name>` (e.g. `/home/user/agent-memory`).
+   - **Cursor:** include it in the workspace.
+3. Point COPS at it:
+
+   | Setting | Claude Code | Cursor | Value |
+   | --- | --- | --- | --- |
+   | Memory path | plugin option `memory_path`, or env `PR_MEMORY_PATH` | plugin variable `PR_MEMORY_PATH` | Git root of the memory repo: absolute, `~/…`, or `$HOME/…` |
+   | Memory login | plugin option `memory_login`, or env `PR_MEMORY_LOGIN` | plugin variable `PR_MEMORY_LOGIN` | Your GitHub login; names `memory/users/<login>/`. Never guessed — unset means team memory only |
+
+   The env variables win over the plugin options. In a Claude Code cloud environment, set them in the environment's variables:
+
+   ```text
+   PR_MEMORY_PATH=/home/user/agent-memory
+   PR_MEMORY_LOGIN=<your-github-login>
+   ```
+
+4. Commit and push memory changes yourself; the [status line](cops/README.md#status-line) shows uncommitted and unpushed counts. In a cloud session, push before the container is reclaimed or the changes are lost.
+
+   ```text
+   memory: ✗ (off)                                    # memory not loaded: no path set (✗ (bad path) when it isn't a Git root)
+   memory: octocat · self 12/200 · team 40/200        # memory loaded with login, everything committed and pushed
+   memory: octocat · self 12/200 · team 40/200 · 2 uncommitted · 1 unpushed
+   ```
+
+   The last line is memory with local changes: `uncommitted` counts modified and untracked files, `unpushed` counts commits not on the upstream yet. A path without a login shows `memory: ✗ (no login)`.
+
+The session-start hook prints the result: `COPS memory root: …` and `COPS memory login: …` when both are valid, or `COPS memory not configured` / `COPS memory unavailable` (the path isn't a Git root) / `COPS memory login unset`.
+
+### Subagent models
+
+Each subagent call runs at a tier; set a tier's model with an env variable ([Subagent models](cops/README.md#subagent-models)):
+
+| Variable | Used for | Claude Code default |
+| --- | --- | --- |
+| `COPS_MODEL_LIGHT` | sorting, extracting, mechanical edits | `haiku` |
+| `COPS_MODEL_STANDARD` | reading, drafting, scoped changes | `sonnet` |
+| `COPS_MODEL_DEEP` | finding bugs, cross-file judgment | `opus` |
+
+Any model name the host accepts for a subagent works; `inherit` runs on the session's model. Unset, empty, or invalid values fall back to the default. Cursor can't set a model per call, so every tier there is `inherit`. The session-start hook prints the resolved values as `COPS models: light=… standard=… deep=…`.
+
+### Putting it together
+
+Claude Code, in `~/.claude/settings.json` (for a cloud environment, put the same values in its variables, with `PR_MEMORY_PATH=/home/user/agent-memory`):
+
+```json
+{
+  "env": {
+    "PR_MEMORY_PATH": "~/code/agent-memory",
+    "PR_MEMORY_LOGIN": "<your-github-login>",
+    "COPS_MODEL_LIGHT": "haiku",
+    "COPS_MODEL_STANDARD": "sonnet",
+    "COPS_MODEL_DEEP": "inherit"
+  }
+}
+```
+
+Then run a skill, e.g. `/cops:pr-review <PR URL>`: its report ends with a `Handoffs:` list, where `✓` means the agents ran and `inline (…)` means a step ran in the main chat instead.
+
+### Development tools
+
+`bash scripts/validate.sh` needs Bash, `jq`, and Perl; rendering the diagram also needs pnpm (see [Development](#development)).
