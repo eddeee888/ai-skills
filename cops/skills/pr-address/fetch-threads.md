@@ -1,6 +1,6 @@
 # pr-address: Step 2 inline thread fetch
 
-Read this file only when `pr-oracle` is unavailable and the main chat must perform Steps 2–3 inline. Pull review threads, not conversation-tab comments; conversation comments have no reply chain and are out of scope.
+Read this file only when `pr-oracle` is unavailable and the main chat performs Steps 2–3 inline, or when the oracle's `gh` route points at its "`gh` route" section. Pull review threads, not conversation-tab comments; conversation comments have no reply chain and are out of scope.
 
 ## `gh` route
 
