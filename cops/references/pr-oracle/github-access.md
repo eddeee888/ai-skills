@@ -15,4 +15,4 @@ Input supplies the selected GitHub route as `GitHub route: gh | MCP`; none given
 
 For review threads, follow the pagination and ID rules in `modes/triage-threads.md`.
 
-The frontmatter tool names are `mcp__github__get_file_contents`, `mcp__github__search_repositories`, and `mcp__github__pull_request_read`. No other GitHub MCP tool is permitted.
+Use only the read tools in the table, from whichever GitHub MCP server the host connects; no other GitHub MCP tool and no write tool of any server.
