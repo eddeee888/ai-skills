@@ -496,7 +496,7 @@ export const register: Register = (on, options) => {
     //   'mode: sweep-diff' → 'mode: sweep-diff\n\nrule-keys:\n- 0a9a18eb  Prefer early returns\n- 595e6dfb  Keep tests beside the code'
     let prompt = e.prompt
     try {
-      if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'brief-task' || one === 'sweep-diff')) {
+      if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !/^for:\s*pr-sidekick\b/mi.test(e.prompt)))) {
         const pluginRoot = $.plugin.root
         const context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
         if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
