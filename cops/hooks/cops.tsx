@@ -10,7 +10,7 @@ import { checkLoaded, checkTool, EXPECTED_HANDOFFS, tickedBy } from './orchestra
 import { describeActivity, describeAgent, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, snippet, SPINNER_MS, summarize, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, listRuleKeys, matchEntries, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 import { addUsage, describeUsage, keyCall, toUsage } from './usage-stats.ts'
 
@@ -320,6 +320,10 @@ const isSkill = async ($: EngineInterface, { command }: { command: string }): Pr
 // Each running cops agent's Bash commands this run, by its agentId, for the 4th-try check.
 const commands = new Map<string, string[]>()
 
+// Each cops:pr-oracle run's final answer, by its agentId, until its Agent call counts rule usage from it:
+// the Agent result's text is only a stub once the report is handed back.
+const answers = new Map<string, string>()
+
 const clearHandled = async ($: EngineInterface) => {
   try {
     await update($, handled, () => [])
@@ -488,9 +492,29 @@ export const register: Register = (on, options) => {
       return next(e)
     }
     if (isCops) void autoOpen($)
+    // A plain brief-task or a sweep-diff oracle call counts the rules its reply cites. Its prompt lists each remembered rule's key,
+    // while memory is on, so the reply cites rules by key; the rules read here are the ones counted once the call ends:
+    //   'mode: sweep-diff' → 'mode: sweep-diff\n\nrule-keys:\n- 0a9a18eb  Prefer early returns\n- 595e6dfb  Keep tests beside the code'
+    // A `for: pr-sidekick` brief lists every rule that could apply, so it doesn't show which rules fire.
+    let rules: string[] = []
+    let prompt = e.prompt
+    try {
+      if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !/^for:\s*pr-sidekick\b/mi.test(e.prompt)))) {
+        const pluginRoot = $.plugin.root
+        const context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+        if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
+          rules = (await readMemory($, { context: context.stdout })).rules.map(one => one.rule)
+        }
+        if (rules.length > 0) {
+          prompt = `${e.prompt}\n\n${listRuleKeys({ rules })}`
+        }
+      }
+    } catch (error) {
+      reportFailure($, { step: 'rule-keys', what: 'list the remembered rules’ keys in the oracle prompt', error })
+    }
     // Redraws the pane so the running call's spinner moves.
     const spin = $.clock.every(SPINNER_MS, () => $.ui.invalidate('ui.render'))
-    const ran = await next(e)
+    const ran = await next({ ...e, prompt })
       .finally(() => spin.cancel())
       .catch(async error => {
         // A lower hook threw: mark the row failed (✗) and rethrow so the hook's catch still runs.
@@ -577,21 +601,18 @@ export const register: Register = (on, options) => {
       if (agent === 'cops:pr-oracle' && call.modes?.includes('learn-feedback')) {
         void refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error }))
       }
-      // Counts the remembered rules a plain brief-task or a sweep-diff reply cites, while memory is on.
-      // A `for: pr-sidekick` brief lists every rule that could apply, so it doesn't show which rules fire.
+      // Counts the rules read before the call that the reply cites by key.
+      // The reply is the run's handed-back answer, or the result's text when there was none.
       try {
-        const isSidekickBrief = /^for:\s*pr-sidekick\b/mi.test(e.prompt)
-        if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !isSidekickBrief))) {
-          const pluginRoot = $.plugin.root
-          const context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
-          if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
-            const { rules } = await readMemory($, { context: context.stdout })
-            const keys = matchEntries({ entries: rules.map(one => one.rule), cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
-            if (keys.length > 0) {
-              await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, now: await $.clock.now() }))
-              $.ui.invalidate('ui.render')
-            }
-          }
+        const agentId = (await read($, agents)).find(one => one.id === call.id)?.agentId
+        const answer = agentId === undefined ? undefined : answers.get(agentId)
+        if (agentId !== undefined) {
+          answers.delete(agentId)
+        }
+        const keys = matchEntries({ entries: rules, cited: parseReply({ text: answer ?? ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
+        if (keys.length > 0) {
+          await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, now: await $.clock.now() }))
+          $.ui.invalidate('ui.render')
         }
       } catch (error) {
         reportFailure($, { step: 'rule-usage', what: 'count remembered rule usage', error })
@@ -652,7 +673,7 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // Checks a cops oracle's `loaded:` once its run ends, and ends the run's 4th-try count.
+  // Checks a cops oracle's `loaded:` once its run ends and keeps its answer for rule usage, and ends the run's 4th-try count.
   on('turn.complete', async ($, e, next) => {
     const completed = await next(e)
     // A main turn (no agentId) ending is when a running autopilot chain counts as stopped.
@@ -670,6 +691,7 @@ export const register: Register = (on, options) => {
       if (call && e.agentId) {
         commands.delete(e.agentId)
         if (call.agent === 'cops:pr-oracle') {
+          answers.set(e.agentId, e.answer)
           await setCall($, call.id, { missingLoads: checkLoaded({ text: e.answer, modes: call.modes || [] }) })
           $.ui.invalidate('ui.render')
         }

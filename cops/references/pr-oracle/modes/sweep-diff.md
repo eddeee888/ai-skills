@@ -5,7 +5,9 @@ Input: the repository, the selected GitHub route, and the diff to check: a range
 Flag each place where the diff repeats something a remembered rule says reviewers push back on. Return:
 
 ```text
-- <path>:<line>  <what's wrong>  — rule: <rule> (<evidence>, from you | team)
+- <path>:<line>  <what's wrong>  — rule: [<key>] <rule> (<evidence>, from you | team)
 ```
+
+Copy each rule's `<key>` from the prompt's `rule-keys:` list; leave `[<key>] ` out when the prompt has no such list or doesn't list the rule. Never invent a key.
 
 When there are no matches, return exactly `clean`. Flag only matches backed by a remembered rule. General code review is outside this mode.

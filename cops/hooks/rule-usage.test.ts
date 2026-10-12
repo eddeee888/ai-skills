@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, listRuleKeys, matchEntries, normalize, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -19,15 +19,20 @@ const FILES = {
 
 type Ui = Awaited<ReturnType<Engine['ui']['mount']>>
 
+// What an Agent result says in place of a report the subagent handed back.
+const STUB = 'This agent\'s report was delivered to you as a message from cops:pr-oracle and is not repeated here.'
+
 // Answers what the plugin asks of the engine from `files` and `stored`, gives each pr-oracle call the reply
-// `replies` names for its prompt, and records the prompt fills.
-const world = ({ on, memory = MEMORY_ON, files = FILES, replies = {}, stored = {} }: {
-  on: On; memory?: string; files?: Record<string, string>; replies?: Record<string, string>; stored?: Record<string, unknown>
-}): { fills: string[]; clock: ReturnType<typeof mock.clock> } => {
+// `replies` names for its prompt without the `rule-keys:` block, and records the prompt fills and the prompts.
+// With `$`, a call runs the way a session does: spawned, its turn ends with the reply as its answer, and the result is STUB.
+const world = ({ $, on, memory = MEMORY_ON, files = FILES, replies = {}, stored = {} }: {
+  $?: Engine; on: On; memory?: string; files?: Record<string, string>; replies?: Record<string, string>; stored?: Record<string, unknown>
+}): { fills: string[]; prompts: string[]; clock: ReturnType<typeof mock.clock> } => {
   const ok = ({ stdout }: { stdout: string }): ProcessRunResult => ({
     exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
   })
   const fills: string[] = []
+  const prompts: string[] = []
   const clock = mock.clock(on, { now: NOW })
   on('store.get', ($, e) => ({ value: stored[e.key] }))
   on('store.set', ($, e) => {
@@ -53,14 +58,29 @@ const world = ({ on, memory = MEMORY_ON, files = FILES, replies = {}, stored = {
     fills.push(e.text)
     return { isFilled: true }
   })
-  on('tool.call', { tool: 'Agent' }, ($, e) => ({
-    result: {
-      status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 1000, totalTokens: 100, prompt: e.prompt,
-      usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
-    },
-    text: replies[e.prompt] ?? '',
-  }))
-  return { fills, clock }
+  on('agent.spawn', () => ({ model: 'sonnet', agentId: 'a1' }))
+  on('turn.complete', (_, e) => ({ text: e.answer }))
+  on('tool.call', { tool: 'Agent' }, async (_, e) => {
+    prompts.push(e.prompt)
+    const reply = replies[e.prompt.replace(/\n+rule-keys:\n[\s\S]*$/, '')] ?? ''
+    let text = reply
+    if ($) {
+      await $.agent.spawn({
+        tool_use_id: e.tool_use_id, prompt: e.prompt, description: e.description, subagentType: e.subagent_type || 'general-purpose',
+        provider: { plugin: 'cops', tier: 'user' }, parentModel: 'opus', background: false, fork: false,
+      })
+      await $.turn.complete({ answer: reply, durationMs: 1, isAborted: false, turnId: 't1', agentId: 'a1', reason: 'answer' })
+      text = STUB
+    }
+    return {
+      result: {
+        status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 1000, totalTokens: 100, prompt: e.prompt,
+        usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
+      },
+      text,
+    }
+  })
+  return { fills, prompts, clock }
 }
 
 const oracle = async ({ $, mode }: { $: Engine; mode: string }): Promise<void> => {
@@ -91,18 +111,47 @@ const used = ({ stored, rule }: { stored: Record<string, unknown>; rule: string 
   toRuleUsage({ stored: stored.ruleUsage })[hashRule({ text: rule })]
 
 describe('rule usage counting', () => {
-  test('a brief-task reply counts each matching rule once, and ignores the rest', MEMORY, async ($, on) => {
+  test('a handed-back sweep-diff reply counts the rule it cites by key', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    const key = hashRule({ text: 'Keep tests beside the code' })
+    world({ $, on, stored, replies: { 'mode: sweep-diff': `- a.test.ts:1  test in a separate folder  — rule: [${key}] keep tests in their own folder (stated by user, from team)` } })
+    await oracle({ $, mode: 'sweep-diff' })
+    expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+  })
+
+  test('a brief-task or sweep-diff prompt gets the rule-keys block while memory is on', MEMORY, async ($, on) => {
+    const { prompts } = world({ on })
+    await oracle({ $, mode: 'brief-task' })
+    await oracle({ $, mode: 'sweep-diff' })
+    await oracle({ $, mode: 'review-pr' })
+    const keys = [
+      `- ${hashRule({ text: 'Prefer early returns' })}  Prefer early returns`,
+      `- ${hashRule({ text: 'Use `run()` (not `exec()`) for commands' })}  Use \`run()\` (not \`exec()\`) for commands`,
+      `- ${hashRule({ text: 'Keep tests beside the code' })}  Keep tests beside the code`,
+    ].join('\n')
+    expect(prompts).toEqual([`mode: brief-task\n\nrule-keys:\n${keys}`, `mode: sweep-diff\n\nrule-keys:\n${keys}`, 'mode: review-pr'])
+  })
+
+  test('a brief-task or sweep-diff prompt is left as is while memory is off', MEMORY, async ($, on) => {
+    const { prompts } = world({ on, memory: MEMORY_OFF })
+    await oracle({ $, mode: 'brief-task' })
+    await oracle({ $, mode: 'sweep-diff' })
+    expect(prompts).toEqual(['mode: brief-task', 'mode: sweep-diff'])
+  })
+
+  test('a brief-task reply counts each cited key\'s rule once, and ignores unknown keys and uncited rules', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
     world({
       on,
       stored,
       replies: {
         'mode: brief-task': [
-          '- prefer early returns.  (stated by user 2x, from you)',
-          '- Prefer early returns  (stated by user 2x, from you)',
-          '- name tests after behavior  (seen 2x, from you)',
+          `- [${hashRule({ text: 'Prefer early returns' })}] prefer early returns.  (stated by user 2x, from you)`,
+          `- [${hashRule({ text: 'Prefer early returns' })}] Prefer early returns  (stated by user 2x, from you)`,
+          '- [deadbeef] name tests after behavior  (seen 2x, from you)',
+          '- Keep tests beside the code  (stated by user, from team)',
           'caller only:',
-          '- Use `run()` (not `exec()`) for commands  (seen 2x, from you)',
+          `- [${hashRule({ text: 'Use `run()` (not `exec()`) for commands' })}] Use \`run()\` (not \`exec()\`) for commands  (seen 2x, from you)`,
         ].join('\n'),
       },
     })
@@ -115,14 +164,14 @@ describe('rule usage counting', () => {
   test('a for: pr-sidekick brief-task reply counts nothing', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
     const prompt = 'mode: brief-task\nfor: pr-sidekick'
-    world({ on, stored, replies: { [prompt]: '- prefer early returns  (stated by user 2x, from you)\ncaller only:\n- Use `run()` (not `exec()`) for commands  (seen 2x, from you)' } })
+    world({ on, stored, replies: { [prompt]: `- [${hashRule({ text: 'Prefer early returns' })}] prefer early returns  (stated by user 2x, from you)` } })
     await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt })
     expect(stored.ruleUsage).toBeUndefined()
   })
 
   test('a sweep-diff flag counts its rule, team rules included', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = { ruleUsage: { [hashRule({ text: 'Keep tests beside the code' })]: { count: 2, firstSeen: DAY, lastSeen: 2 * DAY, recent: [DAY, 2 * DAY] } } }
-    world({ on, stored, replies: { 'mode: sweep-diff': '- a.test.ts:1  test in a separate folder  — rule: keep tests beside the code (stated by user, from team)' } })
+    world({ on, stored, replies: { 'mode: sweep-diff': `- a.test.ts:1  test in a separate folder  — rule: [${hashRule({ text: 'Keep tests beside the code' })}] keep tests beside the code (stated by user, from team)` } })
     await oracle({ $, mode: 'sweep-diff' })
     expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 3, firstSeen: DAY, lastSeen: NOW, recent: [DAY, 2 * DAY, NOW] })
   })
@@ -135,7 +184,7 @@ describe('rule usage counting', () => {
       replies: {
         'mode: brief-task': 'no relevant memory',
         'mode: sweep-diff': 'clean',
-        'mode: review-pr': '- prefer early returns  (stated by user 2x, from you)',
+        'mode: review-pr': `- [${hashRule({ text: 'Prefer early returns' })}] prefer early returns  (stated by user 2x, from you)`,
         'mode: scout-repo': '- squash before merging  (seen 2x, from you)',
       },
     })
@@ -145,13 +194,27 @@ describe('rule usage counting', () => {
 
   test('counts nothing while memory is off', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
-    world({ on, stored, memory: MEMORY_OFF, replies: { 'mode: brief-task': '- prefer early returns  (stated by user 2x, from you)' } })
+    world({ on, stored, memory: MEMORY_OFF, replies: { 'mode: brief-task': `- [${hashRule({ text: 'Prefer early returns' })}] prefer early returns  (stated by user 2x, from you)` } })
     await oracle({ $, mode: 'brief-task' })
     expect(stored.ruleUsage).toBeUndefined()
   })
 })
 
 describe('Rules tab', () => {
+  test('shows a rule a handed-back sweep-diff reply cited as seen', MEMORY, async ($, on) => {
+    const key = hashRule({ text: 'Keep tests beside the code' })
+    world({ $, on, replies: { 'mode: sweep-diff': `- a.test.ts:1  test in a separate folder  — rule: [${key}] keep tests beside the code (stated by user, from team)` } })
+    await oracle({ $, mode: 'sweep-diff' })
+    const ui = await mount({ $ })
+    await until({ check: async () => (await ui.find({ key: 'tab-rules' })) !== undefined })
+    await ui.press({ key: 'tab-rules' })
+    await until({ check: async () => (await text({ ui })).includes('Stale rules (') })
+    const drawn = await text({ ui })
+    expect(drawn).toContain('Stale rules (2)')
+    expect(drawn).not.toContain('Keep tests beside the code · never seen')
+    await ui.unmount()
+  })
+
   test('lists a rule last seen 30+ days ago as stale, with a Prune button that fills the prompt', MEMORY, async ($, on) => {
     const stored = {
       ruleUsage: {
@@ -227,11 +290,23 @@ describe('parseEntries', () => {
   })
 })
 
+describe('listRuleKeys', () => {
+  test('lists each rule with its key, which a reply citing them reads back', () => {
+    const rules = ['Prefer early returns', 'Keep tests beside the code']
+    const listed = listRuleKeys({ rules })
+    expect(listed).toBe(`rule-keys:\n- ${hashRule({ text: 'Prefer early returns' })}  Prefer early returns\n- ${hashRule({ text: 'Keep tests beside the code' })}  Keep tests beside the code`)
+    // A reply copies each key from the list into its citation.
+    const reply = listed.split('\n').slice(1).map(line => line.replace(/^- (\S+)  (.+)$/, '- [$1] $2  (stated by user, from you)')).join('\n')
+    expect(matchEntries({ entries: rules, cited: parseReply({ text: reply }) })).toEqual(rules)
+  })
+})
+
 describe('parseReply', () => {
-  test('reads brief bullets, caller-only bullets and sweep flags', () => {
-    expect(parseReply({ text: '- prefer early returns  (stated by user 2x, from you)\ncaller only:\n- ask before pushing  (seen 2x, from team)' }))
-      .toEqual(['prefer early returns', 'ask before pushing'])
-    expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: use `x()` (not `y`) (stated by user 2x, from you)' })).toEqual(['use `x()` (not `y`)'])
+  test('reads the keys of brief bullets, caller-only bullets and sweep flags', () => {
+    expect(parseReply({ text: '- [0a9a18eb] prefer early returns  (stated by user 2x, from you)\ncaller only:\n- [595e6dfb] ask before pushing  (seen 2x, from team)' }))
+      .toEqual(['0a9a18eb', '595e6dfb'])
+    expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: [d213d4f5] use `x()` (not `y`) (stated by user 2x, from you)' })).toEqual(['d213d4f5'])
+    expect(parseReply({ text: '- prefer early returns  (stated by user 2x, from you)\n- [ABCDEF12] upper case\n- [0a9a18e] too short\n- a.ts:3  x  [0a9a18eb] not after rule:' })).toEqual([])
     expect(parseReply({ text: 'no relevant memory' })).toEqual([])
     expect(parseReply({ text: 'clean' })).toEqual([])
   })
@@ -244,11 +319,12 @@ describe('matching', () => {
     expect(hashRule({ text: 'prefer early returns' })).not.toBe(hashRule({ text: 'use pnpm' }))
   })
 
-  test('matches equal text or a prefix either way, each entry once', () => {
+  test('matches the entries whose key is cited, each entry once', () => {
     const entries = ['Prefer early returns', 'Keep tests beside the code', 'prefer early returns.']
-    expect(matchEntries({ entries, cited: ['prefer early returns, always', 'PREFER EARLY RETURNS'] })).toEqual(['Prefer early returns'])
-    expect(matchEntries({ entries, cited: ['keep tests'] })).toEqual(['Keep tests beside the code'])
-    expect(matchEntries({ entries, cited: ['use pnpm', ''] })).toEqual([])
+    const key = hashRule({ text: 'prefer early returns' })
+    expect(matchEntries({ entries, cited: [key, key] })).toEqual(['Prefer early returns'])
+    expect(matchEntries({ entries, cited: [hashRule({ text: 'Keep tests beside the code' })] })).toEqual(['Keep tests beside the code'])
+    expect(matchEntries({ entries, cited: ['deadbeef', ''] })).toEqual([])
   })
 })
 

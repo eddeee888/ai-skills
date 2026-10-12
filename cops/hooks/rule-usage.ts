@@ -75,33 +75,31 @@ export const parseEntries = ({ text }: { text: string }): string[] => {
   return rules
 }
 
-// The rules a pr-oracle brief-task or sweep-diff reply cites, without their evidence:
-//   '- prefer early returns  (stated by user 2x, from you)'                          → ['prefer early returns']
-//   'caller only:\n- ask before pushing  (seen 2x, from you)'                        → ['ask before pushing']
-//   '- a.ts:3  nested ifs  — rule: prefer early returns (stated by user 2x, from team)' → ['prefer early returns']
-//   'no relevant memory', 'clean'                                                    → []
+// The `rule-keys:` list a brief-task or sweep-diff oracle prompt gets, which parseReply reads the cited keys back from:
+//   ['Prefer early returns', 'Keep tests beside the code'] → 'rule-keys:\n- 0a9a18eb  Prefer early returns\n- 595e6dfb  Keep tests beside the code'
+export const listRuleKeys = ({ rules }: { rules: string[] }): string =>
+  ['rule-keys:', ...rules.map(rule => `- ${hashRule({ text: rule })}  ${rule}`)].join('\n')
+
+// The rule keys a pr-oracle brief-task or sweep-diff reply cites, copied from its prompt's `rule-keys:` list:
+//   '- [0a9a18eb] prefer early returns  (stated by user 2x, from you)'                          → ['0a9a18eb']
+//   'caller only:\n- [595e6dfb] ask before pushing  (seen 2x, from you)'                        → ['595e6dfb']
+//   '- a.ts:3  nested ifs  — rule: [0a9a18eb] prefer early returns (stated by user 2x, from team)' → ['0a9a18eb']
+//   '- prefer early returns  (stated by user 2x, from you)', 'no relevant memory', 'clean'       → []
 export const parseReply = ({ text }: { text: string }): string[] =>
   text.split('\n').flatMap(line => {
-    const bullet = /^\s*- (.+)$/.exec(line)?.[1]
-    if (!bullet) {
-      return []
-    }
-    const rule = stripEvidence({ text: /\s—\s*rule:\s*(.+)$/.exec(bullet)?.[1] ?? bullet })
-    return rule ? [rule] : []
+    const key = /^\s*- \[([0-9a-f]{8})\]/.exec(line)?.[1] ?? /\s—\s*rule:\s*\[([0-9a-f]{8})\]/.exec(line)?.[1]
+    return key ? [key] : []
   })
 
-// The entries a reply's rules match, each once: equal once normalized, or one a prefix of the other:
-//   entries ['prefer early returns', 'keep tests beside code'], cited ['Prefer early returns, always.'] → ['prefer early returns']
-//   entries ['prefer early returns'], cited ['prefer'] → ['prefer early returns']
-//   entries ['prefer early returns'], cited ['use pnpm'] → []
-export const matchEntries = ({ entries, cited }: { entries: string[]; cited: string[] }): string[] => {
-  const rules = cited.map(text => normalize({ text })).filter(Boolean)
-  return entries.filter((entry, index) => {
-    const own = normalize({ text: entry })
-    const isFirst = entries.findIndex(other => normalize({ text: other }) === own) === index
-    return own !== '' && isFirst && rules.some(rule => rule === own || rule.startsWith(own) || own.startsWith(rule))
+// The entries whose key a reply cites, each once:
+//   entries ['prefer early returns', 'keep tests beside code'], cited [key of 'prefer early returns'] → ['prefer early returns']
+//   entries ['prefer early returns', 'Prefer early returns.'], cited [key of 'prefer early returns'] → ['prefer early returns']
+//   entries ['prefer early returns'], cited ['deadbeef'] → []
+export const matchEntries = ({ entries, cited }: { entries: string[]; cited: string[] }): string[] =>
+  entries.filter((entry, index) => {
+    const key = hashRule({ text: entry })
+    return cited.includes(key) && entries.findIndex(other => hashRule({ text: other }) === key) === index
   })
-}
 
 // The usage after one reply matched `keys`, at `now`:
 //   {}, ['k'], 5 → { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
