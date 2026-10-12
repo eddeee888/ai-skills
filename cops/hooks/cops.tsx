@@ -320,6 +320,10 @@ const isSkill = async ($: EngineInterface, { command }: { command: string }): Pr
 // Each running cops agent's Bash commands this run, by its agentId, for the 4th-try check.
 const commands = new Map<string, string[]>()
 
+// Each cops:pr-oracle run's final answer, by its agentId, until its Agent call counts rule usage from it:
+// the Agent result's text is only a stub once the report is handed back.
+const answers = new Map<string, string>()
+
 const clearHandled = async ($: EngineInterface) => {
   try {
     await update($, handled, () => [])
@@ -488,9 +492,25 @@ export const register: Register = (on, options) => {
       return next(e)
     }
     if (isCops) void autoOpen($)
+    // Lists each remembered rule's key in a brief-task or sweep-diff oracle prompt, while memory is on, so the reply cites rules by key:
+    //   'mode: sweep-diff' → 'mode: sweep-diff\n\nrule-keys:\n- 0a9a18eb  Prefer early returns\n- 595e6dfb  Keep tests beside the code'
+    let prompt = e.prompt
+    try {
+      if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'brief-task' || one === 'sweep-diff')) {
+        const context = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+        if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
+          const { rules } = await readMemory($, { context: context.stdout })
+          if (rules.length > 0) {
+            prompt = `${e.prompt}\n\nrule-keys:\n${rules.map(one => `- ${hashRule({ text: one.rule })}  ${one.rule}`).join('\n')}`
+          }
+        }
+      }
+    } catch (error) {
+      reportFailure($, { step: 'rule-keys', what: 'list the remembered rules’ keys in the oracle prompt', error })
+    }
     // Redraws the pane so the running call's spinner moves.
     const spin = $.clock.every(SPINNER_MS, () => $.ui.invalidate('ui.render'))
-    const ran = await next(e)
+    const ran = await next({ ...e, prompt })
       .finally(() => spin.cancel())
       .catch(async error => {
         // A lower hook threw: mark the row failed (✗) and rethrow so the hook's catch still runs.
@@ -577,16 +597,22 @@ export const register: Register = (on, options) => {
       if (agent === 'cops:pr-oracle' && call.modes?.includes('learn-feedback')) {
         void refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error }))
       }
-      // Counts the remembered rules a plain brief-task or a sweep-diff reply cites, while memory is on.
+      // Counts the remembered rules a plain brief-task or a sweep-diff reply cites by key, while memory is on.
+      // The reply is the run's handed-back answer, or the result's text when there was none.
       // A `for: pr-sidekick` brief lists every rule that could apply, so it doesn't show which rules fire.
       try {
+        const agentId = (await read($, agents)).find(one => one.id === call.id)?.agentId
+        const answer = agentId === undefined ? undefined : answers.get(agentId)
+        if (agentId !== undefined) {
+          answers.delete(agentId)
+        }
         const isSidekickBrief = /^for:\s*pr-sidekick\b/mi.test(e.prompt)
         if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !isSidekickBrief))) {
           const pluginRoot = $.plugin.root
           const context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
           if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
             const { rules } = await readMemory($, { context: context.stdout })
-            const keys = matchEntries({ entries: rules.map(one => one.rule), cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
+            const keys = matchEntries({ entries: rules.map(one => one.rule), cited: parseReply({ text: answer ?? ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
             if (keys.length > 0) {
               await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, now: await $.clock.now() }))
               $.ui.invalidate('ui.render')
@@ -652,7 +678,7 @@ export const register: Register = (on, options) => {
     return next(e)
   })
 
-  // Checks a cops oracle's `loaded:` once its run ends, and ends the run's 4th-try count.
+  // Checks a cops oracle's `loaded:` once its run ends and keeps its answer for rule usage, and ends the run's 4th-try count.
   on('turn.complete', async ($, e, next) => {
     const completed = await next(e)
     // A main turn (no agentId) ending is when a running autopilot chain counts as stopped.
@@ -670,6 +696,7 @@ export const register: Register = (on, options) => {
       if (call && e.agentId) {
         commands.delete(e.agentId)
         if (call.agent === 'cops:pr-oracle') {
+          answers.set(e.agentId, e.answer)
           await setCall($, call.id, { missingLoads: checkLoaded({ text: e.answer, modes: call.modes || [] }) })
           $.ui.invalidate('ui.render')
         }

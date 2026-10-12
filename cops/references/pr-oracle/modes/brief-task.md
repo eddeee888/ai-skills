@@ -5,8 +5,10 @@ Input: ask and affected files, or `PR description` for `cops:pr-sync`, and optio
 Return only applicable active rules, most relevant first, with evidence:
 
 ```text
-- <rule>  (<evidence from the entry>, from you | team)
+- [<key>] <rule>  (<evidence from the entry>, from you | team)
 ```
+
+Copy each rule's `<key>` from the prompt's `rule-keys:` list; leave `[<key>] ` out when the prompt has no such list or doesn't list the rule. Never invent a key.
 
 If none, return exactly `no relevant memory`. Never pad.
 
