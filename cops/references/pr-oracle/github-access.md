@@ -2,7 +2,7 @@
 
 Input supplies the selected GitHub route as `GitHub route: gh | MCP`; none given → MCP route. Read GitHub only through that route's read-only allowlist below. Never write GitHub, use raw HTTP, or run any `gh` command the table doesn't list, including `gh auth status`: the caller already picked the route.
 
-- **`gh` route.** Bash runs only the listed `gh` reads. A read returning 401/403/404 → retry that one read through its GitHub MCP counterpart before failing (`CONVENTIONS-github.md` → "GitHub access").
+- **`gh` route.** Bash runs only the listed `gh` reads. A file or directory read returning 404 means the path is absent. Any other read returning 401/403/404 → retry that one read through its GitHub MCP counterpart before failing (`CONVENTIONS-github.md` → "GitHub access").
 - **MCP route.** On a host that loads tools on demand, load each tool with `ToolSearch` before its first use. Bash never reads GitHub.
 
 | Read | `gh` route | GitHub MCP route |
