@@ -88,7 +88,8 @@ Local checkout for development: copy `oss` and `cops` into `~/.cursor/plugins/lo
 
 ## Environment setup
 
-`oss` on its own needs only [GitHub access](#github-access); it has no settings. Everything else here belongs to `cops`, and `oss` skills pick it up when `cops` is installed too: memory reaches them through `pr-oracle`, and the model tiers apply to the subagents they call. With nothing configured, the skills run without memory on the host's default models.
+> [!NOTE]
+> `oss` on its own needs only [GitHub access](#github-access); it has no settings. Everything else here belongs to `cops`, and `oss` skills pick it up when `cops` is installed too: memory reaches them through `pr-oracle`, and the model tiers apply to the subagents they call. With nothing configured, the skills run without memory on the host's default models.
 
 ### GitHub access
 
