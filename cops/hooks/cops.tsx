@@ -497,7 +497,8 @@ export const register: Register = (on, options) => {
     let prompt = e.prompt
     try {
       if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'brief-task' || one === 'sweep-diff')) {
-        const context = await run($, ['bash', `${$.plugin.root}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+        const pluginRoot = $.plugin.root
+        const context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
         if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
           const { rules } = await readMemory($, { context: context.stdout })
           if (rules.length > 0) {
