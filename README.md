@@ -109,7 +109,7 @@ Everything here is optional except GitHub access: with nothing configured, the s
 
 2. Make it available next to the code repository:
    - **Local:** clone it anywhere, e.g. `~/code/agent-memory`.
-   - **Claude Code on the web / cloud sessions:** add it as an extra repository on the environment (or session), so it's checked out beside the main repo, directly under the home directory (e.g. `~/agent-memory`).
+   - **Claude Code on the web / cloud sessions:** add it as an extra repository on the environment (or session), so it's checked out beside the main repo, at `/home/user/<repo-name>` (e.g. `/home/user/agent-memory`).
    - **Cursor:** include it in the workspace.
 3. Point COPS at it:
 
@@ -118,10 +118,10 @@ Everything here is optional except GitHub access: with nothing configured, the s
    | Memory path | plugin option `memory_path`, or env `PR_MEMORY_PATH` | plugin variable `PR_MEMORY_PATH` | Git root of the memory repo: absolute, `~/…`, or `$HOME/…` |
    | Memory login | plugin option `memory_login`, or env `PR_MEMORY_LOGIN` | plugin variable `PR_MEMORY_LOGIN` | Your GitHub login; names `memory/users/<login>/`. Never guessed — unset means team memory only |
 
-   The env variables win over the plugin options. In a cloud environment, set them in the environment's variables, e.g.:
+   The env variables win over the plugin options. In a Claude Code cloud environment, set them in the environment's variables:
 
    ```text
-   PR_MEMORY_PATH=~/agent-memory
+   PR_MEMORY_PATH=/home/user/agent-memory
    PR_MEMORY_LOGIN=<your-github-login>
    ```
 
@@ -143,12 +143,12 @@ Any model name the host accepts for a subagent works; `inherit` runs on the sess
 
 ### Putting it together
 
-Claude Code, in `~/.claude/settings.json` (or a cloud environment's variables):
+Claude Code, in `~/.claude/settings.json` (for a cloud environment, put the same values in its variables, with `PR_MEMORY_PATH=/home/user/agent-memory`):
 
 ```json
 {
   "env": {
-    "PR_MEMORY_PATH": "~/agent-memory",
+    "PR_MEMORY_PATH": "~/code/agent-memory",
     "PR_MEMORY_LOGIN": "<your-github-login>",
     "COPS_MODEL_LIGHT": "haiku",
     "COPS_MODEL_STANDARD": "sonnet",
