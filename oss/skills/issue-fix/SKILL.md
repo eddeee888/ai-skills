@@ -23,7 +23,7 @@ By default build on the checkpoint's own PR. `--new-pr` forces a separate fix PR
 
 ## Step 2: Re-root-cause it
 
-Get `scout-repo` from `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"): one-test command, test layout, package map, and title prefix. If unavailable, discover these locally.
+Get `scout-repo` from `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`, for the one-test command, test layout, package map, and title prefix. If unavailable, discover these locally.
 
 Run only the failing test with a quiet/summary reporter and read the stack, assertion diff, and error type. Re-read the issue thread only if the failure conflicts with the checkpoint message.
 

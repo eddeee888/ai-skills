@@ -2,9 +2,11 @@
 
 Read `../../../CONVENTIONS-posts.md` sections “Comment labels,” “Skill signature,” and “Author notes.” The signature-reading rule is a contract even when a writing default is overridden.
 
-Input: the PR's owner/repository/number, the user's login, whether the PR is the user's own, and the full classification rules from `cops/skills/pr-address/classify.md`. Apply those supplied rules exactly; they are the source of truth, not this agent.
+Input: the PR's owner/repository/number, the selected GitHub route, the user's login, whether the PR is the user's own, and the full classification rules from `cops/skills/pr-address/classify.md`. Apply those supplied rules exactly; they are the source of truth, not this agent.
 
-1. Fetch review threads with `pull_request_read` method `get_review_comments`. Pass `after: <endCursor>` while `pageInfo.hasNextPage` is true. Drop threads whose `is_resolved` is `true`. Comments have no `databaseId`; extract it from the digits after `#discussion_r` in each comment's `html_url`. An outdated comment has no `line`, so use `original_line`.
+1. Fetch every unresolved review thread through the selected route (`../github-access.md`).
+   - `gh` route: run the GraphQL query in [fetch-threads.md](../../../skills/pr-address/fetch-threads.md#gh-route) and follow its pagination and hidden-middle rules. Use each comment's `databaseId`; an outdated comment has no `line`, so use `originalLine`.
+   - MCP route: use `pull_request_read` method `get_review_comments`. Pass `after: <endCursor>` while `pageInfo.hasNextPage` is true. Drop threads whose `is_resolved` is `true`. Comments have no `databaseId`; extract it from the digits after `#discussion_r` in each comment's `html_url`. An outdated comment has no `line`, so use `original_line`.
 2. Classify every unresolved thread under the supplied rules. Determine the bucket from its last comment and the nature from its opening comment. A comment ending in a skill signature—a `<sub>` line reading `Skill: <plugin>:<skill>`, linked into `github.com/eddeee888/ai-skills`, before any host footer—was posted by a skill under the user's login. With an ask label it is the user's own ask. With no label it is a skill reply, never a go-ahead and never something to learn from. If an ask matches remembered memory, note that as caller context without changing its bucket.
 3. Never write memory. For concrete reviewer-derived feedback that could apply across repositories, append `memory-candidate: <rule/evidence>` after the structured result so the caller can request consent. Do not emit a candidate from a skill reply.
 

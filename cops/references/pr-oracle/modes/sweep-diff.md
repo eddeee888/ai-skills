@@ -1,6 +1,6 @@
 # Mode: `sweep-diff`
 
-Input: the repository and diff to check: a range such as `origin/main...HEAD`, the working tree, or `PR #<number>`. For a PR, read the diff with `pull_request_read` method `get_diff`.
+Input: the repository, the selected GitHub route, and the diff to check: a range such as `origin/main...HEAD`, the working tree, or `PR #<number>`. For a PR, read the diff through the selected route's PR diff read in `../github-access.md`: `gh pr diff` or `pull_request_read` method `get_diff`.
 
 Flag each place where the diff repeats something a remembered rule says reviewers push back on. Return:
 

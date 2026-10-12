@@ -16,7 +16,7 @@ GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web)
 - URL or number → fetch the body and last 10 comments: `gh issue view <url or number> --json number,title,body,url,labels,state,comments --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'`. Read earlier comments only when needed and `total` shows more.
 - Conversation description → treat it as the issue. If it is a one-liner without a use case or shape, ask a clarifying question before sizing. First search all states for duplicates: `gh issue list --repo <owner>/<repo> --search "<keywords>" --state all`. A match, including a closed one, means point the user to it and stop instead of duplicating the analysis.
 
-In a monorepo, obtain the `scout-repo` profile from `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor when available (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass its package map to the survey. If unavailable, let the survey discover the layout.
+In a monorepo, obtain the `scout-repo` profile from `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor when available (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass the selected `GitHub route:`, and pass its package map to the survey. If unavailable, let the survey discover the layout.
 
 Classify before surveying:
 

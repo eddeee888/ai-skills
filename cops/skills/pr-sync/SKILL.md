@@ -63,11 +63,11 @@ git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 
 `no diff` → say the PR is already current and stop.
 
-Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline.
+Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`. Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline.
 
 ## Step 7: Apply it
 
-First, run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass owner/repo, PR number, base ref (`origin/<baseRefName>`), the two draft file paths rather than their text, and any description preference stated in this conversation. It flags claims the diff doesn't back, changes the draft leaves out, shared-convention breaks, and misses against active or relayed style without writing memory. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it.
+First, run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `grill-description` mode on the drafted title and body — pass owner/repo, PR number, the selected `GitHub route:`, base ref (`origin/<baseRefName>`), the two draft file paths rather than their text, and any description preference stated in this conversation. It flags claims the diff doesn't back, changes the draft leaves out, shared-convention breaks, and misses against active or relayed style without writing memory. Fix each flag in the draft files; one you disagree with (e.g. a style preference that doesn't fit this PR) → leave it.
 
 If the user explicitly asked to remember a concrete preference, call `learn-feedback` separately with the preference, provenance, and personal or `record-team:` intent. Show any other `memory-candidate:` result and ask for consent before a later `learn-feedback` call. Then apply:
 

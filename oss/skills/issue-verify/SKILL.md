@@ -24,7 +24,7 @@ gh issue view <number> --json number,title,body,url,labels,state,comments \
 
 If no reproduction appears and `total` shows earlier comments, read those too.
 
-Obtain `scout-repo` from `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor when available (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). It supplies the bug template, package map, test layout, and one-test command. Read only the named bug template. Without it, run `ls .github/ISSUE_TEMPLATE/ 2>/dev/null`, read only the obvious bug template, and ask if ambiguous; otherwise check `.github/ISSUE_TEMPLATE.md`. Record the reproduction field's exact wording.
+Obtain `scout-repo` from `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor when available (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`. It supplies the bug template, package map, test layout, and one-test command. Read only the named bug template. Without it, run `ls .github/ISSUE_TEMPLATE/ 2>/dev/null`, read only the obvious bug template, and ask if ambiguous; otherwise check `.github/ISSUE_TEMPLATE.md`. Record the reproduction field's exact wording.
 
 ## Step 2: Decide whether a reproduction already exists
 

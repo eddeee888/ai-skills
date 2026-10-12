@@ -4,7 +4,7 @@ Read this file only after `SKILL.md` has established that the issue contains a u
 
 ## Delegate the failing test
 
-First ask the oracle for `brief-task`, passing the package, the test location, a one-line summary of the repro, and `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Apply any `caller only:` lines yourself. If unavailable, use `none` for rules.
+First ask the oracle for `brief-task`, passing the package, the test location, a one-line summary of the repro, the selected `GitHub route:`, and `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Apply any `caller only:` lines yourself. If unavailable, use `none` for rules.
 
 Use the `scout-repo` package map, test location, and one-test command when available. Delegate per `CONVENTIONS-orchestration.md` → "Hand long loops to a subagent":
 
