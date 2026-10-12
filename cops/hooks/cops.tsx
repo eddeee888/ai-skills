@@ -230,14 +230,14 @@ const refreshThreads = async ($: EngineInterface): Promise<void> => {
   if (isThreadsRefreshing) return
   isThreadsRefreshing = true
   try {
-    const next = await fetchThreads($)
-    await update($, threads, () => next)
+    const latest = await fetchThreads($)
+    await update($, threads, () => latest)
     // A write that lands while the pane is mid-draw, after it read `threads`,
     // doesn't draw it again by itself; without this it stays on "loading".
     $.ui.invalidate('ui.render')
     const done = await read($, handled)
     // A finished PR's leftover threads don't need you.
-    if (next.status === 'ready' && next.state === 'OPEN' && next.threads.some(one => one.move === 'you' && !done.includes(one.id))) await autoOpen($)
+    if (latest.status === 'ready' && latest.state === 'OPEN' && latest.threads.some(one => one.move === 'you' && !done.includes(one.id))) await autoOpen($)
   } finally {
     isThreadsRefreshing = false
   }
