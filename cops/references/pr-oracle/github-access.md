@@ -15,4 +15,4 @@ Input supplies the selected GitHub route as `GitHub route: gh | MCP`; none given
 
 For review threads, follow the pagination and ID rules in `modes/triage-threads.md`.
 
-Use only the read tools in the table, from whichever GitHub MCP server the host connects; no other GitHub MCP tool and no write tool of any server.
+The MCP route uses only the frontmatter's `mcp__github__get_file_contents`, `mcp__github__search_repositories`, and `mcp__github__pull_request_read`, so it needs the host's GitHub MCP server to be named `github`. No such tool → stop that read and return `GitHub MCP tools unavailable — select the gh route`.
