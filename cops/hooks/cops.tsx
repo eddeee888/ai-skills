@@ -49,7 +49,7 @@ const paneTab = atom({ plugin: 'cops', key: 'paneTab' } as const, 'hq')
 const memoryRules = atom({ plugin: 'cops', key: 'memoryRules' } as const, [])
 const turnEndedAt = atom({ plugin: 'cops', key: 'turnEndedAt' } as const, null)
 
-const run = async ($: EngineInterface, argv: readonly string[]) => {
+const runProcess = async ($: EngineInterface, argv: readonly string[]) => {
   try {
     return await $.process.run(argv, { timeoutMs: 15_000 })
   } catch {
@@ -62,7 +62,7 @@ const run = async ($: EngineInterface, argv: readonly string[]) => {
 // The steps that failed this run, each toasted once. A step that fails leaves the pane or
 // status line short, never the tool, prompt or command it ran beside, so it reports instead of throwing:
 //   step 'record' → 'COPS HQ couldn't record /cops:pr-start in Activity: <error>'
-// Expected misses stay quiet where the pane already says so: a process that fails (`run`),
+// Expected misses stay quiet where the pane already says so: a process that fails (`runProcess`),
 // a MEMORY.md that isn't there, gh output that doesn't parse ("needs gh").
 const failed = new Set<string>()
 
@@ -108,8 +108,8 @@ const readMemory = async ($: EngineInterface, { context }: { context: string }):
 // Uncommitted and unpushed changes in the memory repository, read-only; undefined when git can't say.
 // No upstream leaves `unpushed` out.
 const readMemoryGit = async ($: EngineInterface, { root }: { root: string }): Promise<MemoryGit | undefined> => {
-  const statusRun = run($, ['git', '--no-optional-locks', '-C', root, 'status', '--porcelain', '--untracked-files=all'])
-  const aheadRun = run($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD'])
+  const statusRun = runProcess($, ['git', '--no-optional-locks', '-C', root, 'status', '--porcelain', '--untracked-files=all'])
+  const aheadRun = runProcess($, ['git', '-C', root, 'rev-list', '--count', '@{u}..HEAD'])
   const [status, ahead] = await Promise.all([statusRun, aheadRun])
   if (status?.exitCode !== 0) {
     return undefined
@@ -123,7 +123,7 @@ let hasWarnedCapacity = false
 
 const memoryPart = async ($: EngineInterface, { path, login }: { path: string; login: string }): Promise<string | undefined> => {
   const pluginRoot = $.plugin.root
-  const ran = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', path, login])
+  const ran = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', path, login])
   const isOn = ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')
   if ((await read($, isMemoryOn)) !== isOn) {
     await update($, isMemoryOn, () => isOn)
@@ -194,14 +194,14 @@ const readDropped = async ($: EngineInterface): Promise<string[]> => {
 // Threads
 
 const fetchThreads = async ($: EngineInterface): Promise<Threads> => {
-  const branch = await run($, ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+  const branch = await runProcess($, ['git', 'rev-parse', '--abbrev-ref', 'HEAD'])
   if (branch?.exitCode !== 0) return { status: 'no-repo' }
-  const pr = await run($, ['gh', 'pr', 'view', '--json', 'number,url,state,isDraft'])
+  const pr = await runProcess($, ['gh', 'pr', 'view', '--json', 'number,url,state,isDraft'])
   if (pr?.exitCode !== 0) return { status: pr?.stderr.includes('no pull requests found') ? 'no-pr' : 'needs-gh' }
   try {
     // JSON.parse returns `any`; dropping these casts takes a runtime check of gh's output.
     const { number, url, state, isDraft } = JSON.parse(pr.stdout) as { number: number; url: string; state?: string; isDraft?: boolean }
-    const ran = await run($, [
+    const ran = await runProcess($, [
       'gh', 'api', 'graphql', '-F', 'owner={owner}', '-F', 'name={repo}', '-F', `number=${number}`, '-f', `query=${THREADS_QUERY}`,
     ])
     if (ran?.exitCode !== 0) return { status: 'needs-gh' }
@@ -347,7 +347,7 @@ export const register: Register = (on, options) => {
   on('session.end', async ($, e, next) => {
     try {
       const pluginRoot = $.plugin.root
-      const ran = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+      const ran = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
       const root = ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:') ? /^COPS memory root: (.+)$/m.exec(ran.stdout)?.[1] : undefined
       const git = root ? await readMemoryGit($, { root }) : undefined
       if (git?.uncommitted) {
@@ -392,7 +392,7 @@ export const register: Register = (on, options) => {
       const sentence = findRule({ text: e.text, origin: e.origin.kind })
       if (!sentence) return submitted
       const pluginRoot = $.plugin.root
-      const ran = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+      const ran = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
       if (ran?.exitCode === 0 && ran.stdout.includes('COPS memory root:')) await update($, ruleOffer, () => sentence)
     } catch (error) {
       reportFailure($, { step: 'rule-offer', what: 'offer to remember the rule you typed', error })
@@ -542,14 +542,14 @@ export const register: Register = (on, options) => {
         const pluginRoot = $.plugin.root
         let context
         if (found.length > 0) {
-          context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+          context = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
         }
         if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
           const inbox = await readInbox($)
           const asked = await read($, openItems)
           const dropped = await readDropped($)
           const view = await read($, threads)
-          const remote = await run($, ['git', 'remote', 'get-url', 'origin'])
+          const remote = await runProcess($, ['git', 'remote', 'get-url', 'origin'])
           // The repository's name from its remote URL:
           //   'git@github.com:eddeee888/ai-skills.git' → 'ai-skills'
           //   'https://github.com/eddeee888/ai-skills' → 'ai-skills'
@@ -583,7 +583,7 @@ export const register: Register = (on, options) => {
         const isSidekickBrief = /^for:\s*pr-sidekick\b/mi.test(e.prompt)
         if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !isSidekickBrief))) {
           const pluginRoot = $.plugin.root
-          const context = await run($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
+          const context = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
           if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
             const { rules } = await readMemory($, { context: context.stdout })
             const keys = matchEntries({ entries: rules.map(one => one.rule), cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
@@ -625,10 +625,10 @@ export const register: Register = (on, options) => {
       const call = e.agentId ? (await read($, agents)).find(one => one.agentId === e.agentId) : undefined
       if (call && e.agentId) {
         const command = e.tool === 'Bash' ? e.command : undefined
-        const run = command === undefined ? commands.get(e.agentId) || [] : [...(commands.get(e.agentId) || []), command]
-        commands.set(e.agentId, run)
+        const history = command === undefined ? commands.get(e.agentId) || [] : [...(commands.get(e.agentId) || []), command]
+        commands.set(e.agentId, history)
         const path = 'file_path' in e && typeof e.file_path === 'string' ? e.file_path : 'notebook_path' in e && typeof e.notebook_path === 'string' ? e.notebook_path : undefined
-        const found = checkTool({ call, tool: e.tool, command, path, tries: run.filter(one => one === command).length })
+        const found = checkTool({ call, tool: e.tool, command, path, tries: history.filter(one => one === command).length })
         const added = found.filter(flag => !call.flags?.includes(flag))
         if (added.length > 0) {
           const before = call.flags || []
