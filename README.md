@@ -6,7 +6,7 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ### OSS
 
-<img src="oss/assets/logo.svg" alt="OSS logo" width="40" height="40">
+<img src="oss/assets/logo.svg" alt="OSS logo" width="80" height="80">
 
 [`oss/`](oss/) — maintaining and contributing to open source projects. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`. Works on its own; install `cops` too to add the memory and agents ([`CONVENTIONS-orchestration.md`](CONVENTIONS-orchestration.md#companion-plugin-cops)).
 
@@ -19,7 +19,7 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ### Code Ops
 
-<img src="cops/assets/logo.svg" alt="Code Ops logo" width="40" height="40">
+<img src="cops/assets/logo.svg" alt="Code Ops logo" width="80" height="80">
 
 [`cops/`](cops/) — working with pull requests. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
 
