@@ -127,6 +127,14 @@ Everything here is optional except GitHub access: with nothing configured, the s
 
 4. Commit and push memory changes yourself; the [status line](cops/README.md#status-line) shows uncommitted and unpushed counts. In a cloud session, push before the container is reclaimed or the changes are lost.
 
+   ```text
+   memory: ✗ (off)                                    # memory not loaded: no path set (✗ (bad path) when it isn't a Git root)
+   memory: octocat · self 12/200 · team 40/200        # memory loaded with login, everything committed and pushed
+   memory: octocat · self 12/200 · team 40/200 · 2 uncommitted · 1 unpushed
+   ```
+
+   The last line is memory with local changes: `uncommitted` counts modified and untracked files, `unpushed` counts commits not on the upstream yet. A path without a login shows `memory: ✗ (no login)`.
+
 The session-start hook prints the result: `COPS memory root: …` and `COPS memory login: …` when both are valid, or `COPS memory not configured` / `COPS memory unavailable` (the path isn't a Git root) / `COPS memory login unset`.
 
 ### Subagent models
