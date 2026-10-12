@@ -75,6 +75,11 @@ export const parseEntries = ({ text }: { text: string }): string[] => {
   return rules
 }
 
+// The `rule-keys:` list a brief-task or sweep-diff oracle prompt gets, which parseReply reads the cited keys back from:
+//   ['Prefer early returns', 'Keep tests beside the code'] → 'rule-keys:\n- 0a9a18eb  Prefer early returns\n- 595e6dfb  Keep tests beside the code'
+export const listRuleKeys = ({ rules }: { rules: string[] }): string =>
+  ['rule-keys:', ...rules.map(rule => `- ${hashRule({ text: rule })}  ${rule}`)].join('\n')
+
 // The rule keys a pr-oracle brief-task or sweep-diff reply cites, copied from its prompt's `rule-keys:` list:
 //   '- [0a9a18eb] prefer early returns  (stated by user 2x, from you)'                          → ['0a9a18eb']
 //   'caller only:\n- [595e6dfb] ask before pushing  (seen 2x, from you)'                        → ['595e6dfb']

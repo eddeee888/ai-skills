@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, listRuleKeys, matchEntries, normalize, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -287,6 +287,17 @@ describe('parseEntries', () => {
     const rules = parseEntries({ text: lines.join('\n') })
     expect(rules).toHaveLength(MEMORY_LIMIT - 1)
     expect(rules.at(-1)).toBe(`rule ${MEMORY_LIMIT - 1}`)
+  })
+})
+
+describe('listRuleKeys', () => {
+  test('lists each rule with its key, which a reply citing them reads back', () => {
+    const rules = ['Prefer early returns', 'Keep tests beside the code']
+    const listed = listRuleKeys({ rules })
+    expect(listed).toBe(`rule-keys:\n- ${hashRule({ text: 'Prefer early returns' })}  Prefer early returns\n- ${hashRule({ text: 'Keep tests beside the code' })}  Keep tests beside the code`)
+    // A reply copies each key from the list into its citation.
+    const reply = listed.split('\n').slice(1).map(line => line.replace(/^- (\S+)  (.+)$/, '- [$1] $2  (stated by user, from you)')).join('\n')
+    expect(matchEntries({ entries: rules, cited: parseReply({ text: reply }) })).toEqual(rules)
   })
 })
 
