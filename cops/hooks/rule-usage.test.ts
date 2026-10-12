@@ -63,19 +63,21 @@ const world = ({ $, on, memory = MEMORY_ON, files = FILES, replies = {}, stored 
   on('tool.call', { tool: 'Agent' }, async (_, e) => {
     prompts.push(e.prompt)
     const reply = replies[e.prompt.replace(/\n+rule-keys:\n[\s\S]*$/, '')] ?? ''
+    let text = reply
     if ($) {
       await $.agent.spawn({
         tool_use_id: e.tool_use_id, prompt: e.prompt, description: e.description, subagentType: e.subagent_type || 'general-purpose',
         provider: { plugin: 'cops', tier: 'user' }, parentModel: 'opus', background: false, fork: false,
       })
       await $.turn.complete({ answer: reply, durationMs: 1, isAborted: false, turnId: 't1', agentId: 'a1', reason: 'answer' })
+      text = STUB
     }
     return {
       result: {
         status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 1000, totalTokens: 100, prompt: e.prompt,
         usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
       },
-      text: $ ? STUB : reply,
+      text,
     }
   })
   return { fills, prompts, clock }
