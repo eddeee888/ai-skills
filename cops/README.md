@@ -213,15 +213,15 @@ COPS never creates or synchronizes a machine-local memory store. Memory is optio
    - **Claude Code:** plugin options `memory_path` and `memory_login`, or environment variables `PR_MEMORY_PATH` and `PR_MEMORY_LOGIN`.
    - **Cursor:** plugin variables `PR_MEMORY_PATH` and `PR_MEMORY_LOGIN`.
    - `PR_MEMORY_LOGIN` names your personal tree, `memory/users/<login>/`. COPS never guesses it from `gh`, the GitHub MCP server, Git, or the folders already in the repo. Unset → team memory only; nothing personal is read or written.
-   - Use an absolute path locally. In a cloud workspace where attached repositories are checked out directly under the home directory, use a portable home-relative path such as `~/agent-memory`.
+   - Use an absolute path locally. In a Claude Code cloud environment, extra repositories are checked out at `/home/user/<repo-name>`, so use `/home/user/agent-memory`.
 
    ```text
    # Local workspace
    PR_MEMORY_PATH=/path/to/agent-memory
    PR_MEMORY_LOGIN=<your-github-login>
 
-   # Cloud workspace
-   PR_MEMORY_PATH=~/agent-memory
+   # Claude Code cloud environment
+   PR_MEMORY_PATH=/home/user/agent-memory
    PR_MEMORY_LOGIN=<your-github-login>
    ```
 
