@@ -4,8 +4,8 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 ## Plugins
 
-- [`oss/`](oss/) — maintaining and contributing to open source projects: sizing, filing, verifying, and fixing issues. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`.
-- [`cops/`](cops/) **Code Ops** — working with pull requests: starting a draft PR from a task, reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
+- <img src="oss/assets/logo.svg" alt="" width="20" height="20" align="top"> [`oss/`](oss/) — maintaining and contributing to open source projects: sizing, filing, verifying, and fixing issues. Claude Code: `/oss:<skill-name>`, e.g. `/oss:issue-verify`. Cursor: `/issue-verify`.
+- <img src="cops/assets/logo.svg" alt="" width="20" height="20" align="top"> [`cops/`](cops/) **Code Ops** — working with pull requests: starting a draft PR from a task, reviewing, addressing comments, syncing. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
 
 `cops` also ships two agents, used by both plugins' skills (`cops:pr-oracle` / `cops:pr-sidekick` in Claude Code, subagents in Cursor):
 
@@ -21,35 +21,6 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 - Catalogs: [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) (Claude Code), [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) (Cursor).
 - Each plugin: `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests; skills in `skills/<skill-name>/SKILL.md`.
 - [`CONVENTIONS.md`](CONVENTIONS.md) and its four indexed reference files hold rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to them instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `cops/` each carry identical copies of all five files — edit the root set, then copy it over both.
-
-## Development
-
-Run the repository checks (requires Bash, `jq`, and Perl):
-
-```bash
-bash scripts/validate.sh
-```
-
-To render the diagram, install the locked dependencies first:
-
-```bash
-pnpm install
-```
-
-### Updating the diagram
-
-The diagram above is [`docs/memory-flow.png`](docs/memory-flow.png), rendered from [`docs/memory-flow.html`](docs/memory-flow.html) by `pnpm render:memory-flow` (needs `jq` and pnpm). The script stamps plugin versions from the manifests, so a version bump only needs a re-run. When skills, agents, or memory access change, give an agent this prompt:
-
-```text
-Update docs/memory-flow.html so the diagram matches the current code. Read
-cops/agents/*.md, cops/hooks/memory-context.sh, CONVENTIONS-orchestration.md,
-cops/skills/*/SKILL.md, oss/skills/*/SKILL.md and
-cops/references/pr-oracle/modes/*.md. Show only the access paths the code
-allows, and label every arrow with what passes along it. Keep the layout,
-colors, legend, and the COPS skills in PR lifecycle order (pr-start,
-pr-review, pr-sync, pr-note, pr-address). Run `pnpm render:memory-flow`, look at
-docs/memory-flow.png, then commit and push.
-```
 
 ## Install
 
@@ -171,3 +142,32 @@ Then run a skill, e.g. `/cops:pr-review <PR URL>`: its report ends with a `Hando
 ### Development tools
 
 `bash scripts/validate.sh` needs Bash, `jq`, and Perl; rendering the diagram also needs pnpm (see [Development](#development)).
+
+## Development
+
+Run the repository checks (requires Bash, `jq`, and Perl):
+
+```bash
+bash scripts/validate.sh
+```
+
+To render the diagram, install the locked dependencies first:
+
+```bash
+pnpm install
+```
+
+### Updating the diagram
+
+The diagram in [Plugins](#plugins) is [`docs/memory-flow.png`](docs/memory-flow.png), rendered from [`docs/memory-flow.html`](docs/memory-flow.html) by `pnpm render:memory-flow` (needs `jq` and pnpm). The script stamps plugin versions from the manifests, so a version bump only needs a re-run. When skills, agents, or memory access change, give an agent this prompt:
+
+```text
+Update docs/memory-flow.html so the diagram matches the current code. Read
+cops/agents/*.md, cops/hooks/memory-context.sh, CONVENTIONS-orchestration.md,
+cops/skills/*/SKILL.md, oss/skills/*/SKILL.md and
+cops/references/pr-oracle/modes/*.md. Show only the access paths the code
+allows, and label every arrow with what passes along it. Keep the layout,
+colors, legend, and the COPS skills in PR lifecycle order (pr-start,
+pr-review, pr-sync, pr-note, pr-address). Run `pnpm render:memory-flow`, look at
+docs/memory-flow.png, then commit and push.
+```
