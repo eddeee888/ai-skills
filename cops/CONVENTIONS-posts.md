@@ -77,7 +77,7 @@ A critical/dangerous change (including breaking or hacky user-impacting behavior
 When a step shows drafts or choices and waits for the user, and the host has a structured question tool (`AskUserQuestion` on Claude Code), ask through it instead of printing one block:
 
 - **One question per item**, at most 4 per call, in order; more items take further calls. The question text holds the item's anchor (`path:line`) and its exact text as it would be posted or applied, never a summary. The header names the item in a few words.
-- **Show the code**: an item anchored to diff lines also holds them as a fenced `diff` block from the head commit, with up to 3 lines of context, at most 12 lines; each option carries the same block as its `preview`.
+- **Show the code**: an item anchored to diff lines also holds them, at most 12, as a fenced `diff` block; each option's `preview` repeats it.
 - **Options are the decision**: a draft → `Post` / `Drop`, or the step's own verbs; a choice between fixes or actions → one option per choice, trade-offs in its description.
 - **One draft** (a task card, an issue, one comment) → one question holding all of it.
 - **Free-text answer** → an edit: apply it and ask that item again.
