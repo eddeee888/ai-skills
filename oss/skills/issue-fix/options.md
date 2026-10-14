@@ -15,7 +15,9 @@ Return:
 - exact responsible function/file and evidence;
 - if dependency: direct/transitive dependency name, resolved version, exact source function/file, and matching upstream issue/changelog when available;
 - 2–3 fix options appropriate to that classification;
-- for each option, in 1–2 lines: what changes, what it affects, risk, and rough effort.
+- for each option, in 1–2 lines: what changes, what it affects, risk, and rough effort;
+- the responsible code excerpt with its `path:line`, at most 12 lines;
+- for each option, a sketch of its change as a fenced `diff` block of at most 12 lines. Sketch only; edit nothing.
 ```
 
 The root cause is **ours** only when it originates in this repository's code path. It is a **dependency's** when it originates in direct or transitive dependency code; identify the dependency and version rather than stopping at the first repository stack frame.
