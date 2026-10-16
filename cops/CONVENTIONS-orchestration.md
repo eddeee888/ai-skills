@@ -62,6 +62,7 @@ The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr
 
 - **The card is the only prompt.** Stages post and push without further confirmation and suggest no next step.
 - **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft.
+- **Work is shared and skipped, not repeated.** Stages reuse the run's one repo profile, and `cops:pr-address` is skipped when the self-review has no findings ([autopilot.md](skills/pr-start/autopilot.md)).
 - **Only that run starts a stage.** No other skill does, and no argument typed to a stage makes it one.
 
 ## Consulting the `pr-oracle` agent
