@@ -9,9 +9,22 @@ export const AUTOPILOT_SUFFIX = 'autopilot stage of this pr-start run'
 
 const SUFFIX = new RegExp(`\\s*[-\\u2010-\\u2015]*\\s*${AUTOPILOT_SUFFIX}\\s*$`, 'i')
 
+export type ChainStep = {
+  name: string
+  /** `✓` done, `■` stopped here, `·` not started, `?` unknown, a spinner frame in flight, '' for `fix` once a stage ran. */
+  mark: string
+  state: 'done' | 'active' | 'stopped' | 'pending' | 'unknown'
+}
+
 export type Chain = {
-  /** The strip's text. */
+  /** The strip's text on one line. */
   line: string
+  /** The card's heading: `Autopilot`, then `PR #n` when known. */
+  title: string
+  /** One row per step of the card: fix, the stages, then ready. */
+  steps: ChainStep[]
+  /** The step the chain stopped at, when it did. */
+  stoppedAt?: string
   /** One `⚑ …` line per stage that ran out of order or was skipped. */
   warnings: string[]
   /** What the chain is doing: a stage in flight, a stop, the person taking over, or the PR ready. */
@@ -98,6 +111,13 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   const steps = ['fix', ...stages].map((step, at) => `${step} ${mark({ step, stage: at - 1 })}`.trim())
   const readyMark = isReady ? '✓' : isReadyKnown ? '·' : '?'
   const pr = url === undefined ? undefined : url.match(/\/pull\/(\d+)/)?.[1]
+  const title = ['Autopilot', pr && `PR #${pr}`].filter(Boolean).join(' · ')
+  const marks = ['fix', ...stages].map((step, at) => ({ step, mark: mark({ step, stage: at - 1 }) }))
+  const stateOf = ({ mark: one }: { mark: string }): ChainStep['state'] => one === '✓' ? 'done' : one === '■' ? 'stopped' : one === '·' ? 'pending' : one === '?' ? 'unknown' : one === '' ? 'done' : 'active'
+  const cards: ChainStep[] = [
+    ...marks.map(({ step, mark: one }) => ({ name: step, mark: one || '✓', state: stateOf({ mark: one }) })),
+    { name: 'ready', mark: readyMark, state: stateOf({ mark: readyMark }) },
+  ]
   const line = [
     'Autopilot',
     pr && `PR #${pr}`,
@@ -114,5 +134,5 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   })
 
   const pickUp = stoppedAt && stoppedAt !== 'fix' && stoppedAt !== 'finish' && url ? `/${AUTOPILOT_STAGES[lastStage]} ${url} ` : undefined
-  return { line, warnings, status, pickUp, ownsNext: (status === 'running' || status === 'stopped') && (url === undefined || (view.status === 'ready' && view.url === url)) }
+  return { line, title, steps: cards, stoppedAt, warnings, status, pickUp, ownsNext: (status === 'running' || status === 'stopped') && (url === undefined || (view.status === 'ready' && view.url === url)) }
 }

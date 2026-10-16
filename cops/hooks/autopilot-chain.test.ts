@@ -40,6 +40,18 @@ describe('describeChain', () => {
     expect(describe_({ runs: [...runs, stage({ name: 'note', at: 5 })] })?.line).toContain('sync ✓ → note ⠋')
   })
 
+  test('the card has a row per step, with a state each', () => {
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'address', at: 3 }), stage({ name: 'sync', at: 4 })]
+    const chain = describe_({ runs, now: 200 })
+    expect(chain?.title).toBe('Autopilot · PR #81')
+    expect(chain?.steps.map(one => `${one.mark} ${one.name}:${one.state}`)).toEqual([
+      '✓ fix:done', '✓ review:done', '✓ address:done', '⠹ sync:active', '· note:pending', '· ready:pending',
+    ])
+    const stopped = describe_({ runs: runs.slice(0, 2), turnEndedAt: 3 })
+    expect(stopped?.stoppedAt).toBe('review')
+    expect(stopped?.steps.find(one => one.name === 'review')?.state).toBe('stopped')
+  })
+
   test('a turn ending after review reads stopped at review and fills the stage', () => {
     const chain = describe_({ runs: [start({ at: 1 }), stage({ name: 'review', at: 2 })], turnEndedAt: 3 })
     expect(chain?.line).toContain('review ■')

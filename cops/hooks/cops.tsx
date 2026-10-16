@@ -860,18 +860,29 @@ export const register: Register = (on, options) => {
     )
 
     const pickUp = chain?.pickUp
+    // The card's frame says the chain's state at a glance; each step reads by its own colour.
+    const chainColor = { running: 'permission', stopped: 'warning', ready: 'success', resumed: 'inactive' } as const
+    const stepColor = { done: 'success', active: 'permission', stopped: 'warning', pending: undefined, unknown: undefined } as const
     const chainRow = chain && (
-      <Box flexDirection="column">
-        <Box flexDirection="row" gap={1}>
-          <Text wrap="truncate-end">{chain.line}</Text>
-          {pickUp && (
-            <Button key="pick-up" label="Pick up" onPress={async () => {
-              if (!(await $.prompt.fill({ text: pickUp })).isFilled) {
-                $.ui.toast(`Couldn't fill the prompt — type ${pickUp}`)
-              }
-            }} />
-          )}
-        </Box>
+      <Box flexDirection="column" borderStyle="round" borderColor={chainColor[chain.status]} paddingX={1}>
+        <Text bold color={chainColor[chain.status]} wrap="truncate-end">{chain.title}</Text>
+        {chain.steps.map(step => (
+          <Text key={`step-${step.name}`} bold={step.state === 'active' || step.state === 'stopped'} color={stepColor[step.state]} dimColor={step.state === 'pending' || step.state === 'unknown'} wrap="truncate-end">
+            {step.mark} {step.name}
+          </Text>
+        ))}
+        {chain.stoppedAt && (
+          <Box flexDirection="row" gap={1}>
+            <Text bold color="warning" wrap="truncate-end">■ stopped at {chain.stoppedAt}</Text>
+            {pickUp && (
+              <Button key="pick-up" label="Pick up" onPress={async () => {
+                if (!(await $.prompt.fill({ text: pickUp })).isFilled) {
+                  $.ui.toast(`Couldn't fill the prompt — type ${pickUp}`)
+                }
+              }} />
+            )}
+          </Box>
+        )}
         {chain.warnings.map(warning => <Text key={`chain-${warning}`} color="warning" wrap="truncate-end">{warning}</Text>)}
       </Box>
     )
