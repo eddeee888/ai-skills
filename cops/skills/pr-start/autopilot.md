@@ -72,7 +72,7 @@ Step 6, with two additions:
 
 ## The chain
 
-Run four stages on the new PR, in this fixed order, never in parallel. Only the skip under "Skipping `cops:pr-address`" below may omit a stage:
+Run four stages on the new PR, in this fixed order, never in parallel, and never skipping one except `cops:pr-address` as below:
 
 1. `cops:pr-review` — self-review, posted without confirmation as one `COMMENT` review. It is the run's audit trail.
 2. `cops:pr-address` — handles the self-review threads by "Address rules" below.
@@ -85,26 +85,12 @@ A stage follows its own SKILL.md, including its handoffs and its `Handoffs:` lis
 
 - It asks nothing. A point where it would ask or wait for the user is a stop, except the confirmations autopilot replaces: the review, the notes, and the address rules.
 - Its posts carry the skill signature without `Approved:`, since the user has not seen the text (`CONVENTIONS-posts.md` → "Skill signature").
-- A `memory-candidate:` line, from a stage or pr-start's own steps, is not a stop: hold it, save nothing, and show it in the final report for the user to decide.
-- It suggests no next step; the chain goes on to the next stage.
+- A `memory-candidate:` line is not a stop: hold it, save nothing, and show it in the final report.
+- It suggests no next step.
 - A stage with nothing to do (no findings, no threads, already current, nothing unexplained) has finished.
-- `cops:pr-sync` keeps the banner as the body's first line. It gets the card's Goal and Why as the motivation.
-- `cops:pr-note` gets the card's Goal and Why as its task source.
-- `cops:pr-address` and `cops:pr-sync` get the shared profile (below) in their stage prompt.
-
-### Shared profile
-
-Step 2's `scout-repo` profile is valid for the whole run: the repo and its memory don't change mid-run, since `memory-candidate:` lines are held rather than saved. Append this to the `<PR URL> — autopilot stage of this pr-start run` line for `cops:pr-address` and `cops:pr-sync`:
-
-```text
-autopilot profile: <the profile from Step 2, verbatim, minus caller only: lines>
-```
-
-A stage that gets the line uses it as the `scout-repo` result and doesn't run `scout-repo`: `cops:pr-address` calls `triage-threads` alone and `cops:pr-sync` calls `brief-task` alone (its brief is per task, so it still runs). Its handoffs list omits `scout-repo`. A stage without the line scouts as its own SKILL.md says, and so does any run outside autopilot.
-
-### Skipping `cops:pr-address`
-
-`cops:pr-review` reports its findings. When it reports none, so no review thread was opened, mark `cops:pr-address` finished without calling it, say so in the final report's stage lines, and go on to `cops:pr-sync`. Any finding, or a review that stopped, runs the stage as usual. Don't use unresolved threads from other people to decide this; they are out of play (see "Address rules").
+- `cops:pr-sync` and `cops:pr-note` get the card's Goal and Why as motivation and task source; `cops:pr-sync` keeps the banner as the body's first line.
+- `cops:pr-address` and `cops:pr-sync` get `autopilot profile: <Step 2's profile, minus caller only: lines>` after the PR URL. Each uses it instead of `scout-repo` and calls its other mode alone.
+- `cops:pr-address` is skipped, never run, when `cops:pr-review` reports no findings; other people's threads don't count. Say so in the report.
 
 ## Address rules
 
@@ -140,4 +126,4 @@ Any failure or question, at any stage, ends the run:
 
 ## Handoffs
 
-pr-start's own `Handoffs:` list keeps its labels from SKILL.md Step 7. Each stage reports its own list in its own run; don't merge them.
+pr-start's `Handoffs:` list keeps SKILL.md Step 7's labels; each stage reports its own.
