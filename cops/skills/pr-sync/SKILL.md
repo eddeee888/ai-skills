@@ -63,7 +63,7 @@ git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 
 `no diff` → say the PR is already current and stop.
 
-Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`. Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline.
+Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`. Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline. With an `autopilot profile:` line in the stage prompt (see Step 7's autopilot exception), call `brief-task` alone and use that profile.
 
 ## Step 7: Apply it
 
@@ -79,7 +79,7 @@ rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.
 
-Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. Don't run `cops:pr-note`; suggest it per `CONVENTIONS-orchestration.md` → "Suggesting next steps", using the PR's `author.login` from Step 1. Autopilot exception: as a stage of a `/cops:pr-start` autopilot run in this conversation ([autopilot.md](../pr-start/autopilot.md)), suggest nothing, keep its banner as the body's first line, and treat every point that would ask the user, including a subagent question, as a stop. End with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task`, `draft`, `grill-description`, and `learn-feedback` when run.
+Then tell the user briefly whether the title changed, plus one line on what moved in the description/changeset. Don't paste the new PR body back. Don't run `cops:pr-note`; suggest it per `CONVENTIONS-orchestration.md` → "Suggesting next steps", using the PR's `author.login` from Step 1. Autopilot exception: as a stage of a `/cops:pr-start` autopilot run in this conversation ([autopilot.md](../pr-start/autopilot.md)), suggest nothing, keep its banner as the body's first line, and treat every point that would ask the user, including a subagent question, as a stop; label the Step 1 handoff `brief-task` when the oracle call was that alone. End with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with labels `scout-repo + brief-task`, `draft`, `grill-description`, and `learn-feedback` when run.
 
 ## When to touch nothing
 

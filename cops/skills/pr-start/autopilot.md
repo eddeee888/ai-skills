@@ -72,7 +72,7 @@ Step 6, with two additions:
 
 ## The chain
 
-Run four stages on the new PR, in this fixed order, never in parallel and never skipping one:
+Run four stages on the new PR, in this fixed order, never in parallel, and never skipping one except `cops:pr-address` as below:
 
 1. `cops:pr-review` — self-review, posted without confirmation as one `COMMENT` review. It is the run's audit trail.
 2. `cops:pr-address` — handles the self-review threads by "Address rules" below.
@@ -81,15 +81,16 @@ Run four stages on the new PR, in this fixed order, never in parallel and never 
 
 Each stage is its own skill run. On Claude Code, call the Skill tool with the stage's name and `<PR URL> — autopilot stage of this pr-start run`. On Cursor, read the stage's SKILL.md ([pr-review](../pr-review/SKILL.md), [pr-address](../pr-address/SKILL.md), [pr-sync](../pr-sync/SKILL.md), [pr-note](../pr-note/SKILL.md)) and follow it.
 
-A stage follows its own SKILL.md, including its handoffs and its `Handoffs:` list, with the autopilot difference each file names beside its own rule:
+A stage follows its own SKILL.md, including its `Handoffs:` list, with the autopilot difference each file names:
 
 - It asks nothing. A point where it would ask or wait for the user is a stop, except the confirmations autopilot replaces: the review, the notes, and the address rules.
 - Its posts carry the skill signature without `Approved:`, since the user has not seen the text (`CONVENTIONS-posts.md` → "Skill signature").
-- A `memory-candidate:` line, from a stage or pr-start's own steps, is not a stop: hold it, save nothing, and show it in the final report for the user to decide.
-- It suggests no next step; the chain goes on to the next stage.
+- A `memory-candidate:` line is not a stop: hold it, save nothing, and show it in the final report.
+- It suggests no next step.
 - A stage with nothing to do (no findings, no threads, already current, nothing unexplained) has finished.
-- `cops:pr-sync` keeps the banner as the body's first line. It gets the card's Goal and Why as the motivation.
-- `cops:pr-note` gets the card's Goal and Why as its task source.
+- `cops:pr-sync` and `cops:pr-note` get the card's Goal and Why as motivation and task source; `cops:pr-sync` keeps the banner as the body's first line.
+- `cops:pr-address` and `cops:pr-sync` get `autopilot profile: <Step 2's profile, minus caller only: lines>` after the PR URL. Each uses it instead of `scout-repo` and calls its other mode alone.
+- `cops:pr-address` is skipped when `cops:pr-review` reports no findings; other people's threads don't count. Report it.
 
 ## Address rules
 
@@ -117,7 +118,7 @@ Then report as Step 7 says, adding each stage's result in one line the list of t
 
 ## Stops
 
-Any failure or question, at any stage, ends the run:
+Any failure or question ends the run:
 
 - Leave the PR a draft if one exists, and assign the user to it as "Finish" does. A stop before the PR exists has nothing to assign.
 - Don't retry the stage, start a later one, or undo what was already pushed or posted.
@@ -125,4 +126,4 @@ Any failure or question, at any stage, ends the run:
 
 ## Handoffs
 
-pr-start's own `Handoffs:` list keeps its labels from SKILL.md Step 7. Each stage reports its own list in its own run; don't merge them.
+pr-start's `Handoffs:` list keeps SKILL.md Step 7's labels; each stage reports its own.
