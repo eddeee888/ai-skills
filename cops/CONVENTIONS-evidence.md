@@ -6,7 +6,7 @@ Evidence shows a reviewer what a change looks like before and after, for each sc
 
 - **Scenario**: one named case a reader would see change, e.g. `autopilot running` or `POST /pets 400 bad payload`. At most 5 per PR.
 - **Kind**: `ui`, `api`, `cli` or `architecture`. A repo profile may also list `deploy` commands: the repo's own commands for a shared environment, which a user runs, never the agent.
-- The task card carries the list and the user confirms it there. No scenario → `none — <why>`; no UI, API, CLI or architecture surface and no tooling → no line.
+- The task card always carries the line (it is required), user-confirmed: scenarios, or `none — <why>` when no UI, API, CLI or architecture surface or tooling exists.
 - Before/After demonstrates and never replaces Verification (`CONVENTIONS-verification.md` → "Before and After").
 
 ## Evidence manifest: `<pr>/manifest.json`
