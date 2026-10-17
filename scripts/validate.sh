@@ -459,6 +459,15 @@ validate_autopilot() {
   require_order "$start" "autopilot offer and consent on the card" \
     "## 3. Task card" "It gates only autopilot." \
     'read [autopilot.md](autopilot.md) before showing the card' "## 4. Fix loop"
+  require_markers "$start" "autopilot line filled on every card" \
+    'read [autopilot.md](autopilot.md) before showing the card, flag or not'
+  forbid_markers "$start" "autopilot line filled on every card" \
+    "Size Small or Medium, or the flag was typed"
+  require_markers "$auto" "autopilot read before every card" "before showing any card"
+  require_markers "$auto" "failed gate shows not offered" "\`Autopilot: not offered — <failed gate>\`"
+  require_markers "$auto" "autopilot drop keeps the Autopilot line" \
+    "show the card again with \`Autopilot: refused — <reason>\`"
+  forbid_markers "$auto" "autopilot drop keeps the Autopilot line" "show the card again without it"
   require_order "$start" "autopilot chain at wrap-up" \
     "## 7. Wrap up" "run autopilot.md's chain, finish and stops" "## Stop instead of proceeding"
 
@@ -613,6 +622,12 @@ validate_behavioral_contracts() {
   done
   require_markers "cops/skills/pr-start/fix-loop.md" "size raised after the loop" \
     'blast radius: <what>' 'Size: <card size> → <new size>'
+  require_order "cops/skills/pr-start/SKILL.md" "task card Autopilot line" \
+    "Size: <Small|Medium|Large>" \
+    "Autopilot: <offered | refused — <reason> | not offered — <failed gate>>" "Confirm, or edit any line."
+  require_order "cops/skills/pr-start/SKILL.md" "ordered autopilot checklist before the card" \
+    "Before showing the card:" "Read [size.md](size.md) now" "flag or not" \
+    "Fill \`Autopilot:\`; never blank." "Goal: <one line>"
   require_markers "cops/skills/pr-start/SKILL.md" "raised size reported at wrap-up" \
     "a raised Size"
 
