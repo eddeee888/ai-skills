@@ -623,7 +623,8 @@ validate_behavioral_contracts() {
     "never guessed" "Never capture anything"
   require_markers "cops/references/pr-oracle/modes/brief-task.md" "evidence suggestion" \
     "Evidence: <kind> — <scenario>, <scenario> (before/after)" "a candidate list only" \
-    "and optionally \`for: pr-sidekick\` and \`for: task-card\`" "Only with \`for: task-card\`"
+    "and optionally \`for: pr-sidekick\` and \`for: task-card\`" "Only with \`for: task-card\`" \
+    "\`Evidence: none — <why>\` when the profile lists tooling" "omit the line only when"
   require_markers "cops/skills/pr-start/SKILL.md" "card brief request" \
     "with \`for: pr-sidekick\` and \`for: task-card\`"
   require_order "cops/skills/pr-start/SKILL.md" "optional task card Evidence line" \
