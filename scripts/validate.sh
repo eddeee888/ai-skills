@@ -341,8 +341,9 @@ validate_budgets() {
   check_budget "CONVENTIONS-orchestration.md" 1440 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
-  check_budget "CONVENTIONS-pr-metadata.md" 752 "convention file"
-  check_budget "CONVENTIONS-evidence.md" 640 "convention file"
+  check_budget "CONVENTIONS-pr-metadata.md" 646 "convention file"
+  check_budget "CONVENTIONS-evidence.md" 513 "convention file"
+  check_budget "CONVENTIONS-verification.md" 260 "convention file"
 
   while IFS= read -r -d '' path; do
     check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"
@@ -615,9 +616,20 @@ validate_behavioral_contracts() {
     '`captured`' '`captured-by-user`' '`drawn`' '`mock`' '`manual`' '`not-captured`' \
     '"touches"' 'orphan branch `cops-evidence`' '$(git rev-parse --git-dir)/cops/evidence/<pr>/' \
     "Never the working tree or the PR branch" \
-    '`### Before` then `### After` as two separate subsections under `## Verification`' \
     '## Staleness is not a `sweep-diff` check' \
     "until then the task card is the record"
+  require_markers "CONVENTIONS-verification.md" "verification contract" \
+    "**Verification is proof**" "**Before/After is demonstration**" \
+    "## Verification checklist: name the test type, not the command" \
+    "## Don't checklist an intentionally-failing check as done" \
+    '## Before and After: `### Before` / `### After` under `## Verification`' \
+    '`### Before` then `### After` as two separate subsections under `## Verification`'
+  for path in CONVENTIONS-pr-metadata.md CONVENTIONS-evidence.md; do
+    forbid_markers "$path" "verification rules live in CONVENTIONS-verification.md" \
+      "## Verification checklist" "## Don't checklist an intentionally-failing" "## Before and After"
+  done
+  require_markers "cops/skills/pr-sync/draft.md" "verification pointer" \
+    '`CONVENTIONS-verification.md` → "Verification checklist"'
   require_markers "cops/references/pr-oracle/modes/scout-repo.md" "evidence profile line" \
     "evidence: none | <kind> → <tool> (<command>), …; deploy → <command>" \
     "never guessed" "Never capture anything"
