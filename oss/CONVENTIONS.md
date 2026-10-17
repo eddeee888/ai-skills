@@ -46,7 +46,7 @@ Each indexed section is:
   - Evidence scenarios: `Evidence: <kind> — <scenario>, … | none — <why>`
   - Evidence manifest: `<pr>/manifest.json`
   - Evidence status: `captured` … `not-captured`
-  - Where evidence lives: scratch and `cops-evidence`
+  - Where evidence lives: scratch and the PR body
   - Staleness is not a `sweep-diff` check
 - `CONVENTIONS-verification.md`
   - Verification checklist: name the test type, not the command

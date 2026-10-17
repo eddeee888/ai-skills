@@ -39,12 +39,11 @@ One manifest per PR records what each capture was taken from. It is a collapsed 
 
 The PR body shows each scenario's status under `### Before` and `### After`.
 
-## Where evidence lives: scratch and `cops-evidence`
+## Where evidence lives: scratch and the PR body
 
-- **Folder**: `<slug>`, the branch name with `/` replaced by `-`, in scratch and on `cops-evidence`.
+- **Folder**: `<slug>`, the branch name with `/` replaced by `-`, in scratch.
 - **Scratch**: `$(git rev-parse --git-dir)/cops/evidence/<slug>/`, captures in progress and the draft manifest, local only.
-- **Published**: orphan branch `cops-evidence`, under `<slug>/`. It holds image files only, written from a temporary `git worktree` outside the repo, in a commit and push separate from the PR branch's; the body links them by SHA.
-- **Never the working tree or the PR branch**: no `.cops/` folder, no `.gitignore` change. Publishing impossible → scratch only, and the PR says `Evidence: not published — <reason>`.
+- **Never the working tree or the PR branch**: no `.cops/` folder, no `.gitignore` change. Nothing is pushed for evidence.
 - `api`/`cli` text is scanned for secrets before it enters the body; a hit stops the capture. Evidence of a merged or closed PR stays; pruning is a human decision.
 
 ## Staleness is not a `sweep-diff` check

@@ -25,11 +25,11 @@ Expect: <what the output should show>
 
 ## Screenshots
 
-A screenshot is captured to scratch. The body says `pending: drop <name>.png here`; the user drags it into the PR body, GitHub hosts it, and the status is `captured-by-user`. Publishing to `cops-evidence` stays an optional automatic route (SKILL.md Step 5b).
+A screenshot is captured to scratch. The body says `pending: drop <name>.png here`; the user drags it into the PR body, GitHub hosts it, and the status is `captured-by-user`.
 
 ## Manifest
 
-The main chat writes the manifest at Step 5b from the capture handoffs' lines, as a collapsed `<details>` block in the PR body. It is the source of truth, so a later session works with no branch. `cops-evidence`, when used, holds image files only.
+The main chat writes the manifest at Step 5b from the capture handoffs' lines, as a collapsed `<details>` block in the PR body. It is the source of truth, so a later session works with no branch.
 
 ## Secret backstop
 

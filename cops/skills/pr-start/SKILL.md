@@ -103,9 +103,9 @@ Call `pr-oracle` in `sweep-diff` mode over the new commits (pre-loop commit to `
 
 Nothing is pushed before a clean `sweep-diff`.
 
-## 5b. Publish evidence
+## 5b. Write the evidence manifest
 
-Write the `<details>` manifest block ([evidence.md](evidence.md)) for the body. Optionally push only images to orphan branch `cops-evidence` under `<slug>/` (no PR number exists yet) via a temporary `git worktree` outside the repo: own commit and push, linked by SHA. Never on the PR branch. Not pushed → body says `Evidence: not published — <reason>`.
+Write the `<details>` manifest block ([evidence.md](evidence.md)) for the body. Nothing is pushed for evidence.
 
 ## 6. Push and open the PR
 

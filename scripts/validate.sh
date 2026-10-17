@@ -620,7 +620,7 @@ validate_behavioral_contracts() {
 
   require_markers "CONVENTIONS-evidence.md" "evidence contract" \
     '`captured`' '`captured-by-user`' '`drawn`' '`mock`' '`manual`' '`not-captured`' \
-    '"touches"' 'orphan branch `cops-evidence`' '$(git rev-parse --git-dir)/cops/evidence/<slug>/' \
+    '"touches"' '$(git rev-parse --git-dir)/cops/evidence/<slug>/' \
     '## Evidence manifest: `<slug>/manifest.json`' 'the branch name with `/` replaced by `-`' \
     "Never the working tree or the PR branch" \
     '## Staleness is not a `sweep-diff` check' \
@@ -663,18 +663,17 @@ validate_behavioral_contracts() {
 Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   require_order "cops/skills/pr-start/fix-loop.md" "capture handoff before the size check" \
     "## Fix-loop handoff" "## Capture handoff" "## Size after the loop"
-  require_markers "cops/skills/pr-start/SKILL.md" "publish evidence" \
-    "## 5b. Publish evidence" "orphan branch \`cops-evidence\`" "temporary \`git worktree\` outside the repo" \
-    "Never on the PR branch" "Evidence: not published — <reason>" \
+  require_markers "cops/skills/pr-start/SKILL.md" "manifest step" \
+    "## 5b. Write the evidence manifest" "Write the \`<details>\` manifest block" \
     "\`### Before\` then \`### After\` under it" "Evidence never holds the PR"
-  require_markers "cops/skills/pr-start/SKILL.md" "5b writes the manifest; pushes only images, optionally" \
-    "Write the \`<details>\` manifest block" "Optionally push only images"
-  forbid_markers "cops/skills/pr-start/SKILL.md" "5b no longer publishes scratch" \
-    "publish scratch"
-  require_order "cops/skills/pr-start/SKILL.md" "publish after sweep, before the body" \
-    "## 5. Sweep" "## 5b. Publish evidence" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
-  require_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" \
-    "under \`<slug>/\`" "no PR number exists yet"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "nothing is published to a branch" \
+    "publish scratch" "worktree" "not published"
+  require_order "cops/skills/pr-start/SKILL.md" "manifest after sweep, before the body" \
+    "## 5. Sweep" "## 5b. Write the evidence manifest" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
+  for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/evidence.md \
+    cops/skills/pr-start/fix-loop.md CONVENTIONS-evidence.md; do
+    forbid_markers "$path" "no evidence branch" "cops-evidence"
+  done
   require_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" \
     "cops/evidence/<slug>/"
   local ev="cops/skills/pr-start/evidence.md"
@@ -687,14 +686,14 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   require_markers "$ev" "screenshot user drop" \
     "pending: drop <name>.png here" "drags it into the PR body"
   require_markers "$ev" "manifest in the PR body" \
-    "collapsed \`<details>\`" "source of truth" "image files only"
+    "collapsed \`<details>\`" "source of truth"
   require_markers "$ev" "secret backstop" \
     "\`Authorization\`" "private-key" "\`path:line\`" "possible secret" "backstop, not a guarantee"
   require_markers "cops/skills/pr-start/SKILL.md" "evidence rules pointer" "[evidence.md](evidence.md)"
   require_markers "cops/skills/pr-start/fix-loop.md" "evidence rules pointer" "[evidence.md](evidence.md)"
   for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
     require_markers "$path" "manifest and drop rules" \
-      "source of truth" "image files only" "no real credentials" "dropped by the user"
+      "source of truth" "no real credentials" "dropped by the user"
   done
   forbid_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" "<pr | branch-slug>"
   forbid_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" "under \`<pr>/\`"
