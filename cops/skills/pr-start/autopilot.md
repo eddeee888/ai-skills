@@ -117,7 +117,7 @@ gh pr edit <number> --add-assignee <login>
 
 MCP: `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").
 
-Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines. The `autopilot` label and the banner stay for the human who reads the PR.
+Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines, ending with `gh pr ready <number>`. The label and banner stay for the reader.
 
 ## Stops
 
