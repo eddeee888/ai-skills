@@ -6,19 +6,19 @@ disable-model-invocation: true
 
 # Start a PR from a task
 
-This skill pins the task down on a card the user confirms, runs one scoped loop (implement, test, commit), checks it against remembered rules, and opens a draft PR. It never continues an existing PR.
+It pins the task on a user-confirmed card, runs one scoped loop (implement, test, commit), checks it against remembered rules, and opens a draft PR.
 
 GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENTIONS-github.md` → "GitHub access" says.
 
 ## Where the task comes from
 
-Read these, in order:
+Read, in order:
 
-1. **The command argument.** An issue URL or number (any repository), a path to a spec or plan file, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-sync`. A leading `--autopilot [<login>]` is a flag, not the task.
+1. **The command argument.** An issue URL or number (any repository), a spec or plan file path, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-sync`. A leading `--autopilot [<login>]` is a flag, not the task.
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
-The oracle supplies the repo profile and remembered rules, never intent. Nothing states a reason for the change → ask the user; never guess one.
+The oracle supplies the repo profile and remembered rules, never intent. No stated reason for the change → ask the user.
 
 ## 1. Gate
 
@@ -30,21 +30,21 @@ gh pr view --json number,url,state 2>&1
 gh api user --jq .login
 ```
 
-On the MCP route, find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`) and the login with `get_me`.
+MCP route: find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`) and the login with `get_me`.
 
 - No checkout, or a detached HEAD → stop; say what's missing.
 - The current branch already has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-sync`.
-- On the default branch → this run needs a new branch named `<type>/<short-slug>` (`CONVENTIONS-pr-metadata.md` → "Non-issue branch naming"). Propose it on the card in Step 3; never commit to the default branch.
+- On the default branch → propose a new `<type>/<short-slug>` branch on the card (`CONVENTIONS-pr-metadata.md` → "Non-issue branch naming"); never commit to the default branch.
 - Uncommitted changes you didn't make → ask whether they belong here.
 - `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there refuses autopilot and offers the normal run.
 
-Keep the login for trailers and the card's `Approved-by:`.
+Keep the login for trailers and `Approved-by:`.
 
 ## 2. Profile and brief
 
-Draft the card's Goal and the files it likely touches from the task sources. Then make one call to `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor, in `scout-repo` + `brief-task` mode with `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
+From the task sources, draft the card's Goal and likely files. Then call `cops:pr-oracle` once (Cursor: the `pr-oracle` subagent) in `scout-repo` + `brief-task` mode with `for: pr-sidekick` and `for: task-card` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
 
-Keep from the reply: the profile (test command, monorepo packages, template, `overrides:`), the brief lines for `Rules that apply:`, and any `caller only:` lines. Apply those yourself in this chat; never paste them into the sidekick prompt.
+Keep from the reply the profile (test command, monorepo packages, template, `evidence:`, `overrides:`), the brief lines for `Rules that apply:`, the brief's `Evidence:` suggestion for the card (never a rule line), and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
 
 ## 3. Task card
 
@@ -55,6 +55,7 @@ Task card
 Goal: <one line>
 Why: <one line> — <link to the source, or "stated in chat">
 Done when: <a test that should pass | an observable behavior>
+Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>
 In scope:
 - <what the change may touch>
 Out of scope:
@@ -66,9 +67,10 @@ Confirm, or edit any line.
 ```
 
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes that test first and confirms it fails for the reported reason before changing code.
+- **Evidence** (optional) → the brief's `Evidence:` suggestion (`CONVENTIONS-evidence.md` → "Evidence scenarios"); omitted when the profile's `evidence:` is `none` and the change isn't UI, API, CLI or architecture. An edit stands; it doesn't re-run `brief-task`. It is the only record: nothing captures it and the PR body doesn't show it.
 - **Size** → read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size"). It gates only autopilot.
-- **Autopilot** → with the flag, or without it on a Small or Medium card, read [autopilot.md](autopilot.md) before showing the card: it refuses a Large or high-risk card, and adds the card's line of authorised outward actions or the confirm screen's offer.
-- **Scope bullets** keep the sidekick from drifting; make them concrete (files, packages, behaviors).
+- **Autopilot** → with the flag, or without it on a Small or Medium card, read [autopilot.md](autopilot.md) before showing the card: it refuses a Large or high-risk card, and adds the card's authorised outward actions line or the confirm screen's offer.
+- **Scope bullets** stop sidekick drift; make them concrete (files, packages, behaviors).
 - **Options instead of one approach** only when the direction is unclear or the user asks. Give 2–3, each as:
 
   ```text
@@ -83,23 +85,23 @@ Confirm, or edit any line.
   The card's Approach and Size become the picked option's.
 - Never suggest or hand off to another plugin's skill from the card.
 
-An edit to Goal or likely files that changes what the brief covers → call `brief-task` again before Step 4. Once confirmed, create the new branch if the card named one (`git switch -c <type>/<short-slug>`). Branch declined → stop.
+A Goal or likely-files edit that changes what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`). Branch declined → stop.
 
 ## 4. Fix loop
 
 Read [fix-loop.md](fix-loop.md) now. Hand the loop to `pr-sidekick` (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent") in one handoff carrying the card's Goal, Approach, scope and Done when, `Rules that apply:` from the brief, the profile's test command, at most 3 attempts, and a commit with this skill's trailers. The sidekick never pushes.
 
-A question back → ask the user, then respawn with `Resuming:` filled in; in autopilot it stops the run. Failure after 3 attempts → stop; the work stays uncommitted.
+A question back → ask the user, then respawn with `Resuming:`; in autopilot it stops the run. Failure after 3 attempts → stop; the work stays uncommitted.
 
 ## 5. Sweep
 
-Call `pr-oracle` in `sweep-diff` mode over the new commits, from the pre-loop commit through `HEAD` (pass `GitHub route:`, `memory-root:` / `memory-login:` again).
+Call `pr-oracle` in `sweep-diff` mode over the new commits (pre-loop commit to `HEAD`; pass `GitHub route:`, `memory-root:` / `memory-login:` again).
 
 - `clean` → Step 6.
-- In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits and does not push. Then run one more `sweep-diff` over that commit: `clean` → Step 6; any flag → stop and bring it to the user, no second follow-up.
+- In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits, never pushes. Then one more `sweep-diff` over that commit: `clean` → Step 6; any flag → stop, bring it to the user; no second follow-up.
 - A flag outside the card's scope → bring it to the user; don't widen the PR.
 
-Nothing is pushed before a clean `sweep-diff`: every pushed commit, the follow-up's included, has passed a sweep.
+Nothing is pushed before a clean `sweep-diff`.
 
 ## 6. Push and open the PR
 
@@ -110,19 +112,19 @@ gh pr create --draft --base <default branch> --title "$(cat "$d/pr-start-title.t
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 ```
 
-On the MCP route, call `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
+MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
 - **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (the Done when check and its result), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write the files with `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
 
 ## 7. Wrap up
 
-Report the PR link, the commits, the Done when result, and a raised Size (fix-loop.md). Show `memory-candidate:` lines and ask whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Autopilot → before reporting, run autopilot.md's chain, finish and stops. Otherwise don't run another skill; suggest `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps". End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second `sweep-diff` for the follow-up's commit), and `learn-feedback` when run.
+Report the PR link, commits, Done when result and a raised Size (fix-loop.md). Show `memory-candidate:` lines, asking whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Autopilot → before reporting, run autopilot.md's chain, finish and stops. Otherwise don't run another skill; suggest `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps". End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up's commit), and `learn-feedback` when run.
 
 ## Stop instead of proceeding
 
 - The card isn't confirmed, or the Why has no source and the user hasn't given one.
-- The current branch is the default branch and the user declines a new branch.
+- On the default branch and the user declines a new branch.
 - The sidekick fails after 3 attempts, or `sweep-diff` flags something outside the card's scope.
 - The change needs a public API, security, auth, or infrastructure decision the card didn't name.
 

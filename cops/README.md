@@ -10,7 +10,7 @@ Which skill fits depends on whose PR it is and where it is in review. In lifecyc
 
 | When | Skill | What it does |
 | --- | --- | --- |
-| You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). The card carries a `Size:` line — Small, Medium or Large, with the reason — for you to see; it gates only autopilot. With `--autopilot`, or the autopilot choice offered on a Small or Medium card, it goes on to a finished draft PR assigned to you: see [Autopilot](#autopilot). |
+| You have a task, no PR yet | [`pr-start`](skills/pr-start/SKILL.md) | Turns a confirmed task card into a pushed draft PR (slash-only). The card carries a `Size:` line — Small, Medium or Large, with the reason — for you to see; it gates only autopilot. An optional `Evidence:` line names the before/after scenarios to show, from the oracle's brief ([`CONVENTIONS-evidence.md`](CONVENTIONS-evidence.md)); the card is their only record, since nothing captures them. With `--autopilot`, or the autopilot choice offered on a Small or Medium card, it goes on to a finished draft PR assigned to you: see [Autopilot](#autopilot). |
 | Someone else's PR, or yours as a self-review | [`pr-review`](skills/pr-review/SKILL.md) | Drafts labeled comments and posts one confirmed `COMMENT` review. On your own PR, **Fix, no post** fixes the chosen findings and pushes instead of posting them. |
 | Your PR, branch moved on | [`pr-sync`](skills/pr-sync/SKILL.md) | Rebases the PR and refreshes its title, description, and changeset. |
 | Your PR, before anyone comments | [`pr-note`](skills/pr-note/SKILL.md) | Leaves `Note:` / `Drive-by:` reasoning on your own PR. Run it last, on the final diff. |
@@ -145,8 +145,9 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
 ### When the skills consult the oracle
 
 - `pr-start` — `scout-repo` + `brief-task` in one call (how to run tests,
-  the title prefix, the PR template, and the remembered rules for the
-  sidekick) before you confirm the task card, then `sweep-diff` on the
+  the title prefix, the PR template, the evidence tooling and
+  scenarios, and the remembered rules for the sidekick) before you
+  confirm the task card, then `sweep-diff` on the
   commits the fix loop makes, before anything is pushed or the draft PR
   opens. On [autopilot](#autopilot), each of the four skills it runs next
   makes its own oracle calls, as listed here.
