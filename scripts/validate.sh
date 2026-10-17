@@ -665,8 +665,12 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "## Fix-loop handoff" "## Capture handoff" "## Size after the loop"
   require_markers "cops/skills/pr-start/SKILL.md" "publish evidence" \
     "## 5b. Publish evidence" "orphan branch \`cops-evidence\`" "temporary \`git worktree\` outside the repo" \
-    "Never commit evidence to the PR branch" "Evidence: not published — <reason>" \
+    "Never on the PR branch" "Evidence: not published — <reason>" \
     "\`### Before\` then \`### After\` under it" "Evidence never holds the PR"
+  require_markers "cops/skills/pr-start/SKILL.md" "5b writes the manifest; pushes only images, optionally" \
+    "Write the \`<details>\` manifest block" "Optionally push only images"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "5b no longer publishes scratch" \
+    "publish scratch"
   require_order "cops/skills/pr-start/SKILL.md" "publish after sweep, before the body" \
     "## 5. Sweep" "## 5b. Publish evidence" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
   require_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" \

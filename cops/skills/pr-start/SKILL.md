@@ -105,7 +105,7 @@ Nothing is pushed before a clean `sweep-diff`.
 
 ## 5b. Publish evidence
 
-Then publish scratch to orphan branch `cops-evidence` under `<slug>/` (branch slug; no PR number exists yet) via a temporary `git worktree` outside the repo: its own commit and push, linked by SHA. Never commit evidence to the PR branch. Can't → scratch only; the body says `Evidence: not published — <reason>`. Rules: [evidence.md](evidence.md).
+Write the `<details>` manifest block ([evidence.md](evidence.md)) for the body. Optionally push only images to orphan branch `cops-evidence` under `<slug>/` (no PR number exists yet) via a temporary `git worktree` outside the repo: own commit and push, linked by SHA. Never on the PR branch. Not pushed → body says `Evidence: not published — <reason>`.
 
 ## 6. Push and open the PR
 
