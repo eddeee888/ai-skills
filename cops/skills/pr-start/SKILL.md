@@ -38,7 +38,7 @@ MCP route: find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, 
 - Uncommitted changes you didn't make → ask whether they belong here.
 - `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there refuses autopilot and offers the normal run.
 
-Keep the login for trailers and the card's `Approved-by:`.
+Keep the login for trailers and `Approved-by:`.
 
 ## 2. Profile and brief
 
@@ -67,7 +67,7 @@ Confirm, or edit any line.
 ```
 
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes that test first and confirms it fails for the reported reason before changing code.
-- **Evidence** (optional) → the brief's `Evidence:` suggestion (`CONVENTIONS-evidence.md` → "Evidence scenarios"); omitted when the profile's `evidence:` is `none` and the change isn't UI, API, CLI or architecture. Editing it re-runs `brief-task`. It is the only record: nothing captures it and the PR body doesn't show it.
+- **Evidence** (optional) → the brief's `Evidence:` suggestion (`CONVENTIONS-evidence.md` → "Evidence scenarios"); omitted when the profile's `evidence:` is `none` and the change isn't UI, API, CLI or architecture. An edit stands; it doesn't re-run `brief-task`. It is the only record: nothing captures it and the PR body doesn't show it.
 - **Size** → read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size"). It gates only autopilot.
 - **Autopilot** → with the flag, or without it on a Small or Medium card, read [autopilot.md](autopilot.md) before showing the card: it refuses a Large or high-risk card, and adds the card's authorised outward actions line or the confirm screen's offer.
 - **Scope bullets** stop sidekick drift; make them concrete (files, packages, behaviors).

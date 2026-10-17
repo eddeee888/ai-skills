@@ -616,7 +616,8 @@ validate_behavioral_contracts() {
     '"touches"' 'orphan branch `cops-evidence`' '$(git rev-parse --git-dir)/cops/evidence/<pr>/' \
     "Never the working tree or the PR branch" \
     '`### Before` then `### After` as two separate subsections under `## Verification`' \
-    '## Staleness is not a `sweep-diff` check'
+    '## Staleness is not a `sweep-diff` check' \
+    "until then the task card is the record"
   require_markers "cops/references/pr-oracle/modes/scout-repo.md" "evidence profile line" \
     "evidence: none | <kind> → <tool> (<command>), …; deploy → <command>" \
     "never guessed" "Never capture anything"
@@ -624,7 +625,8 @@ validate_behavioral_contracts() {
     "Evidence: <kind> — <scenario>, <scenario> (before/after)" "a candidate list only"
   require_order "cops/skills/pr-start/SKILL.md" "optional task card Evidence line" \
     "Done when: <a test" "Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>" \
-    "In scope:" "**Evidence** (optional)" "It is the only record: nothing captures it"
+    "In scope:" "**Evidence** (optional)" "An edit stands; it doesn't re-run \`brief-task\`." \
+    "It is the only record: nothing captures it"
 
   require_markers "cops/references/pr-oracle/modes/draft-author-notes.md" "author note YAML" \
     "mode: draft-author-notes" "remove-instead:" "task source required"

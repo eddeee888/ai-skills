@@ -37,7 +37,7 @@ One manifest per PR records what each capture was taken from; `file` is relative
 | `manual` | needs the user to run something; the PR carries the exact commands |
 | `not-captured` | tried and failed, or no tooling; the reason is stated |
 
-The PR text always shows each scenario's status.
+Once the PR body renders evidence it shows each scenario's status; until then the task card is the record.
 
 ## Where evidence lives: scratch and `cops-evidence`
 
