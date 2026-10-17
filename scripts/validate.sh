@@ -338,7 +338,7 @@ validate_descriptions() {
 validate_budgets() {
   local path filename count
   check_budget "CONVENTIONS.md" 500 "convention file"
-  check_budget "CONVENTIONS-orchestration.md" 1440 "convention file"
+  check_budget "CONVENTIONS-orchestration.md" 1463 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 646 "convention file"

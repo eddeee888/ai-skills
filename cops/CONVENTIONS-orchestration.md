@@ -2,14 +2,14 @@
 
 ## Hand long loops to a subagent
 
-When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. If handoff seems pure overhead, say so and ask; never silently skip.
+When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems pure overhead, say so and ask; never silently skip.
 
 - **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Other read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
 - **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from session context's `COPS models:` line as the call's model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
 - **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes needed output, with `for: pr-sidekick` on `brief-task`.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
-- **Short results.** Return only requested lines; return a question rather than guess.
+- **Short results.** Return only requested lines; return a question rather than guess. Main chat asks the user, then respawns with the answer.
 - **Every spawn/check is a main-chat step.** Batch as instructed.
 - **Foreground when dependent.** Run a call in the foreground when the next step needs its result; background only independent work.
 - **Bounded retries.** "Until" allows at most 3 attempts. After the third, stop, leave work uncommitted, and report attempts and remaining failure; do not respawn unasked.
@@ -77,7 +77,7 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
   | `light` | sorting, extracting, formatting | `brief-task` |
   | `standard` | reading, summarising, drafting | `scout-repo`, `triage-threads`, `sweep-diff`, `grill-description`, `learn-feedback` |
   | `deep` | finding bugs, judging trade-offs | `review-pr`, `draft-author-notes` |
-- **Optional only when missing.** If `cops` is absent, perform the step inline, continue, and mark fallback. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
+- **Optional only when missing.** If `cops` is absent, perform the step inline, continue, and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known; always include the selected `GitHub route:`. Review modes also receive owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
