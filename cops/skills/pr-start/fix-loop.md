@@ -76,7 +76,7 @@ Repo <owner>/<repo>, branch <branch> (checked out).
 Phase: <before | after>
 Scenarios: <card Evidence scenarios, in order, with kind>
 Tooling: <the profile's `evidence:` line>
-Scratch: <$(git rev-parse --git-dir)/cops/evidence/<pr | branch-slug>/>
+Scratch: <$(git rev-parse --git-dir)/cops/evidence/<slug>/>
 Capture with only that tooling or a labelled fallback; install nothing. Write to
 Scratch only. Commit nothing, never push. At most 3 attempts per scenario.
 Return one line per scenario: <name> — <file> — <status>. Can't capture →

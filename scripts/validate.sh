@@ -614,7 +614,8 @@ validate_behavioral_contracts() {
 
   require_markers "CONVENTIONS-evidence.md" "evidence contract" \
     '`captured`' '`captured-by-user`' '`drawn`' '`mock`' '`manual`' '`not-captured`' \
-    '"touches"' 'orphan branch `cops-evidence`' '$(git rev-parse --git-dir)/cops/evidence/<pr>/' \
+    '"touches"' 'orphan branch `cops-evidence`' '$(git rev-parse --git-dir)/cops/evidence/<slug>/' \
+    '## Evidence manifest: `<slug>/manifest.json`' 'the branch name with `/` replaced by `-`' \
     "Never the working tree or the PR branch" \
     '## Staleness is not a `sweep-diff` check' \
     "under \`### Before\` and \`### After\`"
@@ -662,6 +663,12 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "\`### Before\` then \`### After\` under it" "Evidence never holds the PR"
   require_order "cops/skills/pr-start/SKILL.md" "publish after sweep, before the body" \
     "## 5. Sweep" "## 5b. Publish evidence" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
+  require_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" \
+    "under \`<slug>/\`" "no PR number exists yet"
+  require_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" \
+    "cops/evidence/<slug>/"
+  forbid_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" "<pr | branch-slug>"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" "under \`<pr>/\`"
   for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
     require_markers "$path" "evidence line always present" "always carries the line (it is required)"
     forbid_markers "$path" "evidence line always present" "→ no line"
