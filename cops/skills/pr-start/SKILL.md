@@ -16,7 +16,7 @@ Read, in order:
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
-The oracle supplies the repo profile and remembered rules, never intent.
+The oracle supplies the repo profile and remembered rules, never intent. No stated reason → ask the user.
 
 ## 1. Gate
 
