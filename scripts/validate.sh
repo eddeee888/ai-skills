@@ -706,6 +706,32 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     forbid_markers "$path" "evidence line always present" "→ no line"
   done
 
+  recapture="cops/skills/pr-sync/recapture.md"
+  require_markers "$recapture" "deterministic stale check" \
+    "no model call" "no oracle" 'git diff --quiet <after.at> HEAD -- <touches>' "the before is stale too"
+  require_markers "$recapture" "recapture runs only repo tooling" \
+    "the manifest's \`how\`" "one of the repo's own tooling commands" \
+    "a \`package.json\` script" "becomes \`manual\`" "never executed"
+  require_markers "$recapture" "failed recapture stays labelled" \
+    'stale since <sha>' 'pending: drop <name>.png here' "only the user"
+  require_markers "$recapture" "manifest and entries updated" \
+    '`CONVENTIONS-verification.md` → "Before and After"' '`captured-by-user`' "secret backstop"
+  require_markers "$recapture" "hand-edited manifest" \
+    "treated as no manifest" "skip recapture" "say so in the return line"
+  require_markers "$recapture" "recapture return item" 'evidence (n recaptured, n stale, n none)'
+  require_markers "cops/skills/pr-sync/SKILL.md" "pr-sync recapture pointer" \
+    "no stale evidence" "recapture.md" 'evidence (n recaptured, n stale, n none)'
+  require_markers "cops/skills/pr-sync/draft.md" "pr-sync recapture pointer" \
+    "recapture.md" "before Step 4"
+  forbid_markers "cops/skills/pr-sync/SKILL.md" "recapture rules live in recapture.md" \
+    'stale since' 'git diff --quiet <after.at>' "package.json"
+  forbid_markers "cops/skills/pr-sync/draft.md" "recapture rules live in recapture.md" \
+    'stale since' 'git diff --quiet <after.at>' "package.json" "Recapture is out of scope"
+  require_markers "cops/skills/pr-address/SKILL.md" "pr-address stale evidence report" \
+    "no model call" "no oracle" 'evidence stale: <scenario>, … — run /cops:pr-sync' "no capture, no PR edit"
+  require_markers "cops/skills/pr-start/autopilot.md" "autopilot evidence report" \
+    '`pending: drop`' '`stale`' '`manual`' '`not-captured`' "evidence never holds the finish step"
+
   require_markers "cops/references/pr-oracle/modes/draft-author-notes.md" "author note YAML" \
     "mode: draft-author-notes" "remove-instead:" "task source required"
   require_markers "cops/skills/pr-review/post-review.md" "headRefOid posting" \
