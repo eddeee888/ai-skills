@@ -105,13 +105,26 @@ describe('describeChain', () => {
     expect(describe_({ runs: runs.slice(0, 2) })?.warnings).toEqual([])
   })
 
-  test('all stages done but still a draft reads stopped at finish with no button', () => {
+  test('all stages done but still a draft reads finished with no Pick up', () => {
     const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: true }) })
-    expect(chain?.line).toContain('note ✓ → ready ·')
-    expect(chain?.line).toContain('stopped at finish')
+    expect(chain?.status).toBe('finished')
+    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → sync ✓ → note ✓ → ready · · finished, still a draft')
+    expect(chain?.line).not.toContain('stopped')
+    expect(chain?.stoppedAt).toBeUndefined()
+    expect(chain?.steps.map(one => `${one.mark} ${one.name}:${one.state}`)).toEqual([
+      '✓ fix:done', '✓ review:done', '✓ address:done', '✓ sync:done', '✓ note:done', '· ready:pending',
+    ])
     expect(chain?.pickUp).toBeUndefined()
     expect(chain?.ownsNext).toBe(true)
+  })
+
+  test('all stages done with the view on another PR still reads stopped at finish', () => {
+    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: true, url: 'https://github.com/o/r/pull/9' }) })
+    expect(chain?.status).toBe('stopped')
+    expect(chain?.line).toContain('stopped at finish')
+    expect(chain?.pickUp).toBeUndefined()
   })
 
   test('a stop in the note stage, with no notes posted, reads stopped at note and fills the stage', () => {

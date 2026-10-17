@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
-import type { On } from 'claude-code'
+import type { On, ProcessRunResult } from 'claude-code'
 
 type Ui = Awaited<ReturnType<Engine['ui']['mount']>>
 
@@ -45,6 +45,75 @@ describe('autopilot strip', () => {
     await $.prompt.submit({ text: 'confirm', wait: false, origin: { kind: 'composer' } })
     await until({ check: async () => !((await ui.find({ type: 'Box' }))?.text ?? '').includes('stopped at fix') })
     expect((await ui.find({ type: 'Box' }))?.text).toContain('Autopilot')
+    await ui.unmount()
+  })
+})
+
+const ok = ({ stdout }: { stdout: string }): ProcessRunResult => ({
+  exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false,
+})
+
+const PR_URL = 'https://github.com/o/r/pull/81'
+
+// Answers what the plugin asks of the engine, with draft PR #81 on the branch carrying the author's
+// `Note:` thread; records each `gh pr ready` and toast, and reads the PR as ready once one ran.
+const draftWorld = ({ on }: { on: On }): { readies: string[][]; toasts: string[] } => {
+  const readies: string[][] = []
+  const toasts: string[] = []
+  mock.clock(on)
+  on('session.start', ($, e) => ({ cwd: e.cwd }))
+  on('command.register', ($, e) => ({ value: { command: e.name } }))
+  on('ui.status', () => ({ value: undefined }))
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('ui.toast', ($, e) => {
+    toasts.push(e.text)
+    return { value: undefined }
+  })
+  on('process.run', ($, e) => {
+    if (e.argv[0] === 'git') {
+      return { value: ok({ stdout: 'feat\n' }) }
+    }
+    if (e.argv[0] === 'gh' && e.argv[1] === 'pr' && e.argv[2] === 'ready') {
+      readies.push([...e.argv])
+      return { value: ok({ stdout: '' }) }
+    }
+    if (e.argv[0] === 'gh' && e.argv[1] === 'pr' && e.argv[2] === 'view') {
+      return { value: ok({ stdout: JSON.stringify({ number: 81, url: PR_URL, isDraft: readies.length === 0 }) }) }
+    }
+    if (e.argv[0] === 'gh' && e.argv[1] === 'api') {
+      const note = {
+        id: 'n1', isResolved: false, isOutdated: false, path: 'src/a.ts', line: 3,
+        comments: { totalCount: 1, nodes: [{ author: { login: 'octocat' }, body: '**Note:** why', url: 'https://example.com/n1' }] },
+        first: { nodes: [{ author: { login: 'octocat' }, body: '**Note:** why', reactions: { nodes: [] } }] },
+      }
+      return { value: ok({ stdout: JSON.stringify({ data: { repository: { pullRequest: { author: { login: 'octocat' }, reviewThreads: { nodes: [note] } } } } }) }) }
+    }
+    return { value: { exitCode: 1, stdout: '', stderr: 'not answered', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+  on('prompt.submit', ($, e) => ({ text: e.text }))
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+  on('tool.call', { tool: 'Skill' }, () => ({ result: { success: true, commandName: 'cops:pr-start' } }))
+  return { readies, toasts }
+}
+
+describe('finished autopilot card', () => {
+  test('Mark ready runs gh pr ready on the PR and the card reads ready after', async ($, on) => {
+    const { readies, toasts } = draftWorld({ on })
+    const ui = await mount({ $ })
+    const text = async (): Promise<string> => (await ui.find({ type: 'Box' }))?.text ?? ''
+    await until({ check: async () => (await text()).includes('PR #81') })
+    await $.tool.call({ tool: 'Skill', skill: 'cops:pr-start', args: '--autopilot fix the thing' })
+    for (const stage of ['review', 'address', 'sync', 'note']) {
+      await $.tool.call({ tool: 'Skill', skill: `cops:pr-${stage}`, args: `${PR_URL} — autopilot stage of this pr-start run` })
+    }
+    await $.turn.complete({ answer: 'Autopilot finished.' })
+    await until({ check: async () => (await text()).includes('finished · still a draft') })
+    expect(await text()).not.toContain('stopped at')
+    await ui.press({ key: 'mark-ready' })
+    expect(readies).toEqual([['gh', 'pr', 'ready', '81']])
+    expect(toasts).toContain('PR #81 is ready for review')
+    await until({ check: async () => !(await text()).includes('finished · still a draft') })
+    expect(await text()).toContain('✓ ready')
     await ui.unmount()
   })
 })
