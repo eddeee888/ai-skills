@@ -639,13 +639,21 @@ validate_behavioral_contracts() {
   require_markers "cops/references/pr-oracle/modes/brief-task.md" "evidence suggestion" \
     "Evidence: <kind> — <scenario>, <scenario> (before/after)" "a candidate list only" \
     "and optionally \`for: pr-sidekick\` and \`for: task-card\`" "Only with \`for: task-card\`" \
-    "\`Evidence: none — <why>\` when the profile lists tooling" "omit the line only when"
+    "always end with one \`Evidence:\` line" "or no tooling in the profile: return \`Evidence: none — <why>\`"
+  forbid_markers "cops/references/pr-oracle/modes/brief-task.md" "Evidence line is always returned" \
+    "omit the line only when" "Evidence:\` suggestion"
   require_markers "cops/skills/pr-start/SKILL.md" "card brief request" \
     "with \`for: pr-sidekick\` and \`for: task-card\`"
-  require_order "cops/skills/pr-start/SKILL.md" "optional task card Evidence line" \
+  require_order "cops/skills/pr-start/SKILL.md" "required task card Evidence line" \
     "Done when: <a test" "Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>" \
-    "In scope:" "**Evidence** (optional)" "An edit stands; it doesn't re-run \`brief-task\`." \
+    "In scope:" "**Evidence** (required)" "An edit stands; it doesn't re-run \`brief-task\`." \
     "It is the only record: nothing captures it"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "Evidence line is required" \
+    "**Evidence** (optional)" "omitted when the profile's"
+  for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
+    require_markers "$path" "evidence line always present" "always carries the line (it is required)"
+    forbid_markers "$path" "evidence line always present" "→ no line"
+  done
 
   require_markers "cops/references/pr-oracle/modes/draft-author-notes.md" "author note YAML" \
     "mode: draft-author-notes" "remove-instead:" "task source required"

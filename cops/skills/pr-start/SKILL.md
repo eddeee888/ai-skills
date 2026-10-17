@@ -44,7 +44,7 @@ Keep the login for trailers and `Approved-by:`.
 
 From the task sources, draft the card's Goal and likely files. Then call `cops:pr-oracle` once (Cursor: the `pr-oracle` subagent) in `scout-repo` + `brief-task` mode with `for: pr-sidekick` and `for: task-card` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
 
-Keep from the reply the profile (test command, monorepo packages, template, `evidence:`, `overrides:`), the brief lines for `Rules that apply:`, the brief's `Evidence:` suggestion for the card (never a rule line), and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
+Keep from the reply the profile (test command, monorepo packages, template, `evidence:`, `overrides:`), the brief lines for `Rules that apply:`, the brief's `Evidence:` line for the card (never a rule line), and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
 
 ## 3. Task card
 
@@ -67,7 +67,7 @@ Confirm, or edit any line.
 ```
 
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes that test first and confirms it fails for the reported reason before changing code.
-- **Evidence** (optional) → the brief's `Evidence:` suggestion (`CONVENTIONS-evidence.md` → "Evidence scenarios"); omitted when the profile's `evidence:` is `none` and the change isn't UI, API, CLI or architecture. An edit stands; it doesn't re-run `brief-task`. It is the only record: nothing captures it and the PR body doesn't show it.
+- **Evidence** (required) → the brief's `Evidence:` line (`CONVENTIONS-evidence.md` → "Evidence scenarios"), always present, as scenarios or `none — <why>`. An edit stands; it doesn't re-run `brief-task`. It is the only record: nothing captures it and the PR body doesn't show it.
 - **Size** → read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size"). It gates only autopilot.
 - **Autopilot** → with the flag, or without it on a Small or Medium card, read [autopilot.md](autopilot.md) before showing the card: it refuses a Large or high-risk card, and adds the card's authorised outward actions line or the confirm screen's offer.
 - **Scope bullets** stop sidekick drift; make them concrete (files, packages, behaviors).
