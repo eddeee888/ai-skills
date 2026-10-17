@@ -1,17 +1,17 @@
 # Shared conventions: evidence
 
-Evidence shows a reviewer what a change looks like before and after, for each scenario the task card names.
+Evidence shows a reviewer a change before and after, per scenario on the task card.
 
 ## Evidence scenarios: `Evidence: <kind> — <scenario>, … | none — <why>`
 
 - **Scenario**: one named case a reader would see change, e.g. `autopilot running` or `POST /pets 400 bad payload`. At most 5 per PR.
-- **Kind**: `ui`, `api`, `cli` or `architecture`. A repo profile may list `deploy` commands: the repo's own commands for a shared environment, which a user runs, never the agent.
-- The task card always carries the line (it is required), user-confirmed: scenarios, or `none — <why>` when the change has no UI, API, CLI or architecture surface, or the repo has no tooling.
+- **Kind**: `ui`, `api`, `cli` or `architecture`. A repo profile may list `deploy` commands for a shared environment; a user runs them, never the agent.
+- The task card always carries the line (it is required), user-confirmed: scenarios, or `none — <why>` when the change has no UI, API, CLI or architecture surface or the repo has no tooling.
 - Before/After demonstrates and never replaces Verification (`CONVENTIONS-verification.md` → "Before and After").
 
-## Evidence manifest: `<pr>/manifest.json`
+## Evidence manifest: `<slug>/manifest.json`
 
-One manifest per PR records what each capture was taken from; `file` is relative to it:
+One manifest per PR records what each capture was taken from; `file` is relative to it; `pr` is `null` until the PR exists:
 
 ```json
 { "pr": 89, "base": "a1b2c3d", "scenarios": [{
@@ -37,15 +37,16 @@ One manifest per PR records what each capture was taken from; `file` is relative
 | `manual` | needs the user to run something; the PR carries the commands |
 | `not-captured` | tried and failed, or no tooling; the reason is stated |
 
-Once the PR body renders evidence it shows each scenario's status; until then the task card is the record.
+The PR body shows each scenario's status under `### Before` and `### After`.
 
 ## Where evidence lives: scratch and `cops-evidence`
 
-- **Scratch**: `$(git rev-parse --git-dir)/cops/evidence/<pr>/`, captures in progress and the draft manifest, local only.
-- **Published**: orphan branch `cops-evidence`, under `<pr>/`. Its manifest is the source of truth, read with `git show origin/cops-evidence:<pr>/manifest.json` and written from a temporary `git worktree` outside the repo, in one commit and push separate from the PR branch's. The PR body links files by commit SHA.
+- **Folder**: `<slug>`, the branch name with `/` replaced by `-`, in scratch and on `cops-evidence`.
+- **Scratch**: `$(git rev-parse --git-dir)/cops/evidence/<slug>/`, captures in progress and the draft manifest, local only.
+- **Published**: orphan branch `cops-evidence`, under `<slug>/`. Its manifest is the source of truth, read with `git show origin/cops-evidence:<slug>/manifest.json` and written from a temporary `git worktree` outside the repo, in one commit and push separate from the PR branch's. The PR body links files by commit SHA.
 - **Never the working tree or the PR branch**: no `.cops/` folder, no `.gitignore` change. Publishing impossible → scratch only, and the PR says `Evidence: not published — <reason>`.
 - Captures are scanned for secrets before publishing; a hit stops the capture. Evidence of a merged or closed PR stays; pruning is a human decision.
 
 ## Staleness is not a `sweep-diff` check
 
-`sweep-diff` flags only matches of remembered rules, so staleness would break its contract. The skill that recaptures runs the manifest's stale check itself, deterministically, with no oracle call.
+`sweep-diff` flags only remembered-rule matches. The skill that recaptures runs the stale check itself, with no oracle call.
