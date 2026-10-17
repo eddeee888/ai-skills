@@ -5,8 +5,8 @@ Evidence shows a reviewer what a change looks like before and after, for each sc
 ## Evidence scenarios: `Evidence: <kind> — <scenario>, … | none — <why>`
 
 - **Scenario**: one named case a reader would see change, e.g. `autopilot running` or `POST /pets 400 bad payload`. At most 5 per PR.
-- **Kind**: `ui`, `api`, `cli` or `architecture`. A repo profile may also list `deploy` commands: the repo's own commands for a shared environment, which a user runs, never the agent.
-- The task card always carries the line (it is required), user-confirmed: scenarios, or `none — <why>` when no UI, API, CLI or architecture surface or tooling exists.
+- **Kind**: `ui`, `api`, `cli` or `architecture`. A repo profile may list `deploy` commands: the repo's own commands for a shared environment, which a user runs, never the agent.
+- The task card always carries the line (it is required), user-confirmed: scenarios, or `none — <why>` when the change has no UI, API, CLI or architecture surface, or the repo has no tooling.
 - Before/After demonstrates and never replaces Verification (`CONVENTIONS-verification.md` → "Before and After").
 
 ## Evidence manifest: `<pr>/manifest.json`
@@ -34,7 +34,7 @@ One manifest per PR records what each capture was taken from; `file` is relative
 | `captured-by-user` | a `manual` scenario's output the user ran and handed back |
 | `drawn` | an architecture diagram derived from the diff, not a running system |
 | `mock` | a hand-made demonstration, never presented as a capture |
-| `manual` | needs the user to run something; the PR carries the exact commands |
+| `manual` | needs the user to run something; the PR carries the commands |
 | `not-captured` | tried and failed, or no tooling; the reason is stated |
 
 Once the PR body renders evidence it shows each scenario's status; until then the task card is the record.
