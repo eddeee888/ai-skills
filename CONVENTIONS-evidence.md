@@ -7,7 +7,7 @@ Evidence shows a reviewer what a change looks like before and after, for each sc
 - **Scenario**: one named case a reader would see change, e.g. `autopilot running` or `POST /pets 400 bad payload`. At most 5 per PR.
 - **Kind**: `ui`, `api`, `cli` or `architecture`. A repo profile may also list `deploy` commands: the repo's own commands for a shared environment, which a user runs, never the agent.
 - The task card carries the list and the user confirms it there. No scenario → `none — <why>`; no UI, API, CLI or architecture surface and no tooling → no line.
-- **Verification is proof** (tests, commands, results) on every PR. **Before/After is demonstration**, only for an observable surface. It never replaces Verification and never satisfies a card's Done when.
+- Before/After demonstrates and never replaces Verification (`CONVENTIONS-verification.md` → "Before and After").
 
 ## Evidence manifest: `<pr>/manifest.json`
 
@@ -45,10 +45,6 @@ Once the PR body renders evidence it shows each scenario's status; until then th
 - **Published**: orphan branch `cops-evidence`, under `<pr>/`. Its manifest is the source of truth, read with `git show origin/cops-evidence:<pr>/manifest.json` and written from a temporary `git worktree` outside the repo, in one commit and push separate from the PR branch's. The PR body links files by commit SHA.
 - **Never the working tree or the PR branch**: no `.cops/` folder, no `.gitignore` change. Publishing impossible → scratch only, and the PR says `Evidence: not published — <reason>`.
 - Captures are scanned for secrets before publishing; a hit stops the capture. Evidence of a merged or closed PR stays; pruning is a human decision.
-
-## Before and After: `### Before` / `### After` under `## Verification`
-
-The PR body shows `### Before` then `### After` as two separate subsections under `## Verification`: never new top-level sections, never side by side in one block. Both list the same scenarios, by name and in order, each with its status and the SHA it was taken at. Verification keeps its tests and commands. Evidence never holds a PR: a pending, stale or failed scenario is labelled, not blocking.
 
 ## Staleness is not a `sweep-diff` check
 

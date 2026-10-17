@@ -4,7 +4,7 @@ Rules shared by marketplace skills and the `pr-oracle` checks that enforce them.
 
 ## Distribution and sync
 
-Each plugin carries an identical copy of this core file and its five reference files at its root, two levels above each `SKILL.md`. Edit the six root files, then copy all six over `cops/` and `oss/`.
+Each plugin carries an identical copy of this core file and its six reference files at its root, two levels above each `SKILL.md`. Edit the seven root files, then copy all seven over `cops/` and `oss/`.
 
 ## Defaults and contracts
 
@@ -41,13 +41,14 @@ Each indexed section is:
   - Task size: `Size: Small — <reason>`
   - Bold the critical claim in Why/What/Verification bullets
   - Split What into Main and Drive-by
-  - Verification checklist: name the test type, not the command
-  - Don't checklist an intentionally-failing check as done
   - Commit trailers: `Skill:` / `Approved-by:`
 - `CONVENTIONS-evidence.md`
   - Evidence scenarios: `Evidence: <kind> — <scenario>, … | none — <why>`
   - Evidence manifest: `<pr>/manifest.json`
   - Evidence status: `captured` … `not-captured`
   - Where evidence lives: scratch and `cops-evidence`
-  - Before and After: `### Before` / `### After` under `## Verification`
   - Staleness is not a `sweep-diff` check
+- `CONVENTIONS-verification.md`
+  - Verification checklist: name the test type, not the command
+  - Don't checklist an intentionally-failing check as done
+  - Before and After: `### Before` / `### After` under `## Verification`

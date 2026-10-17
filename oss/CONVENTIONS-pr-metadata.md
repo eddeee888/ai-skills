@@ -50,16 +50,6 @@ Bold (`**...**`) only the causal reason, chosen rationale, caveat, or other crit
 
 When the diff includes task-unnecessary changes, split What into `### Main` and `### Drive-by`; give each drive-by one bullet explaining why it belongs. Without drive-bys, use plain bullets and no subsections.
 
-## Verification checklist: name the test type, not the command
-
-*Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
-
-For checks run equivalently in CI, name the type: `- [x] Unit tests`, not `- [x] Ran \`pnpm test\``. Use literal commands only for manual checks beyond CI.
-
-## Don't checklist an intentionally-failing check as done
-
-For intentionally failing checkpoint tests, write `- [ ] Unit tests — intentionally failing, reproduces the bug`, never `- [x]`.
-
 ## Commit trailers: `Skill:` / `Approved-by:`
 
 A marker commit carries trailers in its final paragraph:
