@@ -529,6 +529,8 @@ validate_autopilot() {
     "**Nothing is asked mid-run.**" "**Only that run starts a stage.**"
   require_markers "CONVENTIONS-posts.md" "autopilot signature" \
     'for every post of an autopilot run (`CONVENTIONS-orchestration.md` → "Autopilot runs")'
+  require_markers "CONVENTIONS-orchestration.md" "foreground when dependent" \
+    '**Foreground when dependent.**'
   # The stages keep their own handoffs, so pr-start's lists are the fix loop and its two oracle calls.
   require_markers "CONVENTIONS-orchestration.md" "pr-start handoff list" \
     '`cops:pr-start` (fix loop);' \
