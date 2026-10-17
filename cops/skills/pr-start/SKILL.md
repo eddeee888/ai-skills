@@ -1,6 +1,6 @@
 ---
 name: pr-start
-description: 'Turn a confirmed task into a pushed draft PR: confirm a task card, run one sidekick fix loop, sweep it against remembered rules, then push and open the draft. Takes an issue, spec file, or plain-text ask; `--autopilot` finishes the draft. Run only when asked to open a PR for a task.'
+description: 'Turn a confirmed task into a pushed draft PR: confirm a task card, run one sidekick fix loop, sweep it, then push and open the draft. Takes an issue, spec file, or plain-text ask; `--autopilot` finishes the draft. Run only when asked to open a PR for a task, e.g. “start #99” or “start working on issue 99.”'
 ---
 
 # Start a PR from a task
