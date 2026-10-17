@@ -631,7 +631,16 @@ validate_behavioral_contracts() {
     "## Verification checklist: name the test type, not the command" \
     "## Don't checklist an intentionally-failing check as done" \
     '## Before and After: `### Before` / `### After` under `## Verification`' \
-    '`### Before` then `### After` as two separate subsections under `## Verification`'
+    '`### Before` then `### After` as two separate subsections under `## Verification`' \
+    '**<name>** — <status> @ <sha>' "pending: drop <name>.png here" \
+    "collapsed \`<details>\` evidence manifest" "keeps all of it verbatim"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "Before/After rules live in the convention" \
+    "same names and order"
+  require_markers "cops/skills/pr-start/SKILL.md" "Before/After pointer" \
+    '`CONVENTIONS-verification.md` → "Before and After"'
+  require_markers "cops/skills/pr-sync/draft.md" "keep Before/After and manifest" \
+    "Keep existing \`### Before\` / \`### After\`" "evidence manifest verbatim" \
+    '`CONVENTIONS-verification.md` → "Before and After"'
   require_order "CONVENTIONS-verification.md" "Done when clause under Before and After" \
     '## Before and After: `### Before` / `### After` under `## Verification`' \
     "never satisfies a card's Done when"
@@ -665,7 +674,7 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "## Fix-loop handoff" "## Capture handoff" "## Size after the loop"
   require_markers "cops/skills/pr-start/SKILL.md" "manifest step" \
     "## 5b. Write the evidence manifest" "Write the \`<details>\` manifest block" \
-    "\`### Before\` then \`### After\` under it" "Evidence never holds the PR"
+    "\`### Before\` then \`### After\` under it" "evidence never holds the PR"
   forbid_markers "cops/skills/pr-start/SKILL.md" "nothing is published to a branch" \
     "publish scratch" "worktree" "not published"
   require_order "cops/skills/pr-start/SKILL.md" "manifest after sweep, before the body" \
@@ -680,7 +689,8 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   require_markers "$ev" "local-only captures" \
     "no real credentials loaded" "becomes \`manual\`"
   require_markers "$ev" "text evidence inline" \
-    "\`### Before\` / \`### After\`" "labelled \`drawn\`" "labelled \`mock\`"
+    '`CONVENTIONS-verification.md` → "Before and After"' "go inline in the PR body"
+  forbid_markers "$ev" "rendering lives in the convention" "labelled \`drawn\`" "status and SHA"
   require_markers "$ev" "manual block" \
     "\`Needs:\`" "\`Expect:\`" "never runs it" "\`captured-by-user\`" "no tooling"
   require_markers "$ev" "screenshot user drop" \

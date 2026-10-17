@@ -103,4 +103,6 @@ This PR ...
 
 A body that opens with a `> [!NOTE]` block starting `Opened on autopilot by` keeps that block verbatim as its first lines, a ticked `- [x]` box included; never regenerate, move or reword it.
 
+Keep existing `### Before` / `### After` subsections and the `<details>` evidence manifest verbatim as part of `## Verification`; never regenerate, move or reword them. Recapture is out of scope (`CONVENTIONS-verification.md` → "Before and After").
+
 The goal: a description that reads as written by the person who made the change, not bulldozed by a script.

@@ -8,7 +8,7 @@ Read this only when the card's Evidence lists scenarios. Statuses and kinds: `CO
 
 ## Text evidence
 
-`api` / `cli` output, an `architecture` Mermaid before/after labelled `drawn`, and a labelled `mock` go inline in the PR body under `### Before` / `### After`, each in a fenced block under its scenario name, status and SHA.
+`api` / `cli` output, an `architecture` Mermaid and a `mock` go inline in the PR body; the entry format is `CONVENTIONS-verification.md` → "Before and After".
 
 ## `manual` block
 
