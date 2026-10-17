@@ -740,10 +740,7 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     'stale since' 'git diff --quiet <after.at>' "package.json"
   forbid_markers "cops/skills/pr-sync/draft.md" "recapture rules live in recapture.md" \
     'stale since' 'git diff --quiet <after.at>' "package.json" "Recapture is out of scope"
-  require_markers "cops/skills/pr-address/SKILL.md" "pr-address stale evidence report" \
-    "no model call" "no oracle" 'evidence stale: <scenario>, … — run /cops:pr-sync' "no capture, no PR edit"
-  require_markers "cops/skills/pr-address/SKILL.md" "pr-address stale check pointer" '`CONVENTIONS-evidence.md`'
-  forbid_markers "cops/skills/pr-address/SKILL.md" "pr-address stale check pointer" "../pr-sync/recapture.md"
+  forbid_markers "cops/skills/pr-address/SKILL.md" "pr-sync owns stale evidence" "evidence stale"
   require_markers "cops/skills/pr-start/autopilot.md" "autopilot evidence report" \
     '`pending: drop`' '`stale`' '`manual`' '`not-captured`' "evidence never holds the finish step"
 
