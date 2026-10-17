@@ -363,6 +363,12 @@ validate_budgets() {
     fi
   done
 
+  if [ -f "$ROOT/cops/skills/pr-start/evidence.md" ]; then
+    check_budget "cops/skills/pr-start/evidence.md" 600 "lazy instruction"
+  else
+    fail "cops/skills/pr-start/evidence.md" "missing evidence instruction file"
+  fi
+
   if [ -f "$ROOT/cops/skills/pr-start/autopilot.md" ]; then
     check_budget "cops/skills/pr-start/autopilot.md" 1200 "lazy instruction"
   else
@@ -667,6 +673,25 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "under \`<slug>/\`" "no PR number exists yet"
   require_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" \
     "cops/evidence/<slug>/"
+  local ev="cops/skills/pr-start/evidence.md"
+  require_markers "$ev" "local-only captures" \
+    "no real credentials loaded" "becomes \`manual\`"
+  require_markers "$ev" "text evidence inline" \
+    "\`### Before\` / \`### After\`" "labelled \`drawn\`" "labelled \`mock\`"
+  require_markers "$ev" "manual block" \
+    "\`Needs:\`" "\`Expect:\`" "never runs it" "\`captured-by-user\`" "no tooling"
+  require_markers "$ev" "screenshot user drop" \
+    "pending: drop <name>.png here" "drags it into the PR body"
+  require_markers "$ev" "manifest in the PR body" \
+    "collapsed \`<details>\`" "source of truth" "image files only"
+  require_markers "$ev" "secret backstop" \
+    "\`Authorization\`" "private-key" "\`path:line\`" "possible secret" "backstop, not a guarantee"
+  require_markers "cops/skills/pr-start/SKILL.md" "evidence rules pointer" "[evidence.md](evidence.md)"
+  require_markers "cops/skills/pr-start/fix-loop.md" "evidence rules pointer" "[evidence.md](evidence.md)"
+  for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
+    require_markers "$path" "manifest and drop rules" \
+      "source of truth" "image files only" "no real credentials" "dropped by the user"
+  done
   forbid_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" "<pr | branch-slug>"
   forbid_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" "under \`<pr>/\`"
   for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do

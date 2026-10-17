@@ -1,20 +1,20 @@
 # Shared conventions: evidence
 
-Evidence shows a reviewer a change before and after, per scenario on the task card.
+Evidence shows a reviewer a change before and after, per card scenario.
 
 ## Evidence scenarios: `Evidence: <kind> — <scenario>, … | none — <why>`
 
-- **Scenario**: one named case a reader would see change, e.g. `autopilot running` or `POST /pets 400 bad payload`. At most 5 per PR.
-- **Kind**: `ui`, `api`, `cli` or `architecture`. A repo profile may list `deploy` commands for a shared environment; a user runs them, never the agent.
-- The task card always carries the line (it is required), user-confirmed: scenarios, or `none — <why>` when the change has no UI, API, CLI or architecture surface or the repo has no tooling.
+- **Scenario**: one named case a reader would see change, e.g. `autopilot running` or `POST /pets 400 bad payload`. Max 5 per PR.
+- **Kind**: `ui`, `api`, `cli` or `architecture`. `api`/`cli` run only against a local or ephemeral environment the repo's scripts start, with no real credentials; else `manual`. A user runs any `deploy` commands, never the agent.
+- The task card always carries the line (it is required), user-confirmed: scenarios, or `none — <why>` (no such surface, or no tooling).
 - Before/After demonstrates and never replaces Verification (`CONVENTIONS-verification.md` → "Before and After").
 
 ## Evidence manifest: `<slug>/manifest.json`
 
-One manifest per PR records what each capture was taken from; `file` is relative to it; `pr` is `null` until the PR exists:
+One manifest per PR records what each capture was taken from. It is a collapsed `<details>` block in the PR body, the source of truth (a later session needs no branch):
 
 ```json
-{ "pr": 89, "base": "a1b2c3d", "scenarios": [{
+{ "base": "a1b2c3d", "scenarios": [{
   "name": "stopped-at-address", "kind": "ui",
   "how": "pnpm exec playwright test autopilot.spec.ts -g stopped",
   "touches": ["cops/hooks/cops.tsx"],
@@ -23,7 +23,7 @@ One manifest per PR records what each capture was taken from; `file` is relative
   "status": "captured" }] }
 ```
 
-- `how` uses only the repo's own tooling; nothing is installed to capture.
+- `how` uses only the repo's own tooling; install nothing.
 - **Stale**: `git diff --quiet <after.at> HEAD -- <touches>` exits non-zero. The before is pinned to the base and goes stale only when the base moves.
 
 ## Evidence status: `captured` | `captured-by-user` | `drawn` | `mock` | `manual` | `not-captured`
@@ -31,7 +31,7 @@ One manifest per PR records what each capture was taken from; `file` is relative
 | Status | Meaning |
 |---|---|
 | `captured` | taken from the real thing by the agent |
-| `captured-by-user` | a `manual` scenario's output the user ran and handed back |
+| `captured-by-user` | a `manual` scenario's output pasted back, or a screenshot dropped by the user into the PR body |
 | `drawn` | an architecture diagram derived from the diff, not a running system |
 | `mock` | a hand-made demonstration, never presented as a capture |
 | `manual` | needs the user to run something; the PR carries the commands |
@@ -43,9 +43,9 @@ The PR body shows each scenario's status under `### Before` and `### After`.
 
 - **Folder**: `<slug>`, the branch name with `/` replaced by `-`, in scratch and on `cops-evidence`.
 - **Scratch**: `$(git rev-parse --git-dir)/cops/evidence/<slug>/`, captures in progress and the draft manifest, local only.
-- **Published**: orphan branch `cops-evidence`, under `<slug>/`. Its manifest is the source of truth, read with `git show origin/cops-evidence:<slug>/manifest.json` and written from a temporary `git worktree` outside the repo, in one commit and push separate from the PR branch's. The PR body links files by commit SHA.
+- **Published**: orphan branch `cops-evidence`, under `<slug>/`. It holds image files only, written from a temporary `git worktree` outside the repo, in a commit and push separate from the PR branch's; the body links them by SHA.
 - **Never the working tree or the PR branch**: no `.cops/` folder, no `.gitignore` change. Publishing impossible → scratch only, and the PR says `Evidence: not published — <reason>`.
-- Captures are scanned for secrets before publishing; a hit stops the capture. Evidence of a merged or closed PR stays; pruning is a human decision.
+- `api`/`cli` text is scanned for secrets before it enters the body; a hit stops the capture. Evidence of a merged or closed PR stays; pruning is a human decision.
 
 ## Staleness is not a `sweep-diff` check
 
