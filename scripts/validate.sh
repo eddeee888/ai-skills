@@ -624,6 +624,9 @@ validate_behavioral_contracts() {
     "## Don't checklist an intentionally-failing check as done" \
     '## Before and After: `### Before` / `### After` under `## Verification`' \
     '`### Before` then `### After` as two separate subsections under `## Verification`'
+  require_order "CONVENTIONS-verification.md" "Done when clause under Before and After" \
+    '## Before and After: `### Before` / `### After` under `## Verification`' \
+    "never satisfies a card's Done when"
   for path in CONVENTIONS-pr-metadata.md CONVENTIONS-evidence.md; do
     forbid_markers "$path" "verification rules live in CONVENTIONS-verification.md" \
       "## Verification checklist" "## Don't checklist an intentionally-failing" "## Before and After"
