@@ -18,4 +18,4 @@ With `for: pr-sidekick`, the caller pastes the brief into an editing subagent's 
 Evidence: <kind> — <scenario>, <scenario> (before/after)
 ```
 
-Take kinds from the profile's `evidence:` line when `scout-repo` runs in the same call, and scenarios from the ask, at most 5 (`CONVENTIONS-evidence.md` → "Evidence scenarios"). No UI, API, CLI or architecture surface in the ask, or no tooling in the profile: return `Evidence: none — <why>`. `no relevant memory` covers only the rules. Never capture anything.
+Take kinds from the profile's `evidence:` line when `scout-repo` runs in the same call, and scenarios from the ask, at most 5 (`CONVENTIONS-evidence.md` → "Evidence scenarios"). No UI, API, CLI or architecture surface in the ask, no `scout-repo` in the same call, or no tooling in the profile: return `Evidence: none — <why>`. `no relevant memory` covers only the rules. Never capture anything.
