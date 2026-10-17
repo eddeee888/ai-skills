@@ -24,10 +24,11 @@ jobs:
       - uses: actions/checkout@v7
       # The hooks import `claude-code` and `claude-code/testing`, which only Claude Code provides, so
       # `claude plugin test` is the runner. It needs no login, API key or bun. Claude Code is a
-      # devDependency pinned in package.json; pnpm comes from its `packageManager` field.
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      # devDependency pinned in package.json; pnpm/setup takes pnpm from its `packageManager` field
+      # and installs the dependencies from the lockfile.
+      - name: Set up pnpm and install dependencies
+        uses: pnpm/setup@v3
+        with:
+          require-lockfile: true
       - name: Run the cops hook tests
         run: pnpm test:hooks
