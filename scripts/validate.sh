@@ -473,9 +473,10 @@ validate_autopilot() {
     "Confirm on autopilot" "The card is the only prompt."
   require_markers "$auto" "autopilot PR marking" "--label autopilot" \
     "Opened on autopilot by [Code Ops](https://github.com/eddeee888/ai-skills/tree/main/cops) plugin;" "- [ ] Approved by [<login>](https://github.com/<login>)"
+  forbid_markers "$auto" "autopilot leaves the PR a draft" "assign <login>, mark ready" "draft: false"
   require_order "$auto" "autopilot chain order" \
     "## Open the PR" "## The chain" '1. `cops:pr-review`' '2. `cops:pr-address`' \
-    '3. `cops:pr-sync`' '4. `cops:pr-note`' "## Finish" "gh pr ready" "--add-assignee"
+    '3. `cops:pr-sync`' '4. `cops:pr-note`' "## Finish" "--add-assignee"
   require_markers "$auto" "autopilot address rules" \
     '`Question:` → left open for the user' '`Suggestion:` → applied if low risk' \
     '`Test:` → applied' '`Issue:` → applied if low risk, test first' "Left open if critical" \
