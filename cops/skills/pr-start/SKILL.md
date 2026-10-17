@@ -18,7 +18,7 @@ Read, in order:
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
-The oracle supplies the repo profile and remembered rules, never intent. No stated reason for the change → ask the user; never guess one.
+The oracle supplies the repo profile and remembered rules, never intent. No stated reason for the change → ask the user.
 
 ## 1. Gate
 
@@ -44,7 +44,7 @@ Keep the login for trailers and the card's `Approved-by:`.
 
 From the task sources, draft the card's Goal and likely files. Then call `cops:pr-oracle` once (Cursor: the `pr-oracle` subagent) in `scout-repo` + `brief-task` mode with `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
 
-Keep from the reply the profile (test command, monorepo packages, template, `overrides:`), the brief lines for `Rules that apply:`, and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
+Keep from the reply the profile (test command, monorepo packages, template, `evidence:`, `overrides:`), the brief lines for `Rules that apply:`, the brief's `Evidence:` suggestion for the card (never a rule line), and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
 
 ## 3. Task card
 
@@ -101,7 +101,7 @@ Call `pr-oracle` in `sweep-diff` mode over the new commits (pre-loop commit to `
 - In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits, never pushes. Then one more `sweep-diff` over that commit: `clean` → Step 6; any flag → stop, bring it to the user; no second follow-up.
 - A flag outside the card's scope → bring it to the user; don't widen the PR.
 
-Nothing is pushed before a clean `sweep-diff`: every pushed commit, the follow-up's included, has passed a sweep.
+Nothing is pushed before a clean `sweep-diff`.
 
 ## 6. Push and open the PR
 
