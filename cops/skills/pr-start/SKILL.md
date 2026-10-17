@@ -31,6 +31,7 @@ MCP route: find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, 
 
 - No checkout, or a detached HEAD → stop; say what's missing.
 - The current branch already has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-sync`.
+- This conversation already ran `pr-start` for the same task (same issue, spec or ask), whether called or implied → ask whether to start another PR for it before going on; no new GitHub call, judge from the conversation alone. Declined → stop and point to the PR it opened.
 - On the default branch → propose a new `<type>/<short-slug>` branch on the card (`CONVENTIONS-pr-metadata.md` → "Non-issue branch naming"); never commit to the default branch.
 - Uncommitted changes you didn't make → ask whether they belong here.
 - `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there refuses autopilot and offers the normal run.
