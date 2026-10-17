@@ -1,9 +1,9 @@
 ---
-name: pr-sync
-description: 'Sync an existing open PR with its branch: rebase onto the current base, then update title, description, and changeset from the remaining diff, preserving genuine issue links and external context. Run only when asked: “update the PR description,” “sync the PR with my changes,” “rebase and update the PR,” “the PR is stale,” or “make the changeset match my changes.”'
+name: pr-wrap-up
+description: 'Wrap up an open PR: rebase onto the current base, then update title, description, changeset and after-evidence from the final diff, keeping genuine issue links. Run only when asked: “wrap up the PR,” “finalize my PR,” “I’m done coding, wrap this up,” “update the PR description,” or “rebase and update the PR.”'
 ---
 
-# Sync PR with branch changes
+# Wrap up a PR
 
 A PR description is a snapshot of intent from when the PR opened; the branch keeps moving — new commits, scope changes, an advancing base. This skill rebases the branch onto its base, then re-derives the title, description, and changeset from what's there, so a reviewer never reads a stale summary or a diff cluttered with already-merged commits.
 
@@ -30,8 +30,8 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    states the motivation for Why. When resuming, use the answer and pick up
    at the step that asked; don't redo a rebase, changeset commit or push
    that's already on origin.
-   Write the drafted title to $(git rev-parse --git-dir)/pr-sync-title.txt
-   and the body to $(git rev-parse --git-dir)/pr-sync-body.md, outside the
+   Write the drafted title to $(git rev-parse --git-dir)/pr-wrap-up-title.txt
+   and the body to $(git rev-parse --git-dir)/pr-wrap-up-body.md, outside the
    working tree. Don't edit the PR.
    Return at most 5 lines: pushed (sha, or "nothing to push"), changeset
    (created | updated | none), title changed (yes/no),
@@ -52,18 +52,18 @@ gh pr view --json number,title,url,author,baseRefName,headRefName 2>&1
 
 On the MCP route, find the branch's PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`), then `pull_request_read` method `get`.
 
-Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) → stop, tell the user there's no PR to sync, and don't create one — opening a PR is a different task with its own judgment calls (base, reviewers, draft-or-not).
+Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) → stop, tell the user there's no PR to wrap up, and don't create one — opening a PR is a different task with its own judgment calls (base, reviewers, draft-or-not).
 
 Succeeds → keep the PR number and `baseRefName`; everything downstream diffs against that base, not the last commit.
 
-Before spending an oracle call and a subagent, check there's anything to sync:
+Before spending an oracle call and a subagent, check there's anything to wrap up:
 
 ```bash
 git fetch origin <baseRefName> --quiet
 git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 ```
 
-`no diff` and no evidence to capture → say the PR is already current and stop. A `<details>` evidence manifest in the PR body (already fetched in this step by the selected route: `gh pr view` fields or MCP `pull_request_read` `get`) means `recapture.md`'s check runs here too; any after missing or stale → go on. Body can't be read → the "nothing to sync" stop is not taken on evidence grounds; say the evidence check was skipped.
+`no diff` and no evidence to capture → say the PR is already current and stop. A `<details>` evidence manifest in the PR body (already fetched in this step by the selected route: `gh pr view` fields or MCP `pull_request_read` `get`) means `recapture.md`'s check runs here too; any after missing or stale → go on. Body can't be read → the "nothing to wrap up" stop is not taken on evidence grounds; say the evidence check was skipped.
 
 Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`. Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline. With an `autopilot profile:` line in the stage prompt (see Step 7's autopilot exception), call `brief-task` alone and use that profile.
 
@@ -75,8 +75,8 @@ If the user explicitly asked to remember a concrete preference, call `learn-feed
 
 ```bash
 d="$(git rev-parse --git-dir)"
-gh pr edit <number> --title "$(cat "$d/pr-sync-title.txt")" --body-file "$d/pr-sync-body.md"
-rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
+gh pr edit <number> --title "$(cat "$d/pr-wrap-up-title.txt")" --body-file "$d/pr-wrap-up-body.md"
+rm "$d/pr-wrap-up-title.txt" "$d/pr-wrap-up-body.md"
 ```
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.

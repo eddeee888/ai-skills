@@ -69,7 +69,7 @@ No subagent capability → run the same steps here, in the same order, and mark 
 
 ## Capture handoff
 
-Only when the card's Evidence lists scenarios; autopilot too. `standard` tier. The before only, on the base commit, before the first edit; pr-sync captures the after.
+Only when the card's Evidence lists scenarios; autopilot too. `standard` tier. The before only, on the base commit, before the first edit; pr-wrap-up captures the after.
 
 ```text
 Repo <owner>/<repo>, branch <branch> (checked out).

@@ -18,6 +18,15 @@ const world = ({ on }: { on: On }): void => {
   on('tool.call', { tool: 'Skill' }, () => ({ result: { success: true, commandName: 'cops:pr-start' } }))
 }
 
+// A typed skill command expands its prompt, which is how its run counts as the person's.
+const typedSkills = ({ $, on }: { $: Engine; on: On }): void => {
+  on('skill.prompt', (_, e) => ({ text: e.text }))
+  on('command.run', async (_, e) => {
+    await $.skill.prompt({ skill: e.command, text: 'body' })
+    return { text: '' }
+  })
+}
+
 const mount = async ({ $ }: { $: Engine }): Promise<Ui> => {
   await $.session.start({ cwd: '/repo', surface: null, isInteractive: false })
   return $.ui.mount({
@@ -38,8 +47,9 @@ const until = async ({ check }: { check: () => Promise<boolean> }): Promise<void
 describe('autopilot strip', () => {
   test('a prompt submitted after the turn ended reads running again', async ($, on) => {
     world({ on })
+    typedSkills({ $, on })
     const ui = await mount({ $ })
-    await $.tool.call({ tool: 'Skill', skill: 'cops:pr-start', args: '--autopilot fix the thing' })
+    await $.command.run({ command: 'cops:pr-start', args: '--autopilot fix the thing', origin: { kind: 'composer' } } as never)
     await $.turn.complete({ answer: 'Confirm, or edit any line.' })
     await until({ check: async () => ((await ui.find({ type: 'Box' }))?.text ?? '').includes('stopped at fix') })
     await $.prompt.submit({ text: 'confirm', wait: false, origin: { kind: 'composer' } })
@@ -93,11 +103,12 @@ describe('finished autopilot card', () => {
     on('prompt.submit', ($, e) => ({ text: e.text }))
     on('turn.complete', ($, e) => ({ text: e.answer }))
     on('tool.call', { tool: 'Skill' }, () => ({ result: { success: true, commandName: 'cops:pr-start' } }))
+    typedSkills({ $, on })
     const ui = await mount({ $ })
     const text = async (): Promise<string> => (await ui.find({ type: 'Box' }))?.text ?? ''
     await until({ check: async () => (await text()).includes('PR #81') })
-    await $.tool.call({ tool: 'Skill', skill: 'cops:pr-start', args: '--autopilot fix the thing' })
-    for (const stage of ['review', 'address', 'sync', 'note']) {
+    await $.command.run({ command: 'cops:pr-start', args: '--autopilot fix the thing', origin: { kind: 'composer' } } as never)
+    for (const stage of ['review', 'address', 'wrap-up', 'note']) {
       await $.tool.call({ tool: 'Skill', skill: `cops:pr-${stage}`, args: `${PR_URL} — autopilot stage of this pr-start run` })
     }
     await $.turn.complete({ answer: 'Autopilot finished.' })

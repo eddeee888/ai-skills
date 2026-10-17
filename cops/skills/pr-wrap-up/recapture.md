@@ -1,4 +1,4 @@
-# pr-sync: capture the after
+# pr-wrap-up: capture the after
 
 Read this when the PR body holds a `<details>` evidence manifest. Manifest, statuses, stale check, `how` guardrail, hand-edited manifest and secret backstop: `CONVENTIONS-evidence.md`.
 

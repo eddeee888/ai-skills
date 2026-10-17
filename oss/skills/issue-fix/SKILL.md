@@ -1,13 +1,13 @@
 ---
 name: issue-fix
-description: 'Fix a verified issue from an `issue-verify` failing-test checkpoint. Root-cause it, distinguish library from dependency bugs, present 2–3 options, then implement the chosen fix on the checkpoint, commit with required trailers, and push; `--new-pr` opens a separate PR. Use for “fix issue #123,” “implement the fix for #123,” or after an `issue-verify` checkpoint. Never writes the reproduction or runs `cops:pr-sync`.'
+description: 'Fix a verified issue from an `issue-verify` failing-test checkpoint. Root-cause it, distinguish library from dependency bugs, present 2–3 options, then implement the chosen fix on the checkpoint, commit with required trailers, and push; `--new-pr` opens a separate PR. Use for “fix issue #123,” “implement the fix for #123,” or after an `issue-verify` checkpoint. Never writes the reproduction or runs `cops:pr-wrap-up`.'
 ---
 
 # Fix a verified issue
 
 Continue the TDD loop from an `issue-verify` failing-test checkpoint. Make the test pass only after the root cause is classified and the user chooses among concrete options.
 
-**This skill never runs `cops:pr-sync` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS-orchestration.md` → "Suggesting next steps", Step 7).
+**This skill never runs `cops:pr-wrap-up` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS-orchestration.md` → "Suggesting next steps", Step 7).
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
@@ -58,7 +58,7 @@ Use a non-closing issue reference, never `Fixes #123`/`Closes #123` (`CONVENTION
 
 ## Step 7: Wrap up
 
-Never run `cops:pr-sync` or `cops:pr-note`; suggest them per `CONVENTIONS-orchestration.md` → "Suggesting next steps". A new fix PR needs no sync; a pushed existing checkpoint PR may. End with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo`, `root cause`, `brief-task`, `learn-feedback` when run, `fix loop`, and `sweep-diff`.
+Never run `cops:pr-wrap-up` or `cops:pr-note`; suggest them per `CONVENTIONS-orchestration.md` → "Suggesting next steps". A new fix PR needs no wrap-up; a pushed existing checkpoint PR may. End with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo`, `root cause`, `brief-task`, `learn-feedback` when run, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

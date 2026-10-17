@@ -478,7 +478,7 @@ validate_autopilot() {
   forbid_markers "$auto" "autopilot leaves the PR a draft" "assign <login>, mark ready" "draft: false"
   require_order "$auto" "autopilot chain order" \
     "## Open the PR" "## The chain" '1. `cops:pr-review`' '2. `cops:pr-address`' \
-    '3. `cops:pr-sync`' '4. `cops:pr-note`' "## Finish" "--add-assignee"
+    '3. `cops:pr-wrap-up`' '4. `cops:pr-note`' "## Finish" "--add-assignee"
   require_markers "$auto" "autopilot address rules" \
     '`Question:` → left open for the user' '`Suggestion:` → applied if low risk' \
     '`Test:` → applied' '`Issue:` → applied if low risk, test first' "Left open if critical" \
@@ -499,10 +499,10 @@ validate_autopilot() {
     "Never post without confirmation." "Autopilot exception:" "## 5. Post and report"
   require_order "cops/skills/pr-address/SKILL.md" "autopilot address exception" \
     "Apply no automatic action" "Autopilot exception:" "## Step 5: Handling comments"
-  require_order "cops/skills/pr-sync/SKILL.md" "autopilot sync exception" \
+  require_order "cops/skills/pr-wrap-up/SKILL.md" "autopilot wrap-up exception" \
     'Don'\''t run `cops:pr-note`' "Autopilot exception:" "## When to touch nothing"
   for path in cops/skills/pr-review/SKILL.md cops/skills/pr-note/SKILL.md \
-    cops/skills/pr-address/SKILL.md cops/skills/pr-sync/SKILL.md; do
+    cops/skills/pr-address/SKILL.md cops/skills/pr-wrap-up/SKILL.md; do
     require_markers "$path" "autopilot stage of a pr-start run only" \
       'as a stage of a `/cops:pr-start` autopilot run in this conversation' \
       "(../pr-start/autopilot.md)"
@@ -590,11 +590,13 @@ validate_behavioral_contracts() {
   done
 
   require_order "docs/memory-flow.html" "COPS skills in PR lifecycle order" \
-    ">pr-start<" ">pr-review<" ">pr-sync<" ">pr-note<" ">pr-address<"
+    ">pr-start<" ">pr-review<" ">pr-wrap-up<" ">pr-note<" ">pr-address<"
   require_order "cops/README.md" "COPS skills in PR lifecycle order" \
-    '| [`pr-start`]' '| [`pr-review`]' '| [`pr-sync`]' '| [`pr-note`]' '| [`pr-address`]'
+    '| [`pr-start`]' '| [`pr-review`]' '| [`pr-wrap-up`]' '| [`pr-note`]' '| [`pr-address`]'
 
-  require_markers "cops/skills/pr-start/SKILL.md" "slash-only skill" \
+  require_markers "cops/skills/pr-start/SKILL.md" "model-invocable skill, user-typed autopilot, repeat-task ask" \
+    "honor it only when the user typed it" "already ran \`pr-start\` for the same task"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "model-invocable skill" \
     "disable-model-invocation: true"
   require_order "cops/skills/pr-start/SKILL.md" "task card before any edit" \
     "## 3. Task card" "Nothing is edited, run or delegated before the user confirms the card." \
@@ -634,7 +636,7 @@ validate_behavioral_contracts() {
     "same names and order"
   require_markers "cops/skills/pr-start/SKILL.md" "Before/After pointer" \
     '`CONVENTIONS-verification.md` → "Before and After"'
-  require_markers "cops/skills/pr-sync/draft.md" "keep Before/After and manifest" \
+  require_markers "cops/skills/pr-wrap-up/draft.md" "keep Before/After and manifest" \
     "Keep existing \`### Before\` / \`### After\`" "evidence manifest verbatim" \
     '`CONVENTIONS-verification.md` → "Before and After"'
   require_order "CONVENTIONS-verification.md" "Done when clause under Before and After" \
@@ -644,7 +646,7 @@ validate_behavioral_contracts() {
     forbid_markers "$path" "verification rules live in CONVENTIONS-verification.md" \
       "## Verification checklist" "## Don't checklist an intentionally-failing" "## Before and After"
   done
-  require_markers "cops/skills/pr-sync/draft.md" "verification pointer" \
+  require_markers "cops/skills/pr-wrap-up/draft.md" "verification pointer" \
     '`CONVENTIONS-verification.md` → "Verification checklist"'
   require_markers "cops/references/pr-oracle/modes/scout-repo.md" "evidence profile line" \
     "evidence: none | <kind> → <tool> (<command>), …; deploy → <command>" \
@@ -670,8 +672,8 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "Phase:" "\`after\`"
   require_order "cops/skills/pr-start/fix-loop.md" "capture handoff before the size check" \
     "## Fix-loop handoff" "## Capture handoff" "## Size after the loop"
-  require_markers "cops/skills/pr-start/SKILL.md" "after left to pr-sync" \
-    'pending: run /cops:pr-sync' "suggest \`/cops:pr-sync\`"
+  require_markers "cops/skills/pr-start/SKILL.md" "after left to pr-wrap-up" \
+    'pending: run /cops:pr-wrap-up' "suggest \`/cops:pr-wrap-up\`"
   require_markers "cops/skills/pr-start/SKILL.md" "manifest step" \
     "## 5b. Write the evidence manifest" "Write the \`<details>\` manifest block" \
     "\`### Before\` then \`### After\` under it" "evidence never holds the PR"
@@ -712,12 +714,12 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     forbid_markers "$path" "evidence line always present" "→ no line"
   done
 
-  recapture="cops/skills/pr-sync/recapture.md"
+  recapture="cops/skills/pr-wrap-up/recapture.md"
   for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
     require_markers "$path" "stale before is labelled, not recaptured" \
       "never recaptured" 'stale since <new base sha>' "its status stays"
     require_markers "$path" "who captures what" \
-      "pr-start" "before the first edit" "pr-sync" "final code" "absent until"
+      "pr-start" "before the first edit" "pr-wrap-up" "final code" "absent until"
     require_markers "$path" "hand-edited manifest" \
       "treated as no manifest" "skip recapture" "say so in the return line"
     require_markers "$path" "how guardrail" \
@@ -727,7 +729,7 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   done
   for path in CONVENTIONS-verification.md cops/CONVENTIONS-verification.md oss/CONVENTIONS-verification.md; do
     require_markers "$path" "stale entry labels" 'stale since <sha>' 'pending: drop <name>.png here' \
-      'pending: run /cops:pr-sync'
+      'pending: run /cops:pr-wrap-up'
   done
   require_markers "$recapture" "deterministic stale check" \
     "no model call" "no oracle" "Capture the after" '`CONVENTIONS-evidence.md`'
@@ -737,19 +739,19 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   require_markers "$recapture" "manifest and entries updated" \
     '`CONVENTIONS-verification.md` → "Before and After"' '`captured-by-user`' "secret backstop"
   require_markers "$recapture" "recapture return item" 'evidence (n captured, n stale, n none)'
-  require_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
+  require_markers "cops/skills/pr-wrap-up/SKILL.md" "stale-evidence check reads the body on any route" \
     "fetched in this step" 'MCP `pull_request_read` `get`' "evidence check was skipped"
-  forbid_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
+  forbid_markers "cops/skills/pr-wrap-up/SKILL.md" "stale-evidence check reads the body on any route" \
     '`gh pr view --json body`'
-  require_markers "cops/skills/pr-sync/SKILL.md" "pr-sync recapture pointer" \
+  require_markers "cops/skills/pr-wrap-up/SKILL.md" "pr-wrap-up recapture pointer" \
     "no evidence to capture" "recapture.md" 'evidence (n captured, n stale, n none)'
-  require_markers "cops/skills/pr-sync/draft.md" "pr-sync recapture pointer" \
+  require_markers "cops/skills/pr-wrap-up/draft.md" "pr-wrap-up recapture pointer" \
     "recapture.md" "before Step 4"
-  forbid_markers "cops/skills/pr-sync/SKILL.md" "recapture rules live in recapture.md" \
+  forbid_markers "cops/skills/pr-wrap-up/SKILL.md" "recapture rules live in recapture.md" \
     'stale since' 'git diff --quiet <after.at>' "package.json"
-  forbid_markers "cops/skills/pr-sync/draft.md" "recapture rules live in recapture.md" \
+  forbid_markers "cops/skills/pr-wrap-up/draft.md" "recapture rules live in recapture.md" \
     'stale since' 'git diff --quiet <after.at>' "package.json" "Recapture is out of scope"
-  forbid_markers "cops/skills/pr-address/SKILL.md" "pr-sync owns stale evidence" "evidence stale"
+  forbid_markers "cops/skills/pr-address/SKILL.md" "pr-wrap-up owns stale evidence" "evidence stale"
   require_markers "cops/skills/pr-start/autopilot.md" "autopilot evidence report" \
     '`pending: drop`' '`stale`' '`manual`' '`not-captured`' "evidence never holds the finish step"
 
@@ -831,16 +833,16 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "This is a hard gate"
   require_markers "oss/skills/issue-verify/SKILL.md" "checkpoint" \
     "Skill: oss:issue-verify"
-  require_markers "oss/skills/issue-verify/SKILL.md" "no PR sync" \
-    'never runs `cops:pr-sync`'
+  require_markers "oss/skills/issue-verify/SKILL.md" "no PR wrap-up" \
+    'never runs `cops:pr-wrap-up`'
   require_markers "oss/skills/issue-fix/SKILL.md" "option gate" \
     "This is a hard gate" "User hasn't picked an option"
   require_markers "oss/skills/issue-fix/SKILL.md" "checkpoint" \
     'issue-verify` checkpoint'
   require_markers "oss/skills/issue-fix/SKILL.md" "unnumbered checkpoint discovery" \
     "no-issue-number path"
-  require_markers "oss/skills/issue-fix/SKILL.md" "no PR sync" \
-    'never runs `cops:pr-sync`'
+  require_markers "oss/skills/issue-fix/SKILL.md" "no PR wrap-up" \
+    'never runs `cops:pr-wrap-up`'
   require_markers "oss/skills/issue-fix/SKILL.md" "no duplicate PR" \
     'Never run `gh pr create`'
   require_markers "oss/skills/checkpoint.md" "exact issue guard" \

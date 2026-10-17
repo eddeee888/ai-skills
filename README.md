@@ -21,13 +21,13 @@ AI skills kit — a plugin marketplace for Claude Code and Cursor.
 
 <img src="cops/assets/logo.svg" alt="Code Ops logo" width="80" height="80">
 
-[`cops/`](cops/) — working with pull requests. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-sync`. Cursor: `/pr-sync`.
+[`cops/`](cops/) — working with pull requests. Claude Code: `/cops:<skill-name>`, e.g. `/cops:pr-start` or `/cops:pr-wrap-up`. Cursor: `/pr-wrap-up`.
 
 #### Skills
 
 - [`pr-start`](cops/skills/pr-start/SKILL.md) — turns a confirmed task into a pushed draft PR.
 - [`pr-review`](cops/skills/pr-review/SKILL.md) — drafts labeled review comments and posts one review after you confirm.
-- [`pr-sync`](cops/skills/pr-sync/SKILL.md) — rebases an open PR and updates its title, description, and changeset.
+- [`pr-wrap-up`](cops/skills/pr-wrap-up/SKILL.md) — rebases an open PR and updates its title, description, and changeset.
 - [`pr-note`](cops/skills/pr-note/SKILL.md) — leaves inline notes explaining choices on your own PR.
 - [`pr-address`](cops/skills/pr-address/SKILL.md) — addresses unresolved review threads on your PR.
 
@@ -192,6 +192,6 @@ cops/skills/*/SKILL.md, oss/skills/*/SKILL.md and
 cops/references/pr-oracle/modes/*.md. Show only the access paths the code
 allows, and label every arrow with what passes along it. Keep the layout,
 colors, legend, and the COPS skills in PR lifecycle order (pr-start,
-pr-review, pr-sync, pr-note, pr-address). Run `pnpm render:memory-flow`, look at
+pr-review, pr-wrap-up, pr-note, pr-address). Run `pnpm render:memory-flow`, look at
 docs/memory-flow.png, then commit and push.
 ```

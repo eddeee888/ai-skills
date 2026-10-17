@@ -64,7 +64,7 @@ const text = async ({ ui }: { ui: Ui }): Promise<string> => (await ui.find({ typ
 describe('handoff checklist', () => {
   test('ticks a combined oracle call by each mode it names', () => {
     expect(tickedBy({ skill: 'cops:pr-start', agent: 'cops:pr-oracle', modes: ['scout-repo', 'brief-task'] })).toEqual(['scout-repo + brief-task'])
-    expect(tickedBy({ skill: 'cops:pr-sync', agent: 'cops:pr-oracle', modes: ['scout-repo', 'brief-task'] })).toEqual(['scout-repo', 'brief-task'])
+    expect(tickedBy({ skill: 'cops:pr-wrap-up', agent: 'cops:pr-oracle', modes: ['scout-repo', 'brief-task'] })).toEqual(['scout-repo', 'brief-task'])
     expect(tickedBy({ skill: 'cops:pr-start', agent: 'cops:pr-oracle', modes: ['scout-repo'] })).toEqual([])
     expect(tickedBy({ skill: 'cops:pr-start', agent: 'cops:pr-sidekick', modes: [] })).toEqual(['fix loop'])
     expect(tickedBy({ skill: 'cops:pr-address', agent: 'Explore', modes: [] })).toEqual(['5b research'])

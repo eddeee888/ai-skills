@@ -48,7 +48,7 @@ Read [research.md](research.md) now, before researching or drafting any answer. 
 
 ## Step 6: Wrap up
 
-Never run `cops:pr-sync`. If implementation changes were pushed to the user's own PR, suggest `pr-sync` exactly as `CONVENTIONS-orchestration.md` → "Suggesting next steps" says. Report counts implemented/replied and still open for manual resolution. End with the `CONVENTIONS-orchestration.md` → "Handoffs in the final report" list, in execution order, using `triage-threads + scout-repo`, `learn-feedback` when run, one `5a batch` per batch, `sweep-diff` per check, and `5b research` when applicable.
+Never run `cops:pr-wrap-up`. If implementation changes were pushed to the user's own PR, suggest `pr-wrap-up` exactly as `CONVENTIONS-orchestration.md` → "Suggesting next steps" says. Report counts implemented/replied and still open for manual resolution. End with the `CONVENTIONS-orchestration.md` → "Handoffs in the final report" list, in execution order, using `triage-threads + scout-repo`, `learn-feedback` when run, one `5a batch` per batch, `sweep-diff` per check, and `5b research` when applicable.
 
 ## When to stop instead of proceeding
 
@@ -56,4 +56,4 @@ Never run `cops:pr-sync`. If implementation changes were pushed to the user's ow
 - Any item still awaits the user's Step 4 decision → do nothing.
 - A why-question has only private backing → post only what public sources support, or say the backing is private and give that source only to the user (`CONVENTIONS-posts.md` → "Citing sources").
 - The user has not replied in a reviewer thread → never auto-act, however trivial or authoritative it looks.
-- Never resolve a review thread. Never auto-run `pr-sync`. Replying is the final thread action.
+- Never resolve a review thread. Never auto-run `pr-wrap-up`. Replying is the final thread action.
