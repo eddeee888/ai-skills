@@ -622,7 +622,10 @@ validate_behavioral_contracts() {
     "evidence: none | <kind> → <tool> (<command>), …; deploy → <command>" \
     "never guessed" "Never capture anything"
   require_markers "cops/references/pr-oracle/modes/brief-task.md" "evidence suggestion" \
-    "Evidence: <kind> — <scenario>, <scenario> (before/after)" "a candidate list only"
+    "Evidence: <kind> — <scenario>, <scenario> (before/after)" "a candidate list only" \
+    "and optionally \`for: pr-sidekick\` and \`for: task-card\`" "Only with \`for: task-card\`"
+  require_markers "cops/skills/pr-start/SKILL.md" "card brief request" \
+    "with \`for: pr-sidekick\` and \`for: task-card\`"
   require_order "cops/skills/pr-start/SKILL.md" "optional task card Evidence line" \
     "Done when: <a test" "Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>" \
     "In scope:" "**Evidence** (optional)" "An edit stands; it doesn't re-run \`brief-task\`." \

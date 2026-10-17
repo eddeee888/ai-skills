@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Start a PR from a task
 
-It pins the task on a user-confirmed card, runs one scoped loop (implement, test, commit), checks it against remembered rules, and opens a draft PR, never continuing an existing PR.
+It pins the task on a user-confirmed card, runs one scoped loop (implement, test, commit), checks it against remembered rules, and opens a draft PR.
 
 GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENTIONS-github.md` → "GitHub access" says.
 
@@ -42,7 +42,7 @@ Keep the login for trailers and `Approved-by:`.
 
 ## 2. Profile and brief
 
-From the task sources, draft the card's Goal and likely files. Then call `cops:pr-oracle` once (Cursor: the `pr-oracle` subagent) in `scout-repo` + `brief-task` mode with `for: pr-sidekick` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
+From the task sources, draft the card's Goal and likely files. Then call `cops:pr-oracle` once (Cursor: the `pr-oracle` subagent) in `scout-repo` + `brief-task` mode with `for: pr-sidekick` and `for: task-card` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
 
 Keep from the reply the profile (test command, monorepo packages, template, `evidence:`, `overrides:`), the brief lines for `Rules that apply:`, the brief's `Evidence:` suggestion for the card (never a rule line), and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
 
