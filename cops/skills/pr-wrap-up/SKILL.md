@@ -1,6 +1,6 @@
 ---
 name: pr-wrap-up
-description: 'Sync an existing open PR with its branch: rebase onto the current base, then update title, description, and changeset from the remaining diff, preserving genuine issue links and external context. Run only when asked: “update the PR description,” “sync the PR with my changes,” “rebase and update the PR,” “the PR is stale,” or “make the changeset match my changes.”'
+description: 'Wrap up an open PR: rebase onto the current base, then update title, description, changeset and after-evidence from the final diff, keeping genuine issue links. Run only when asked: “wrap up the PR,” “finalize my PR,” “I’m done coding, wrap this up,” “update the PR description,” or “rebase and update the PR.”'
 ---
 
 # Sync PR with branch changes
