@@ -12,8 +12,8 @@ const skill = ({ name, args = '', at }: { name: string; args?: string; at: numbe
 }
 const start = ({ at }: { at: number }): SkillRun => skill({ name: 'cops:pr-start', args: '--autopilot fix the thing', at })
 const stage = ({ name, at }: { name: string; at: number }): SkillRun => skill({ name: `cops:pr-${name}`, args: SUFFIX, at })
-const view = ({ isDraft = true, url = URL, hasNotes = false }: { isDraft?: boolean; url?: string; hasNotes?: boolean } = {}): Threads => ({
-  status: 'ready', pr: 81, url, state: 'OPEN', threads: [], isReviewed: false, hasNotes, isDraft,
+const view = ({ isDraft = true, url = URL, hasNotes = false, state = 'OPEN' }: { isDraft?: boolean; url?: string; hasNotes?: boolean; state?: 'OPEN' | 'MERGED' | 'CLOSED' } = {}): Threads => ({
+  status: 'ready', pr: 81, url, state, threads: [], isReviewed: false, hasNotes, isDraft,
 })
 const call = ({ startedAt, state }: { startedAt: number; state: AgentCall['state'] }): AgentCall =>
   ({ id: `call-${startedAt}`, agent: 'cops:pr-sidekick', isLeak: false, startedAt, state })
@@ -105,18 +105,46 @@ describe('describeChain', () => {
     expect(describe_({ runs: runs.slice(0, 2) })?.warnings).toEqual([])
   })
 
-  test('all stages done but still a draft reads stopped at finish with no button', () => {
+  test('all stages done but still a draft reads finished with no Pick up', () => {
     const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: true }) })
-    expect(chain?.line).toContain('note ✓ → ready ·')
-    expect(chain?.line).toContain('stopped at finish')
+    expect(chain?.status).toBe('finished')
+    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → sync ✓ → note ✓ → ready · · finished, still a draft')
+    expect(chain?.line).not.toContain('stopped')
+    expect(chain?.stoppedAt).toBeUndefined()
+    expect(chain?.steps.map(one => `${one.mark} ${one.name}:${one.state}`)).toEqual([
+      '✓ fix:done', '✓ review:done', '✓ address:done', '✓ sync:done', '✓ note:done', '· ready:pending',
+    ])
     expect(chain?.pickUp).toBeUndefined()
     expect(chain?.ownsNext).toBe(true)
   })
 
-  test('a stop in the note stage, with no notes posted, reads stopped at note and fills the stage', () => {
+  test('all stages done with the view on another PR still reads stopped at finish', () => {
     const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
-    const chain = describe_({ runs, turnEndedAt: 7 })
+    const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: true, url: 'https://github.com/o/r/pull/9' }) })
+    expect(chain?.status).toBe('stopped')
+    expect(chain?.line).toContain('stopped at finish')
+    expect(chain?.pickUp).toBeUndefined()
+  })
+
+  test('all stages done with no notes posted reads finished', () => {
+    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: false }) })
+    expect(chain?.status).toBe('finished')
+    expect(chain?.pickUp).toBeUndefined()
+  })
+
+  test('address skipped with the other stages done reads finished', () => {
+    const runs = [start({ at: 1 }), ...['review', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const chain = describe_({ runs, turnEndedAt: 6, v: view({ hasNotes: true }) })
+    expect(chain?.status).toBe('finished')
+    expect(chain?.warnings).toEqual(['⚑ skipped address'])
+  })
+
+  test('all stages done on a closed PR with no notes posted reads stopped at note and fills the stage', () => {
+    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const chain = describe_({ runs, turnEndedAt: 7, v: view({ state: 'CLOSED' }) })
+    expect(chain?.status).not.toBe('finished')
     expect(chain?.line).toContain('note ■')
     expect(chain?.line).toContain('stopped at note')
     expect(chain?.pickUp).toBe(`/cops:pr-note ${URL} `)

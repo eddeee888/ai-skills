@@ -27,11 +27,11 @@ export type Chain = {
   stoppedAt?: string
   /** One `⚑ …` line per stage that ran out of order or was skipped. */
   warnings: string[]
-  /** What the chain is doing: a stage in flight, a stop, the person taking over, or the PR ready. */
-  status: 'running' | 'stopped' | 'resumed' | 'ready'
+  /** What the chain is doing: a stage in flight, a stop, a finished draft, the person taking over, or the PR marked ready. */
+  status: 'running' | 'stopped' | 'finished' | 'resumed' | 'ready'
   /** The prompt text the Pick up button fills; unset when the stop can't be picked up. */
   pickUp?: string
-  /** Whether the strip replaces the `Next:` row: while the chain runs or is stopped. */
+  /** Whether the strip replaces the `Next:` row: while the chain runs, is stopped, or is a finished draft. */
   ownsNext: boolean
 }
 
@@ -43,8 +43,9 @@ export type Chain = {
 //   turn ended after review began                  → `… → review ■ → address · … · stopped at review`, pickUp `/cops:pr-review <PR URL> `
 //   sync began with address never run              → warnings `⚑ skipped address`
 //   sync began, then address                       → warnings `⚑ ran sync before address`
-//   all four started, turn ended, notes posted     → `… · stopped at finish`, no pickUp
-//   all four started, turn ended, no notes posted  → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `
+//   all but address started, turn ended, open PR   → `… → note ✓ → ready · · finished, still a draft`, status finished, no pickUp
+//   all four started, the view another PR          → `… → ready ? · stopped at finish`, no pickUp
+//   all four started, PR closed, no notes posted   → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `
 //   a plain cops run on the PR after the stages    → status resumed, no stop
 //   view is another PR, or not ready               → `ready ?`
 export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
@@ -84,9 +85,14 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   const busy = calls.some(one => one.startedAt >= last.at && (one.state === 'running' || one.state === 'background'))
   const isEnded = turnEndedAt !== undefined && turnEndedAt !== null && turnEndedAt >= last.at && !busy
   const isAllStarted = started.every(Boolean)
-  const status = isReady ? 'ready' : plain ? 'resumed' : isEnded ? 'stopped' : 'running'
   // Whether note's comments are posted, or the view can't tell (another PR); a draft PR with none means note never finished.
   const isNoteDone = view.status !== 'ready' || view.url !== url || view.hasNotes
+  // Address may be skipped when the review had no findings, so it is the one stage that need not have started.
+  const addressAt = AUTOPILOT_STAGES.indexOf('cops:pr-address')
+  const isRequiredStarted = started.every((one, at) => one || at === addressAt)
+  // Every stage but address started and note ran last; on an open PR whose draft state the view knows, that is a finished draft.
+  const isFinished = isEnded && isRequiredStarted && lastStage === AUTOPILOT_STAGES.length - 1 && view.status === 'ready' && view.state === 'OPEN' && isReadyKnown
+  const status = isReady ? 'ready' : plain ? 'resumed' : isFinished ? 'finished' : isEnded ? 'stopped' : 'running'
   // The step the chain stopped at: a stage name, `fix`, or `finish` when every stage ran and note finished.
   const stoppedAt = status !== 'stopped' ? undefined : !lastRun ? 'fix' : isAllStarted && lastStage === AUTOPILOT_STAGES.length - 1 && isNoteDone ? 'finish' : AUTOPILOT_STAGES[lastStage].replace(/^cops:pr-/, '')
 
@@ -99,7 +105,7 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
       return '·'
     }
     const isCurrent = stage === lastStage
-    if (status === 'ready' || status === 'resumed' || !isCurrent) {
+    if (status === 'ready' || status === 'resumed' || status === 'finished' || !isCurrent) {
       return '✓'
     }
     if (status === 'stopped') {
@@ -123,6 +129,7 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
     pr && `PR #${pr}`,
     `${steps.join(' → ')} → ready ${readyMark}`,
     stoppedAt && `stopped at ${stoppedAt}`,
+    status === 'finished' && 'finished, still a draft',
   ].filter(Boolean).join(' · ')
 
   const warnings = stages.flatMap((stage, at) => {
@@ -134,5 +141,5 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   })
 
   const pickUp = stoppedAt && stoppedAt !== 'fix' && stoppedAt !== 'finish' && url ? `/${AUTOPILOT_STAGES[lastStage]} ${url} ` : undefined
-  return { line, title, steps: cards, stoppedAt, warnings, status, pickUp, ownsNext: (status === 'running' || status === 'stopped') && (url === undefined || (view.status === 'ready' && view.url === url)) }
+  return { line, title, steps: cards, stoppedAt, warnings, status, pickUp, ownsNext: (status === 'running' || status === 'stopped' || status === 'finished') && (url === undefined || (view.status === 'ready' && view.url === url)) }
 }

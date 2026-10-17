@@ -101,4 +101,6 @@ This PR ...
 
 (omit `## Resources` when Step 5 found nothing for it)
 
+A body that opens with a `> [!NOTE]` block starting `Opened on autopilot by` keeps that block verbatim as its first lines, a ticked `- [x]` box included; never regenerate, move or reword it.
+
 The goal: a description that reads as written by the person who made the change, not bulldozed by a script.

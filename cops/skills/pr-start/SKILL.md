@@ -1,6 +1,6 @@
 ---
 name: pr-start
-description: 'Turn a confirmed task into a pushed draft PR: profile the repo, confirm a task card (goal, why, done-when, scope, approach), hand the change to one sidekick fix loop, sweep it against remembered rules, then push and open a draft PR. Takes an issue, spec file, or plain-text ask; `--autopilot` carries it on to ready for review. Slash-only: /cops:pr-start.'
+description: 'Turn a confirmed task into a pushed draft PR: profile the repo, confirm a task card (goal, why, done-when, scope, approach), hand the change to one sidekick fix loop, sweep it against remembered rules, then push and open a draft PR. Takes an issue, spec file, or plain-text ask; `--autopilot` carries it on to a finished draft. Slash-only: /cops:pr-start.'
 disable-model-invocation: true
 ---
 

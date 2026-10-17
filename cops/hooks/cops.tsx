@@ -861,7 +861,8 @@ export const register: Register = (on, options) => {
 
     const pickUp = chain?.pickUp
     // The card's frame says the chain's state at a glance; each step reads by its own colour.
-    const chainColor = { running: 'permission', stopped: 'warning', ready: 'success', resumed: 'inactive' } as const
+    // `as const` keeps the values as the colour names `borderColor` accepts; dropping it takes typing the map with the theme's colour type.
+    const chainColor = { running: 'permission', stopped: 'warning', finished: 'success', ready: 'success', resumed: 'inactive' } as const
     const stepColor = { done: 'success', active: 'permission', stopped: 'warning', pending: undefined, unknown: undefined } as const
     const chainRow = chain && (
       <Box flexDirection="column" borderStyle="round" borderColor={chainColor[chain.status]} paddingX={1}>
@@ -881,6 +882,21 @@ export const register: Register = (on, options) => {
                 }
               }} />
             )}
+          </Box>
+        )}
+        {/* Only to satisfy type safety: a finished chain always has a `ready` view of its PR. */}
+        {chain.status === 'finished' && view.status === 'ready' && (
+          <Box flexDirection="row" gap={1}>
+            <Text bold color="success" wrap="truncate-end">✓ finished · still a draft</Text>
+            <Button key="mark-ready" label="Mark ready" onPress={async () => {
+              const ran = await runProcess($, ['gh', 'pr', 'ready', String(view.pr)])
+              if (ran?.exitCode !== 0) {
+                $.ui.toast(`Couldn't mark PR #${view.pr} ready — ${ran?.stderr.trim().split('\n')[0] || 'gh failed'}`)
+                return
+              }
+              $.ui.toast(`PR #${view.pr} is ready for review`)
+              await refreshThreadsReported($)
+            }} />
           </Box>
         )}
         {chain.warnings.map(warning => <Text key={`chain-${warning}`} color="warning" wrap="truncate-end">{warning}</Text>)}

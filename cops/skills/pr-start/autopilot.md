@@ -1,6 +1,6 @@
 # pr-start: autopilot
 
-Read this at Step 1 when `--autopilot` was passed; otherwise at Step 3, before showing a card whose Size is Small or Medium. Autopilot carries one confirmed card to a ready-for-review PR without another prompt (`CONVENTIONS-orchestration.md` → "Autopilot runs"). Everything SKILL.md says still holds unless this file names the difference.
+Read this at Step 1 when `--autopilot` was passed; otherwise at Step 3, before showing a card whose Size is Small or Medium. Autopilot carries one confirmed card to a finished draft PR without another prompt (`CONVENTIONS-orchestration.md` → "Autopilot runs"). Everything SKILL.md says still holds unless this file names the difference.
 
 ## Flag and login
 
@@ -42,7 +42,7 @@ Otherwise:
 - **With the flag**, the card gains this line above `Confirm, or edit any line.`:
 
   ```text
-  Autopilot authorises: push, open PR, post review, push fixes, edit title and body, post notes, assign <login>, mark ready
+  Autopilot authorises: push, open PR, post review, push fixes, edit title and body, post notes, assign <login>
   ```
 
 - **Without the flag**, the confirm screen offers two choices, `Confirm` and `Confirm on autopilot`; the second one's description is that same line. Without a question tool, print the line under the card as the offer.
@@ -64,11 +64,15 @@ A sweep flag that SKILL.md would bring to the user stops the run too.
 Step 6, with two additions:
 
 - `gh pr create --draft --label autopilot ...` (MCP: add the label after `create_pull_request`, with `issue_write` `update` and `labels`).
-- The first line of the body file, above the template or `## Why`, is the banner:
+- The body file opens, above the template or `## Why`, with the banner:
 
   ```markdown
-  Opened on autopilot by [Code Ops](https://github.com/eddeee888/ai-skills/tree/main/cops) plugin; not yet read by a human
+  > [!NOTE]
+  > Opened on autopilot by [Code Ops](https://github.com/eddeee888/ai-skills/tree/main/cops) plugin;
+  > - [ ] Approved by [<login>](https://github.com/<login>)
   ```
+
+  A profile link, never an `@` mention.
 
 ## The chain
 
@@ -88,7 +92,7 @@ A stage follows its own SKILL.md, including its `Handoffs:` list, with the autop
 - A `memory-candidate:` line is not a stop: hold it, save nothing, and show it in the final report.
 - It suggests no next step.
 - A stage with nothing to do (no findings, no threads, already current, nothing unexplained) has finished.
-- `cops:pr-sync` and `cops:pr-note` get the card's Goal and Why as motivation and task source; `cops:pr-sync` keeps the banner as the body's first line.
+- `cops:pr-sync` and `cops:pr-note` get the card's Goal and Why as motivation and task source; `cops:pr-sync` keeps the banner verbatim, ticked box included.
 - `cops:pr-address` and `cops:pr-sync` get `autopilot profile: <Step 2's profile, minus caller only: lines>` after the PR URL. Each uses it instead of `scout-repo` and calls its other mode alone.
 - `cops:pr-address` is skipped when `cops:pr-review` reports no findings; other people's threads don't count. Report it.
 
@@ -105,22 +109,21 @@ The risk gate in `../pr-address/classify.md` beats the label: high-risk work is 
 
 ## Finish
 
-Only when all four stages finished:
+Only when all four stages finished, assign the user; they mark the draft ready:
 
 ```bash
-gh pr ready <number>
 gh pr edit <number> --add-assignee <login>
 ```
 
-MCP: `update_pull_request` with `draft: false`, then `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").
+MCP: `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").
 
-Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines. The `autopilot` label and the banner stay for the human who reads the PR.
+Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines, ending with `gh pr ready <number>`.
 
 ## Stops
 
 Any failure or question ends the run:
 
-- Leave the PR a draft if one exists, and assign the user to it as "Finish" does. A stop before the PR exists has nothing to assign.
+- Leave the PR a draft if one exists, and assign the user as "Finish" does. A stop before the PR exists has nothing to assign.
 - Don't retry the stage, start a later one, or undo what was already pushed or posted.
 - Report the stage reached, what stopped it, what was pushed and posted so far, the held `memory-candidate:` lines, and the command that picks up from there (`/cops:pr-address`, `/cops:pr-sync`, …).
 
