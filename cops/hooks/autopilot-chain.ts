@@ -43,9 +43,9 @@ export type Chain = {
 //   turn ended after review began                  → `… → review ■ → address · … · stopped at review`, pickUp `/cops:pr-review <PR URL> `
 //   sync began with address never run              → warnings `⚑ skipped address`
 //   sync began, then address                       → warnings `⚑ ran sync before address`
-//   all four started, turn ended, notes posted     → `… → note ✓ → ready · · finished, still a draft`, status finished, no pickUp
-//   the same, with the view another PR             → `… → ready ? · stopped at finish`, no pickUp
-//   all four started, turn ended, no notes posted  → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `
+//   all but address started, turn ended, open PR   → `… → note ✓ → ready · · finished, still a draft`, status finished, no pickUp
+//   all four started, the view another PR          → `… → ready ? · stopped at finish`, no pickUp
+//   all four started, PR closed, no notes posted   → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `
 //   a plain cops run on the PR after the stages    → status resumed, no stop
 //   view is another PR, or not ready               → `ready ?`
 export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
@@ -87,8 +87,11 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   const isAllStarted = started.every(Boolean)
   // Whether note's comments are posted, or the view can't tell (another PR); a draft PR with none means note never finished.
   const isNoteDone = view.status !== 'ready' || view.url !== url || view.hasNotes
-  // Every stage ran and note finished; on a PR whose draft state the view knows, that is a finished draft.
-  const isFinished = isEnded && isAllStarted && lastStage === AUTOPILOT_STAGES.length - 1 && isNoteDone && isReadyKnown
+  // Address may be skipped when the review had no findings, so it is the one stage that need not have started.
+  const addressAt = AUTOPILOT_STAGES.indexOf('cops:pr-address')
+  const isRequiredStarted = started.every((one, at) => one || at === addressAt)
+  // Every stage but address started and note ran last; on an open PR whose draft state the view knows, that is a finished draft.
+  const isFinished = isEnded && isRequiredStarted && lastStage === AUTOPILOT_STAGES.length - 1 && view.status === 'ready' && view.state === 'OPEN' && isReadyKnown
   const status = isReady ? 'ready' : plain ? 'resumed' : isFinished ? 'finished' : isEnded ? 'stopped' : 'running'
   // The step the chain stopped at: a stage name, `fix`, or `finish` when every stage ran and note finished.
   const stoppedAt = status !== 'stopped' ? undefined : !lastRun ? 'fix' : isAllStarted && lastStage === AUTOPILOT_STAGES.length - 1 && isNoteDone ? 'finish' : AUTOPILOT_STAGES[lastStage].replace(/^cops:pr-/, '')
