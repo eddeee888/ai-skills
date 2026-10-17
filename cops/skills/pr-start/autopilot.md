@@ -109,7 +109,7 @@ The risk gate in `../pr-address/classify.md` beats the label: high-risk work is 
 
 ## Finish
 
-Only when all four stages finished, assign the user; after reading, they mark the draft ready (`gh pr ready <number>` or the pane's Mark ready):
+Only when all four stages finished, assign the user; they mark the draft ready:
 
 ```bash
 gh pr edit <number> --add-assignee <login>
@@ -117,7 +117,7 @@ gh pr edit <number> --add-assignee <login>
 
 MCP: `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").
 
-Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines, ending with `gh pr ready <number>`. The label and banner stay for the reader.
+Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines, ending with `gh pr ready <number>`.
 
 ## Stops
 

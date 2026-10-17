@@ -58,7 +58,7 @@ Without `cops`, give only a manual-update `pr-sync` line.
 
 ## Autopilot runs
 
-The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card listing every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-sync`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`, and assigns the user to the PR, which stays a draft until the user marks it ready.
+The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card listing every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-sync`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`, and leaves the PR a draft.
 
 - **The card is the only prompt.** Stages post and push without further confirmation and suggest no next step.
 - **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft.
