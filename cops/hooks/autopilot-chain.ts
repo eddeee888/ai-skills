@@ -2,7 +2,7 @@ import type { AgentCall, SkillRun, Threads } from '../types'
 import { isSameSkill, SPINNER, SPINNER_MS } from './pr-panel.ts'
 
 // The skills of pr-start's autopilot chain, in the order autopilot.md → "The chain" runs them.
-export const AUTOPILOT_STAGES = ['cops:pr-review', 'cops:pr-address', 'cops:pr-sync', 'cops:pr-note']
+export const AUTOPILOT_STAGES = ['cops:pr-review', 'cops:pr-address', 'cops:pr-wrap-up', 'cops:pr-note']
 
 // The phrase that ends the args of every stage run, after a dash.
 export const AUTOPILOT_SUFFIX = 'autopilot stage of this pr-start run'

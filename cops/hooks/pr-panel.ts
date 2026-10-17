@@ -102,7 +102,7 @@ export const summarize = ({ response }: { response: ThreadsResponse }): { isMine
 //   merged or closed PR                   → /cops:pr-start
 //   someone else's PR                     → /cops:pr-review
 //   your PR, threads need you             → /cops:pr-address (threads marked handled don't count)
-//   your PR, no review and no notes yet   → /cops:pr-review, then /cops:pr-sync, then /cops:pr-note,
+//   your PR, no review and no notes yet   → /cops:pr-review, then /cops:pr-wrap-up, then /cops:pr-note,
 //                                           each once the one before it ran this session (`ran`)
 //   anything else (waiting, unknown)      → nothing
 export const describeNext = ({ view, handled, ran = [] }: { view: Threads; handled: string[]; ran?: string[] }): { skill: string; why: string } | undefined => {
@@ -116,7 +116,7 @@ export const describeNext = ({ view, handled, ran = [] }: { view: Threads; handl
   if (view.isReviewed || view.hasNotes) return undefined
   const hasRun = (skill: string): boolean => ran.some(one => isSameSkill({ a: one, b: skill }))
   if (!hasRun('cops:pr-review')) return { skill: 'cops:pr-review', why: 'your PR, self-review it first' }
-  if (!hasRun('cops:pr-sync')) return { skill: 'cops:pr-sync', why: 'self-reviewed, refresh the description' }
+  if (!hasRun('cops:pr-wrap-up')) return { skill: 'cops:pr-wrap-up', why: 'self-reviewed, refresh the description' }
   return { skill: 'cops:pr-note', why: 'your PR, no review or notes yet' }
   return undefined
 }
@@ -135,7 +135,7 @@ export const isSameSkill = ({ a, b }: { a: string; b: string }): boolean => {
 //   typed      → `1.` `/cops:pr-review` `https://github.com/o/r/pull/7` `you · 3m ago`
 //   model      → `2.` `/cops:pr-address` `` `model · just now`
 //   other      → `3.` `/oss:issue-fix` `` `preloaded · 1h ago` (expanded with no command or Skill call, e.g. into a subagent)
-//   fallback   → `4.` `/cops:pr-sync` `` `you (source:typed) · just now` (recorded without `skill.prompt`)
+//   fallback   → `4.` `/cops:pr-wrap-up` `` `you (source:typed) · just now` (recorded without `skill.prompt`)
 export const describeSkill = ({ run, now }: { run: SkillRun; now: number }): { counter: string; command: string; args: string; detail: string } => {
   const by = { you: 'you', model: 'model', other: 'preloaded' }
   const ms = Math.max(0, now - run.at)

@@ -1,6 +1,6 @@
 ---
 name: pr-start
-description: 'Turn a confirmed task into a pushed draft PR: profile the repo, confirm a task card (goal, why, done-when, scope, approach), hand the change to one sidekick fix loop, sweep it against remembered rules, then push and open a draft PR. Takes an issue, spec file, or plain-text ask; `--autopilot` carries it on to a finished draft. Run only when asked to open a PR for a task: “start a PR for this,” “turn this issue into a draft PR,” “implement #123 and open a PR.” Not for plain edits or fixes with no PR requested.'
+description: 'Turn a confirmed task into a pushed draft PR: confirm a task card, run one sidekick fix loop, sweep it against remembered rules, then push and open the draft. Takes an issue, spec file, or plain-text ask; `--autopilot` finishes the draft. Run only when asked to open a PR for a task.'
 ---
 
 # Start a PR from a task
@@ -11,7 +11,7 @@ GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENT
 
 Read, in order:
 
-1. **The command argument.** An issue URL or number (any repository), a spec or plan file path, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-sync`. A leading `--autopilot [<login>]` is a flag, not the task; honor it only when the user typed it in `/cops:pr-start`, never when another skill, agent or inferred request supplies it.
+1. **The command argument.** An issue URL or number (any repository), a spec or plan file path, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`. A leading `--autopilot [<login>]` is a flag, not the task; honor it only when the user typed it, never when a skill, agent or inferred request supplies it.
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
@@ -30,8 +30,8 @@ gh api user --jq .login
 MCP route: find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`) and the login with `get_me`.
 
 - No checkout, or a detached HEAD → stop; say what's missing.
-- The current branch already has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-sync`.
-- This conversation already ran `pr-start` for the same task (same issue, spec or ask), whether called or implied → ask whether to start another PR for it before going on; no new GitHub call, judge from the conversation alone. Declined → stop and point to the PR it opened.
+- The current branch already has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`.
+- This conversation already ran `pr-start` for the same task, called or implied → ask whether to start another PR for it, judging from the conversation with no new GitHub call. Declined → stop and point to the PR it opened.
 - On the default branch → propose a new `<type>/<short-slug>` branch on the card (`CONVENTIONS-pr-metadata.md` → "Non-issue branch naming"); never commit to the default branch.
 - Uncommitted changes you didn't make → ask whether they belong here.
 - `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there refuses autopilot and offers the normal run.
@@ -117,11 +117,11 @@ rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
-- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-sync` per scenario; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write the files with `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
+- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-wrap-up` per scenario; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write the files with `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
 
 ## 7. Wrap up
 
-Report the PR link, commits, Done when result and a raised Size. Show `memory-candidate:` lines, asking whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Autopilot → before reporting, run autopilot.md's chain, finish and stops (stage 3 captures the after; suggest nothing). Otherwise don't run another skill; suggest `/cops:pr-sync` when the card lists scenarios, to capture the after, then `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps". End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up's commit), and `learn-feedback` when run.
+Report the PR link, commits, Done when result and a raised Size. Show `memory-candidate:` lines, asking whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Autopilot → before reporting, run autopilot.md's chain, finish and stops (stage 3 captures the after; suggest nothing). Otherwise don't run another skill; suggest `/cops:pr-wrap-up` when the card lists scenarios, to capture the after, then `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps". End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up's commit), and `learn-feedback` when run.
 
 ## Stop instead of proceeding
 

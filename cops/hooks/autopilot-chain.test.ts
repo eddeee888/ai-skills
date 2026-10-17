@@ -22,7 +22,7 @@ const describe_ = ({ runs, calls = [], turnEndedAt, v = view(), now = 0 }: { run
 
 describe('describeChain', () => {
   test('exports the stages in the order autopilot.md runs them', () => {
-    expect(AUTOPILOT_STAGES).toEqual(['cops:pr-review', 'cops:pr-address', 'cops:pr-sync', 'cops:pr-note'])
+    expect(AUTOPILOT_STAGES).toEqual(['cops:pr-review', 'cops:pr-address', 'cops:pr-wrap-up', 'cops:pr-note'])
   })
 
   test('no autopilot run gives no strip', () => {
@@ -86,7 +86,7 @@ describe('describeChain', () => {
     expect(chain?.line).not.toContain('stopped')
     expect(chain?.pickUp).toBeUndefined()
     expect(chain?.ownsNext).toBe(false)
-    expect(describe_({ runs: [...runs, skill({ name: 'cops:pr-sync', args: URL, at: 6 })], turnEndedAt: 7 })?.status).toBe('resumed')
+    expect(describe_({ runs: [...runs, skill({ name: 'cops:pr-wrap-up', args: URL, at: 6 })], turnEndedAt: 7 })?.status).toBe('resumed')
   })
 
   test('a plain run on another PR does not clear the stop', () => {

@@ -33,7 +33,7 @@ discard that thread's uncommitted edits and go on to the next one.
 After the last thread, run the affected tests for all committed threads
 together. Fix a break only inside the asks; otherwise stop and say which
 tests still fail.
-Do not push, reply on any thread, resolve any thread, or run pr-sync.
+Do not push, reply on any thread, resolve any thread, or run pr-wrap-up.
 Return one line per thread: comment id, done (commit sha, one-line
 summary for the reply) or skipped (why) — then one line for the final test run.
 ```

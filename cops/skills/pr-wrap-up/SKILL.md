@@ -1,5 +1,5 @@
 ---
-name: pr-sync
+name: pr-wrap-up
 description: 'Sync an existing open PR with its branch: rebase onto the current base, then update title, description, and changeset from the remaining diff, preserving genuine issue links and external context. Run only when asked: “update the PR description,” “sync the PR with my changes,” “rebase and update the PR,” “the PR is stale,” or “make the changeset match my changes.”'
 ---
 
@@ -30,8 +30,8 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    states the motivation for Why. When resuming, use the answer and pick up
    at the step that asked; don't redo a rebase, changeset commit or push
    that's already on origin.
-   Write the drafted title to $(git rev-parse --git-dir)/pr-sync-title.txt
-   and the body to $(git rev-parse --git-dir)/pr-sync-body.md, outside the
+   Write the drafted title to $(git rev-parse --git-dir)/pr-wrap-up-title.txt
+   and the body to $(git rev-parse --git-dir)/pr-wrap-up-body.md, outside the
    working tree. Don't edit the PR.
    Return at most 5 lines: pushed (sha, or "nothing to push"), changeset
    (created | updated | none), title changed (yes/no),
@@ -75,8 +75,8 @@ If the user explicitly asked to remember a concrete preference, call `learn-feed
 
 ```bash
 d="$(git rev-parse --git-dir)"
-gh pr edit <number> --title "$(cat "$d/pr-sync-title.txt")" --body-file "$d/pr-sync-body.md"
-rm "$d/pr-sync-title.txt" "$d/pr-sync-body.md"
+gh pr edit <number> --title "$(cat "$d/pr-wrap-up-title.txt")" --body-file "$d/pr-wrap-up-body.md"
+rm "$d/pr-wrap-up-title.txt" "$d/pr-wrap-up-body.md"
 ```
 
 On the MCP route, call `update_pull_request` with the two files' contents as `title` and `body`, then remove the files.

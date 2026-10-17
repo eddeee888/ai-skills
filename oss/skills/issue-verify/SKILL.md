@@ -7,7 +7,7 @@ description: 'Verify that a GitHub issue is reproducible before fixes. Check for
 
 Turn a reported issue into evidence: a failing test proving the bug exists, or a template-grounded request when reproduction details are insufficient. Never fix the bug here; `issue-fix` builds on the checkpoint. The job ends when the failing test is committed and pushed; its draft PR need not merge or become green.
 
-**This skill never runs `cops:pr-sync` itself.** The checkpoint PR is written from the test it opens with and pushed to only once, so it's always current.
+**This skill never runs `cops:pr-wrap-up` itself.** The checkpoint PR is written from the test it opens with and pushed to only once, so it's always current.
 
 GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
@@ -60,7 +60,7 @@ Follow `./draft.md`: leave the matching test red, create `repro/<issue-number>`,
 
 ## Step 6: Wrap up
 
-Never run or suggest `cops:pr-sync`; the new PR already matches its branch. Report the PR URL and end with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo`, `brief-task`, and `test loop`.
+Never run or suggest `cops:pr-wrap-up`; the new PR already matches its branch. Report the PR URL and end with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo`, `brief-task`, and `test loop`.
 
 ## When to stop instead of proceeding
 

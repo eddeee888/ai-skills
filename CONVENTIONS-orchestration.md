@@ -16,7 +16,7 @@ When a skill names a handoff and the host can spawn a subagent, make it every ti
 - **Resume, don't restart.** After a question, carry question+answer and resume at that step, checking completed rebase/commit/push work.
 - **No way to spawn** means no subagent tool at all, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
 
-Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-sync` (Steps 2–6); `cops:pr-review` (`review-pr`, fix loop); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
+Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-wrap-up` (Steps 2–6); `cops:pr-review` (`review-pr`, fix loop); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
 
 ## Handoffs in the final report
 
@@ -41,10 +41,10 @@ Final-report users: every `cops` and `oss` skill.
 
 ## Companion plugin: `cops`
 
-`oss` works alone; when installed, `cops` supplies `pr-oracle`, `pr-sidekick`, and `pr-sync`.
+`oss` works alone; when installed, `cops` supplies `pr-oracle`, `pr-sidekick`, and `pr-wrap-up`.
 
-- **How to tell.** Installed when this session has `cops:pr-oracle`, `cops:pr-sidekick`, `/cops:pr-sync` on Claude Code; or `pr-oracle`, `pr-sidekick`, `/pr-sync` on Cursor. Check once and cache. Cursor itself is never "missing".
-- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → general-purpose/subagent fallback above; `pr-sync` → say title and description need manual updating, without naming `/cops:pr-sync`.
+- **How to tell.** Installed when this session has `cops:pr-oracle`, `cops:pr-sidekick`, `/cops:pr-wrap-up` on Claude Code; or `pr-oracle`, `pr-sidekick`, `/pr-wrap-up` on Cursor. Check once and cache. Cursor itself is never "missing".
+- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → general-purpose/subagent fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
 - **Defaults without the oracle.** With no profile/`overrides:`, inspect repo `CLAUDE.md` and `CONTRIBUTING.md` before applying a *Default*.
 
 ## Suggesting next steps
@@ -52,14 +52,14 @@ Final-report users: every `cops` and `oss` skill.
 A skill never runs another skill to finish, except under "Autopilot runs"; it only suggests each applicable step once before `Handoffs:`, and only for the user's own PR, determined by `gh api user --jq .login` or `get_me`.
 
 - PR just opened → `/cops:pr-review self-reviews it; "fix, no post" skips posting.` (`/pr-review` on Cursor).
-- An existing PR was pushed; title/body may be stale → `The PR's title and description may now be stale; /cops:pr-sync will update them.` (`/pr-sync` on Cursor).
+- An existing PR was pushed; title/body may be stale → `The PR's title and description may now be stale; /cops:pr-wrap-up will update them.` (`/pr-wrap-up` on Cursor).
 - No thread comment by anyone else and no user `Note:`/`Drive-by:` in either label form → `/cops:pr-note will post your reasoning and drive-bys as inline comments for reviewers.` (`/pr-note` on Cursor).
 
-Without `cops`, give only a manual-update `pr-sync` line.
+Without `cops`, give only a manual-update `pr-wrap-up` line.
 
 ## Autopilot runs
 
-The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card listing every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-sync`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`, and leaves the PR a draft.
+The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card listing every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-wrap-up`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`, and leaves the PR a draft.
 
 - **The card is the only prompt.** Stages post and push without further confirmation and suggest no next step.
 - **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft.
@@ -88,4 +88,4 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
 
 Review modes scout repository context, read complete PR evidence, verify new-side changed-line anchors, return structured YAML, and never write GitHub or memory. If the oracle is unavailable but a subagent tool exists, run one general read-only subagent with the oracle mode contract. No subagent capability → run it inline. Never replace review with `sweep-diff`.
 
-Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-sync` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`review-pr`, `sweep-diff`); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (`scout-repo` + `brief-task`, `sweep-diff`); `oss:issue-analyze` and `oss:issue-create` (`scout-repo`); `oss:issue-verify` (`scout-repo`, `brief-task`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).
+Call points: `cops:pr-address` (`triage-threads` + `scout-repo`, `sweep-diff`); `cops:pr-wrap-up` (`scout-repo`, `brief-task`, `grill-description`); `cops:pr-review` (`review-pr`, `sweep-diff`); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (`scout-repo` + `brief-task`, `sweep-diff`); `oss:issue-analyze` and `oss:issue-create` (`scout-repo`); `oss:issue-verify` (`scout-repo`, `brief-task`); `oss:issue-fix` (`scout-repo`, `brief-task`, `sweep-diff`).

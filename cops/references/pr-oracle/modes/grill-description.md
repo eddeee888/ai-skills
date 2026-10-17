@@ -2,7 +2,7 @@
 
 Read `../../../CONVENTIONS.md` for “Defaults and contracts,” then read the PR-description-relevant sections in `../../../CONVENTIONS-pr-metadata.md` and the “Citing sources” section in `../../../CONVENTIONS-posts.md`.
 
-Input: the PR's owner/repository/number, base ref, and drafted title and body that `cops:pr-sync` is about to apply, either inline or as file paths to read.
+Input: the PR's owner/repository/number, base ref, and drafted title and body that `cops:pr-wrap-up` is about to apply, either inline or as file paths to read.
 
 1. Read the diff and commit log against the base.
 2. Flag:

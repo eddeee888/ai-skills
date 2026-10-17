@@ -1,4 +1,4 @@
-# pr-sync: Steps 2–6
+# pr-wrap-up: Steps 2–6
 
 The `SKILL.md` subagent (or main chat without one) reads this. The prompt supplies the oracle profile (`scout-repo`) and brief (`brief-task`), so don't call the oracle. Return anything that needs the user as your question.
 

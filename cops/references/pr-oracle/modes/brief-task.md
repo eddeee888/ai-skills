@@ -1,6 +1,6 @@
 # Mode: `brief-task`
 
-Input: ask and affected files, or `PR description` for `cops:pr-sync`, and optionally `for: pr-sidekick` and `for: task-card` (both may be passed).
+Input: ask and affected files, or `PR description` for `cops:pr-wrap-up`, and optionally `for: pr-sidekick` and `for: task-card` (both may be passed).
 
 Return only applicable active rules, most relevant first, with evidence:
 

@@ -21,7 +21,7 @@ export const EXPECTED_HANDOFFS: Record<string, Handoff[]> = {
     { label: 'sweep-diff', agents: ORACLE },
     { label: '5b research', agents: ['Explore', 'general-purpose'] },
   ],
-  'cops:pr-sync': [
+  'cops:pr-wrap-up': [
     { label: 'scout-repo', agents: ORACLE },
     { label: 'brief-task', agents: ORACLE },
     { label: 'Steps 2–6', agents: SIDEKICK },
@@ -45,7 +45,7 @@ export const EXPECTED_HANDOFFS: Record<string, Handoff[]> = {
 // The labels of a skill's handoffs that a spawn ticks. An oracle handoff is ticked by a call
 // naming each of its modes:
 //   'cops:pr-start', 'cops:pr-oracle', modes ['scout-repo', 'brief-task'] → ['scout-repo + brief-task']
-//   'cops:pr-sync', 'cops:pr-oracle', modes ['scout-repo', 'brief-task']  → ['scout-repo', 'brief-task']
+//   'cops:pr-wrap-up', 'cops:pr-oracle', modes ['scout-repo', 'brief-task']  → ['scout-repo', 'brief-task']
 //   'cops:pr-start', 'cops:pr-oracle', modes ['scout-repo']               → []
 //   'cops:pr-start', 'cops:pr-sidekick'                                   → ['fix loop']
 //   'cops:pr-address', 'Explore'                                          → ['5b research']
