@@ -62,7 +62,7 @@ git push --force-with-lease
 
 Draft to the brief's description preferences and recurring review asks. The rules below win conflicts, except shared-convention *Defaults* overridden by the profile's `overrides:` or brief (`CONVENTIONS.md` → "Defaults and contracts").
 
-**Title** — one line naming the net effect of the change, imperative after any type prefix. Keep an existing conventional-commit prefix (`fix:`, `test:`, …), updating it when the change's kind changed: a checkpoint PR that now carries its fix goes from `test: reproduce … (failing)` to `fix: …`, dropping `(failing)`. Diff bundles unrelated things → name the most user-visible one, don't cram. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). Title ends in a `(#123)`-style issue reference → keep it in the same form (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference"); a resync must not silently drop it.
+**Title** — one line naming the net effect of the change, imperative after any type prefix. Keep an existing conventional-commit prefix (`fix:`, `test:`, …), updating it when the change's kind changed: a checkpoint PR that now carries its fix goes from `test: reproduce … (failing)` to `fix: …`, dropping `(failing)`. Diff bundles unrelated things → name the most user-visible one, don't cram. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). Title ends in a `(#123)`-style issue reference → keep it in the same form (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference"); a wrap-up must not silently drop it.
 
 **Description** — three required sections, in this order, kept tight — a PR body a reviewer skims, not a design doc:
 
@@ -74,7 +74,7 @@ One bullet per section is enough for a trivial PR; don't pad. In each section, b
 
 **Resources** — one more section, only when there's something to put in it:
 
-- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is in use, closing or non-closing — never normalize one to the other while rewriting; whether the PR closes the issue on merge isn't a resync's call (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references").
+- The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is in use, closing or non-closing — never normalize one to the other while rewriting; whether the PR closes the issue on merge isn't a wrap-up's call (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references").
 - External context that informed the fix — an upstream issue, a design doc, a blog post — only if one genuinely exists.
 
 Don't hunt for tangential links. Use one openable link per line (`CONVENTIONS-posts.md` → "Citing sources"). No issue or external context → omit the section.

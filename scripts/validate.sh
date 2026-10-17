@@ -499,7 +499,7 @@ validate_autopilot() {
     "Never post without confirmation." "Autopilot exception:" "## 5. Post and report"
   require_order "cops/skills/pr-address/SKILL.md" "autopilot address exception" \
     "Apply no automatic action" "Autopilot exception:" "## Step 5: Handling comments"
-  require_order "cops/skills/pr-wrap-up/SKILL.md" "autopilot sync exception" \
+  require_order "cops/skills/pr-wrap-up/SKILL.md" "autopilot wrap-up exception" \
     'Don'\''t run `cops:pr-note`' "Autopilot exception:" "## When to touch nothing"
   for path in cops/skills/pr-review/SKILL.md cops/skills/pr-note/SKILL.md \
     cops/skills/pr-address/SKILL.md cops/skills/pr-wrap-up/SKILL.md; do
@@ -833,7 +833,7 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "This is a hard gate"
   require_markers "oss/skills/issue-verify/SKILL.md" "checkpoint" \
     "Skill: oss:issue-verify"
-  require_markers "oss/skills/issue-verify/SKILL.md" "no PR sync" \
+  require_markers "oss/skills/issue-verify/SKILL.md" "no PR wrap-up" \
     'never runs `cops:pr-wrap-up`'
   require_markers "oss/skills/issue-fix/SKILL.md" "option gate" \
     "This is a hard gate" "User hasn't picked an option"
@@ -841,7 +841,7 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     'issue-verify` checkpoint'
   require_markers "oss/skills/issue-fix/SKILL.md" "unnumbered checkpoint discovery" \
     "no-issue-number path"
-  require_markers "oss/skills/issue-fix/SKILL.md" "no PR sync" \
+  require_markers "oss/skills/issue-fix/SKILL.md" "no PR wrap-up" \
     'never runs `cops:pr-wrap-up`'
   require_markers "oss/skills/issue-fix/SKILL.md" "no duplicate PR" \
     'Never run `gh pr create`'

@@ -6,11 +6,11 @@ const URL = 'https://github.com/o/r/pull/81'
 const SUFFIX = `${URL} — autopilot stage of this pr-start run`
 
 let count = 0
-const skill = ({ name, args = '', at }: { name: string; args?: string; at: number }): SkillRun => {
+const skill = ({ name, args = '', at, by = 'model' }: { name: string; args?: string; at: number; by?: SkillRun['by'] }): SkillRun => {
   count += 1
-  return { n: count, skill: name, args, by: 'model', at }
+  return { n: count, skill: name, args, by, at }
 }
-const start = ({ at }: { at: number }): SkillRun => skill({ name: 'cops:pr-start', args: '--autopilot fix the thing', at })
+const start = ({ at, by = 'you' }: { at: number; by?: SkillRun['by'] }): SkillRun => skill({ name: 'cops:pr-start', args: '--autopilot fix the thing', at, by })
 const stage = ({ name, at }: { name: string; at: number }): SkillRun => skill({ name: `cops:pr-${name}`, args: SUFFIX, at })
 const view = ({ isDraft = true, url = URL, hasNotes = false, state = 'OPEN' }: { isDraft?: boolean; url?: string; hasNotes?: boolean; state?: 'OPEN' | 'MERGED' | 'CLOSED' } = {}): Threads => ({
   status: 'ready', pr: 81, url, state, threads: [], isReviewed: false, hasNotes, isDraft,
@@ -28,6 +28,12 @@ describe('describeChain', () => {
   test('no autopilot run gives no strip', () => {
     expect(describe_({ runs: [] })).toBeUndefined()
     expect(describe_({ runs: [skill({ name: 'cops:pr-start', args: 'plain task', at: 1 }), skill({ name: 'cops:pr-review', args: URL, at: 2 })] })).toBeUndefined()
+  })
+
+  test('an --autopilot the model passed starts no chain, since pr-start ignores it', () => {
+    expect(describe_({ runs: [start({ at: 1, by: 'model' })] })).toBeUndefined()
+    expect(describe_({ runs: [start({ at: 1, by: 'other' })] })).toBeUndefined()
+    expect(describe_({ runs: [start({ at: 1, by: 'you' })] })?.line).toBe('Autopilot · fix ⠋ → review · → address · → wrap-up · → note · → ready ?')
   })
 
   test('each stage reads running while it is the latest, done after', () => {

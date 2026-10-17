@@ -48,6 +48,10 @@ export type Chain = {
 //   all four started, PR closed, no notes posted   → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `
 //   a plain cops run on the PR after the stages    → status resumed, no stop
 //   view is another PR, or not ready               → `ready ?`
+// Only the person's own `/cops:pr-start --autopilot` starts a chain: pr-start ignores an `--autopilot` the model passes.
+const isAutopilotStart = (one: SkillRun): boolean =>
+  one.by === 'you' && isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && /^\s*--autopilot\b/.test(one.args || '')
+
 export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   runs: SkillRun[]
   calls?: AgentCall[]
@@ -56,14 +60,14 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   now: number
 }): Chain | undefined => {
   // A later `--autopilot` run starts a new chain, so stage runs from before it belong to an earlier one.
-  const latestStart = runs.findLast(one => isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && /^\s*--autopilot\b/.test(one.args || ''))
+  const latestStart = runs.findLast(isAutopilotStart)
   const stageRuns = runs
     .filter(one => one.n > (latestStart?.n ?? 0) && SUFFIX.test(one.args || '') && AUTOPILOT_STAGES.some(stage => isSameSkill({ a: one.skill, b: stage })))
     .map(one => ({ run: one, url: ((one.args || '').replace(SUFFIX, '').match(/https?:\/\/\S+/) || [])[0] }))
   const url = stageRuns.at(-1)?.url
   const chainRuns = stageRuns.filter(one => one.url === url).map(one => one.run)
   const first = chainRuns[0]
-  const fix = runs.findLast(one => isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && (first ? one.n < first.n : /^\s*--autopilot\b/.test(one.args || '')))
+  const fix = runs.findLast(one => isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && (first ? one.n < first.n : isAutopilotStart(one)))
   if (!fix && !first) {
     return undefined
   }
