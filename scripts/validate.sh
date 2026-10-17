@@ -342,6 +342,7 @@ validate_budgets() {
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 752 "convention file"
+  check_budget "CONVENTIONS-evidence.md" 640 "convention file"
 
   while IFS= read -r -d '' path; do
     check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"
@@ -609,6 +610,21 @@ validate_behavioral_contracts() {
     'blast radius: <what>' 'Size: <card size> → <new size>'
   require_markers "cops/skills/pr-start/SKILL.md" "raised size reported at wrap-up" \
     "a raised Size"
+
+  require_markers "CONVENTIONS-evidence.md" "evidence contract" \
+    '`captured`' '`captured-by-user`' '`drawn`' '`mock`' '`manual`' '`not-captured`' \
+    '"touches"' 'orphan branch `cops-evidence`' '$(git rev-parse --git-dir)/cops/evidence/<pr>/' \
+    "Never the working tree or the PR branch" \
+    '`### Before` then `### After` as two separate subsections under `## Verification`' \
+    '## Staleness is not a `sweep-diff` check'
+  require_markers "cops/references/pr-oracle/modes/scout-repo.md" "evidence profile line" \
+    "evidence: none | <kind> → <tool> (<command>), …; deploy → <command>" \
+    "never guessed" "Never capture anything"
+  require_markers "cops/references/pr-oracle/modes/brief-task.md" "evidence suggestion" \
+    "Evidence: <kind> — <scenario>, <scenario> (before/after)" "a candidate list only"
+  require_order "cops/skills/pr-start/SKILL.md" "optional task card Evidence line" \
+    "Done when: <a test" "Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>" \
+    "In scope:" "**Evidence** (optional)" "It is the only record: nothing captures it"
 
   require_markers "cops/references/pr-oracle/modes/draft-author-notes.md" "author note YAML" \
     "mode: draft-author-notes" "remove-instead:" "task source required"
