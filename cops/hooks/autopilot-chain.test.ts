@@ -31,21 +31,21 @@ describe('describeChain', () => {
   })
 
   test('each stage reads running while it is the latest, done after', () => {
-    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'address', at: 3 }), stage({ name: 'sync', at: 4 })]
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'address', at: 3 }), stage({ name: 'wrap-up', at: 4 })]
     // Frame 2 of the spinner.
     const chain = describe_({ runs, now: 200 })
-    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → sync ⠹ → note · → ready ·')
+    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → wrap-up ⠹ → note · → ready ·')
     expect(chain?.status).toBe('running')
-    expect(describe_({ runs: [start({ at: 1 })] })?.line).toBe('Autopilot · fix ⠋ → review · → address · → sync · → note · → ready ?')
-    expect(describe_({ runs: [...runs, stage({ name: 'note', at: 5 })] })?.line).toContain('sync ✓ → note ⠋')
+    expect(describe_({ runs: [start({ at: 1 })] })?.line).toBe('Autopilot · fix ⠋ → review · → address · → wrap-up · → note · → ready ?')
+    expect(describe_({ runs: [...runs, stage({ name: 'note', at: 5 })] })?.line).toContain('wrap-up ✓ → note ⠋')
   })
 
   test('the card has a row per step, with a state each', () => {
-    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'address', at: 3 }), stage({ name: 'sync', at: 4 })]
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'address', at: 3 }), stage({ name: 'wrap-up', at: 4 })]
     const chain = describe_({ runs, now: 200 })
     expect(chain?.title).toBe('Autopilot · PR #81')
     expect(chain?.steps.map(one => `${one.mark} ${one.name}:${one.state}`)).toEqual([
-      '✓ fix:done', '✓ review:done', '✓ address:done', '⠹ sync:active', '· note:pending', '· ready:pending',
+      '✓ fix:done', '✓ review:done', '✓ address:done', '⠹ wrap-up:active', '· note:pending', '· ready:pending',
     ])
     const stopped = describe_({ runs: runs.slice(0, 2), turnEndedAt: 3 })
     expect(stopped?.stoppedAt).toBe('review')
@@ -95,32 +95,32 @@ describe('describeChain', () => {
   })
 
   test('an out-of-order stage is flagged', () => {
-    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'sync', at: 3 }), stage({ name: 'address', at: 4 })]
-    expect(describe_({ runs })?.warnings).toEqual(['⚑ ran sync before address'])
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'wrap-up', at: 3 }), stage({ name: 'address', at: 4 })]
+    expect(describe_({ runs })?.warnings).toEqual(['⚑ ran wrap-up before address'])
   })
 
   test('a skipped stage is flagged', () => {
-    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'sync', at: 3 })]
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), stage({ name: 'wrap-up', at: 3 })]
     expect(describe_({ runs })?.warnings).toEqual(['⚑ skipped address'])
     expect(describe_({ runs: runs.slice(0, 2) })?.warnings).toEqual([])
   })
 
   test('all stages done but still a draft reads finished with no Pick up', () => {
-    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const runs = [start({ at: 1 }), ...['review', 'address', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: true }) })
     expect(chain?.status).toBe('finished')
-    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → sync ✓ → note ✓ → ready · · finished, still a draft')
+    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → wrap-up ✓ → note ✓ → ready · · finished, still a draft')
     expect(chain?.line).not.toContain('stopped')
     expect(chain?.stoppedAt).toBeUndefined()
     expect(chain?.steps.map(one => `${one.mark} ${one.name}:${one.state}`)).toEqual([
-      '✓ fix:done', '✓ review:done', '✓ address:done', '✓ sync:done', '✓ note:done', '· ready:pending',
+      '✓ fix:done', '✓ review:done', '✓ address:done', '✓ wrap-up:done', '✓ note:done', '· ready:pending',
     ])
     expect(chain?.pickUp).toBeUndefined()
     expect(chain?.ownsNext).toBe(true)
   })
 
   test('all stages done with the view on another PR still reads stopped at finish', () => {
-    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const runs = [start({ at: 1 }), ...['review', 'address', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: true, url: 'https://github.com/o/r/pull/9' }) })
     expect(chain?.status).toBe('stopped')
     expect(chain?.line).toContain('stopped at finish')
@@ -128,21 +128,21 @@ describe('describeChain', () => {
   })
 
   test('all stages done with no notes posted reads finished', () => {
-    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const runs = [start({ at: 1 }), ...['review', 'address', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ hasNotes: false }) })
     expect(chain?.status).toBe('finished')
     expect(chain?.pickUp).toBeUndefined()
   })
 
   test('address skipped with the other stages done reads finished', () => {
-    const runs = [start({ at: 1 }), ...['review', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const runs = [start({ at: 1 }), ...['review', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 6, v: view({ hasNotes: true }) })
     expect(chain?.status).toBe('finished')
     expect(chain?.warnings).toEqual(['⚑ skipped address'])
   })
 
   test('all stages done on a closed PR with no notes posted reads stopped at note and fills the stage', () => {
-    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const runs = [start({ at: 1 }), ...['review', 'address', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ state: 'CLOSED' }) })
     expect(chain?.status).not.toBe('finished')
     expect(chain?.line).toContain('note ■')
@@ -151,16 +151,16 @@ describe('describeChain', () => {
   })
 
   test('a stop leaves the Next slot once the view is another PR', () => {
-    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const runs = [start({ at: 1 }), ...['review', 'address', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ url: 'https://github.com/o/r/pull/9' }) })
     expect(chain?.status).toBe('stopped')
     expect(chain?.ownsNext).toBe(false)
   })
 
   test('the PR going ready finishes the chain', () => {
-    const runs = [start({ at: 1 }), ...['review', 'address', 'sync', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const runs = [start({ at: 1 }), ...['review', 'address', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
     const chain = describe_({ runs, turnEndedAt: 7, v: view({ isDraft: false }) })
-    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → sync ✓ → note ✓ → ready ✓')
+    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → wrap-up ✓ → note ✓ → ready ✓')
     expect(chain?.status).toBe('ready')
     expect(chain?.ownsNext).toBe(false)
   })
@@ -191,7 +191,7 @@ describe('describeChain', () => {
   test('a second autopilot run shows from its fix stage', () => {
     const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), start({ at: 3 })]
     const chain = describe_({ runs })
-    expect(chain?.line).toBe('Autopilot · fix ⠋ → review · → address · → sync · → note · → ready ?')
+    expect(chain?.line).toBe('Autopilot · fix ⠋ → review · → address · → wrap-up · → note · → ready ?')
     expect(describe_({ runs, turnEndedAt: 4 })?.line).toContain('stopped at fix')
   })
 })

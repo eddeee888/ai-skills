@@ -31,7 +31,7 @@ MCP route: find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, 
 
 - No checkout, or a detached HEAD → stop; say what's missing.
 - The current branch already has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`.
-- This conversation already ran `pr-start` for the same task, called or implied → ask whether to start another PR for it, judging from the conversation with no new GitHub call. Declined → stop and point to the PR it opened.
+- This conversation already ran `pr-start` for the same task → ask whether to start another PR, judging from the conversation alone. Declined → stop and point to the earlier PR.
 - On the default branch → propose a new `<type>/<short-slug>` branch on the card (`CONVENTIONS-pr-metadata.md` → "Non-issue branch naming"); never commit to the default branch.
 - Uncommitted changes you didn't make → ask whether they belong here.
 - `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there refuses autopilot and offers the normal run.
@@ -69,18 +69,7 @@ Confirm, or edit any line.
 - **Size** → read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size"). It gates only autopilot.
 - **Autopilot** → with the flag, or without it on a Small or Medium card, read [autopilot.md](autopilot.md) before showing the card: it refuses a Large or high-risk card, and adds the card's authorised outward actions line or the confirm screen's offer.
 - **Scope bullets** stop sidekick drift; make them concrete (files, packages, behaviors).
-- **Options instead of one approach** only when the direction is unclear or the user asks. Give 2–3, each as:
-
-  ```text
-  Option <A>: <one-line name>
-    Changes: <files or packages and what changes in each>
-    Affects: <who or what else sees the change>
-    Risk: <what could break, and how likely>
-    Effort: <rough size — a few lines | one file | several files>
-    Size: <Small|Medium|Large> — <reason>
-  ```
-
-  The card's Approach and Size become the picked option's.
+- **Options instead of one approach** only when the direction is unclear or the user asks: 2–3, in the format under "Options on the card" in [size.md](size.md). The card's Approach and Size become the picked option's.
 - Never suggest or hand off to another plugin's skill from the card.
 
 A Goal or likely-files edit changing what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`).

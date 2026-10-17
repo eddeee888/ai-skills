@@ -30,3 +30,16 @@ Only ever raise it: the card's scope or Approach reaching further than the analy
 An edit to scope or Approach → derive the size again before showing the card again. The user's own edit to the `Size:` line stands.
 
 After the card is confirmed, the size can still go up if the fix loop finds the change reaches further than the card said; fix-loop.md says how and where that is reported, and that a raise to Large stops an autopilot run.
+
+## Options on the card
+
+Give 2–3 options, each as:
+
+```text
+Option <A>: <one-line name>
+  Changes: <files or packages and what changes in each>
+  Affects: <who or what else sees the change>
+  Risk: <what could break, and how likely>
+  Effort: <rough size — a few lines | one file | several files>
+  Size: <Small|Medium|Large> — <reason>
+```

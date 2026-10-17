@@ -39,10 +39,10 @@ export type Chain = {
 // A stage is a skill run whose args end in the suffix; the args' first URL is the PR. `fix` is the latest
 // cops:pr-start run before the first stage (or an `--autopilot` one while no stage ran yet).
 //   no autopilot run                               → undefined
-//   review done, sync in flight                    → `Autopilot · PR #81 · fix → review ✓ → address ✓ → sync ⠹ → note · → ready ·`
+//   review done, wrap-up in flight                 → `Autopilot · PR #81 · fix → review ✓ → address ✓ → wrap-up ⠹ → note · → ready ·`
 //   turn ended after review began                  → `… → review ■ → address · … · stopped at review`, pickUp `/cops:pr-review <PR URL> `
-//   sync began with address never run              → warnings `⚑ skipped address`
-//   sync began, then address                       → warnings `⚑ ran sync before address`
+//   wrap-up began with address never run           → warnings `⚑ skipped address`
+//   wrap-up began, then address                    → warnings `⚑ ran wrap-up before address`
 //   all but address started, turn ended, open PR   → `… → note ✓ → ready · · finished, still a draft`, status finished, no pickUp
 //   all four started, the view another PR          → `… → ready ? · stopped at finish`, no pickUp
 //   all four started, PR closed, no notes posted   → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `

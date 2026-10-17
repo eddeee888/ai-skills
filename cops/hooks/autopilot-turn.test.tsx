@@ -97,7 +97,7 @@ describe('finished autopilot card', () => {
     const text = async (): Promise<string> => (await ui.find({ type: 'Box' }))?.text ?? ''
     await until({ check: async () => (await text()).includes('PR #81') })
     await $.tool.call({ tool: 'Skill', skill: 'cops:pr-start', args: '--autopilot fix the thing' })
-    for (const stage of ['review', 'address', 'sync', 'note']) {
+    for (const stage of ['review', 'address', 'wrap-up', 'note']) {
       await $.tool.call({ tool: 'Skill', skill: `cops:pr-${stage}`, args: `${PR_URL} — autopilot stage of this pr-start run` })
     }
     await $.turn.complete({ answer: 'Autopilot finished.' })
