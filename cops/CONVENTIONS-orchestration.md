@@ -69,7 +69,7 @@ The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr
 
 Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
-- Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle`, waits, and supplies the mode plus every listed input because it starts blank. Foreground or background follows "Hand long loops to a subagent".
+- Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle` and supplies the mode plus every listed input because it starts blank. Foreground or background follows "Hand long loops to a subagent".
 - **Model by tier.** A call takes its mode's tier, or a combined call's highest; a mode's fallback subagent takes the same. Pass the model as "Hand long loops to a subagent" says.
 
   | Tier | For | Modes |
