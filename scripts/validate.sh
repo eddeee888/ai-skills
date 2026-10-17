@@ -709,6 +709,13 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   recapture="cops/skills/pr-sync/recapture.md"
   require_markers "$recapture" "deterministic stale check" \
     "no model call" "no oracle" 'git diff --quiet <after.at> HEAD -- <touches>' "the before is stale too"
+  require_markers "$recapture" "stale before is labelled, not recaptured" \
+    "the before is never recaptured" "only the after is recaptured" 'stale since <new base sha>' "its status stays"
+  forbid_markers "$recapture" "stale before is labelled, not recaptured" "worktree"
+  require_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
+    "fetched in this step" 'MCP `pull_request_read` `get`' "evidence check was skipped"
+  forbid_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
+    '`gh pr view --json body`'
   require_markers "$recapture" "recapture runs only repo tooling" \
     "the manifest's \`how\`" "one of the repo's own tooling commands" \
     "a \`package.json\` script" "becomes \`manual\`" "never executed"
