@@ -2,6 +2,8 @@
 
 The `SKILL.md` subagent (or main chat without one) reads this. The prompt supplies the oracle profile (`scout-repo`) and brief (`brief-task`), so don't call the oracle. Return anything that needs the user as your question.
 
+A `<details>` manifest in the body → `recapture.md` before Step 4.
+
 `Resuming:` not `no` carries your earlier question and the user's answer. Check `git status -sb` against `origin/<headRefName>` and whether the changeset commit exists, then resume at that step. Don't repeat work already on origin.
 
 ## Step 2: Rebase onto the base branch
@@ -103,6 +105,6 @@ This PR ...
 
 A body that opens with a `> [!NOTE]` block starting `Opened on autopilot by` keeps that block verbatim as its first lines, a ticked `- [x]` box included; never regenerate, move or reword it.
 
-Keep existing `### Before` / `### After` subsections and the `<details>` evidence manifest verbatim as part of `## Verification`; never regenerate, move or reword them. Recapture is out of scope (`CONVENTIONS-verification.md` → "Before and After").
+Keep existing `### Before` / `### After` subsections and the `<details>` evidence manifest verbatim as part of `## Verification`; never regenerate, move or reword them (`CONVENTIONS-verification.md` → "Before and After").
 
 The goal: a description that reads as written by the person who made the change, not bulldozed by a script.

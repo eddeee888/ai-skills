@@ -117,7 +117,7 @@ gh pr edit <number> --add-assignee <login>
 
 MCP: `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").
 
-Then report as Step 7 says, adding each stage's result in one line the list of threads left open, each with its label and `path:line`, and the held `memory-candidate:` lines, ending with `gh pr ready <number>`.
+Report as Step 7 says, adding each stage's result in one line, the open threads (label, `path:line`), held `memory-candidate:` lines, and each `pending: drop`, `stale`, `manual` and `not-captured` scenario; evidence never holds the finish step. End with `gh pr ready <number>`.
 
 ## Stops
 

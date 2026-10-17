@@ -42,7 +42,7 @@ Keep the login for trailers and `Approved-by:`.
 
 From the task sources, draft the card's Goal and likely files. Then call `cops:pr-oracle` once (Cursor: the `pr-oracle` subagent) in `scout-repo` + `brief-task` mode with `for: pr-sidekick` and `for: task-card` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo, that it's checked out, the draft Goal as the ask, likely files, `login:`, `GitHub route:`, and `memory-root:` / `memory-login:` from session context.
 
-Keep from the reply the profile (test command, monorepo packages, template, `evidence:`, `overrides:`), the brief lines for `Rules that apply:`, the brief's `Evidence:` line for the card (never a rule line), and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
+Keep from the reply the profile (test command, packages, template, `evidence:`, `overrides:`), the brief lines for `Rules that apply:`, the brief's `Evidence:` line for the card (never a rule line), and any `caller only:` lines, which you apply here and never paste into the sidekick prompt.
 
 ## 3. Task card
 
@@ -83,13 +83,13 @@ Confirm, or edit any line.
   The card's Approach and Size become the picked option's.
 - Never suggest or hand off to another plugin's skill from the card.
 
-A Goal or likely-files edit that changes what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`).
+A Goal or likely-files edit changing what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`).
 
 ## 4. Fix loop
 
-Read [fix-loop.md](fix-loop.md) now. Scenarios → `before` capture first. Hand the loop to `pr-sidekick` (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent") in one handoff carrying the card's Goal, Approach, scope and Done when, `Rules that apply:` from the brief, the profile's test command, at most 3 attempts, and a commit with this skill's trailers. The sidekick never pushes.
+Read [fix-loop.md](fix-loop.md) now. Scenarios → capture the before first. Hand the loop to `pr-sidekick` (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent") in one handoff with the card's fields, `Rules that apply:`, the test command, at most 3 attempts, and a commit with this skill's trailers. The sidekick never pushes.
 
-A question back → ask the user, then respawn with `Resuming:`; in autopilot it stops the run. Failure after 3 attempts leaves the work uncommitted.
+A question back → ask the user, then respawn with `Resuming:`; in autopilot it stops the run.
 
 ## 5. Sweep
 
@@ -103,7 +103,7 @@ Nothing is pushed before a clean `sweep-diff`.
 
 ## 5b. Write the evidence manifest
 
-Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body. Nothing is pushed for evidence.
+Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body, with the before only. Nothing is pushed for evidence.
 
 ## 6. Push and open the PR
 
@@ -117,11 +117,11 @@ rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
-- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it, as in `CONVENTIONS-verification.md` → "Before and After"; Before is taken at the base; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write the files with `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
+- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-sync` per scenario; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write the files with `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
 
 ## 7. Wrap up
 
-Report the PR link, commits, Done when result and a raised Size (fix-loop.md). Show `memory-candidate:` lines, asking whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Autopilot → before reporting, run autopilot.md's chain, finish and stops. Otherwise don't run another skill; suggest `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps". End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up's commit), and `learn-feedback` when run.
+Report the PR link, commits, Done when result and a raised Size. Show `memory-candidate:` lines, asking whether to save them; only an explicit "remember this" permits a separate `learn-feedback` call. Autopilot → before reporting, run autopilot.md's chain, finish and stops (stage 3 captures the after; suggest nothing). Otherwise don't run another skill; suggest `/cops:pr-sync` when the card lists scenarios, to capture the after, then `/cops:pr-review`, then `/cops:pr-note`, per `CONVENTIONS-orchestration.md` → "Suggesting next steps". End with `CONVENTIONS-orchestration.md` → "Handoffs in the final report", labels `scout-repo + brief-task`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up's commit), and `learn-feedback` when run.
 
 ## Stop instead of proceeding
 

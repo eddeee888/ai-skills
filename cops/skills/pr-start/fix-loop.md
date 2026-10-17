@@ -69,11 +69,10 @@ No subagent capability → run the same steps here, in the same order, and mark 
 
 ## Capture handoff
 
-Only when the card's Evidence lists scenarios; autopilot too. `standard` tier. `before`: on the base commit, before the first edit. `after`: once the loop and any sweep follow-up have committed.
+Only when the card's Evidence lists scenarios; autopilot too. `standard` tier. The before only, on the base commit, before the first edit; pr-sync captures the after.
 
 ```text
 Repo <owner>/<repo>, branch <branch> (checked out).
-Phase: <before | after>
 Scenarios: <card Evidence scenarios, in order, with kind>
 Tooling: <the profile's `evidence:` line>
 Scratch: <$(git rev-parse --git-dir)/cops/evidence/<slug>/>
