@@ -343,10 +343,10 @@ validate_budgets() {
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 646 "convention file"
   check_budget "CONVENTIONS-evidence.md" 513 "convention file"
-  check_budget "CONVENTIONS-verification.md" 260 "convention file"
+  check_budget "CONVENTIONS-verification.md" 302 "convention file"
 
   while IFS= read -r -d '' path; do
-    check_budget "${path#"$ROOT"/}" 1470 "SKILL.md"
+    check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"
   done < <(repository_files 'SKILL.md')
   for path in "$ROOT"/cops/agents/*.md; do
     [ -f "$path" ] && check_budget "${path#"$ROOT"/}" 1000 "agent instruction"
@@ -362,12 +362,6 @@ validate_budgets() {
       done < <(find "$ROOT/$plugin/references" -type f -name '*.md' -print0)
     fi
   done
-
-  if [ -f "$ROOT/cops/skills/pr-start/evidence.md" ]; then
-    check_budget "cops/skills/pr-start/evidence.md" 600 "lazy instruction"
-  else
-    fail "cops/skills/pr-start/evidence.md" "missing evidence instruction file"
-  fi
 
   if [ -f "$ROOT/cops/skills/pr-start/autopilot.md" ]; then
     check_budget "cops/skills/pr-start/autopilot.md" 1200 "lazy instruction"
@@ -679,28 +673,28 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "publish scratch" "worktree" "not published"
   require_order "cops/skills/pr-start/SKILL.md" "manifest after sweep, before the body" \
     "## 5. Sweep" "## 5b. Write the evidence manifest" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
-  for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/evidence.md \
+  for path in cops/skills/pr-start/SKILL.md \
     cops/skills/pr-start/fix-loop.md CONVENTIONS-evidence.md; do
     forbid_markers "$path" "no evidence branch" "cops-evidence"
   done
   require_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" \
     "cops/evidence/<slug>/"
-  local ev="cops/skills/pr-start/evidence.md"
-  require_markers "$ev" "local-only captures" \
-    "no real credentials loaded" "becomes \`manual\`"
-  require_markers "$ev" "text evidence inline" \
-    '`CONVENTIONS-verification.md` → "Before and After"' "go inline in the PR body"
-  forbid_markers "$ev" "rendering lives in the convention" "labelled \`drawn\`" "status and SHA"
-  require_markers "$ev" "manual block" \
-    "\`Needs:\`" "\`Expect:\`" "never runs it" "\`captured-by-user\`" "no tooling"
-  require_markers "$ev" "screenshot user drop" \
-    "pending: drop <name>.png here" "drags it into the PR body"
-  require_markers "$ev" "manifest in the PR body" \
-    "collapsed \`<details>\`" "source of truth"
-  require_markers "$ev" "secret backstop" \
-    "\`Authorization\`" "private-key" "\`path:line\`" "possible secret" "backstop, not a guarantee"
-  require_markers "cops/skills/pr-start/SKILL.md" "evidence rules pointer" "[evidence.md](evidence.md)"
-  require_markers "cops/skills/pr-start/fix-loop.md" "evidence rules pointer" "[evidence.md](evidence.md)"
+  for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
+    require_markers "$path" "local-only captures" "no real credentials" "else \`manual\`"
+    require_markers "$path" "manifest written by the main chat" \
+      "Step 5b" "capture handoffs" "pending: drop <name>.png here" "\`captured-by-user\`"
+    require_markers "$path" "secret backstop" \
+      "\`Authorization\`" "private-key" "\`path:line\`" "possible secret" "backstop, not a guarantee"
+  done
+  for path in CONVENTIONS-verification.md cops/CONVENTIONS-verification.md oss/CONVENTIONS-verification.md; do
+    require_markers "$path" "manual block" \
+      "manual: <scenario>" "\`Needs:\`" "\`Expect:\`" "never runs it" "no tooling"
+  done
+  for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/fix-loop.md; do
+    require_markers "$path" "evidence rules pointer" '`CONVENTIONS-evidence.md`'
+    forbid_markers "$path" "evidence rules live in the conventions" \
+      "(evidence.md)" "[evidence.md]" '`evidence.md`'
+  done
   for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
     require_markers "$path" "manifest and drop rules" \
       "source of truth" "no real credentials" "dropped by the user"

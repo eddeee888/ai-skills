@@ -85,7 +85,7 @@ Return one line per scenario: <name> — <file> — <status>. Can't capture →
 
 A `not-captured` scenario never blocks.
 
-Rules: [evidence.md](evidence.md).
+Rules: `CONVENTIONS-evidence.md`.
 
 ## Size after the loop
 

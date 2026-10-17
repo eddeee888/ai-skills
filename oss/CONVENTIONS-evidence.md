@@ -11,7 +11,7 @@ Evidence shows a reviewer a change before and after, per card scenario.
 
 ## Evidence manifest: `<slug>/manifest.json`
 
-One manifest per PR records what each capture was taken from. It is a collapsed `<details>` block in the PR body, the source of truth (a later session needs no branch):
+One manifest per PR records what each capture was taken from. It is a collapsed `<details>` block in the PR body, the source of truth:
 
 ```json
 { "base": "a1b2c3d", "scenarios": [{
@@ -44,8 +44,10 @@ The PR body shows each scenario's status under `### Before` and `### After`.
 - **Folder**: `<slug>`, the branch name with `/` replaced by `-`, in scratch.
 - **Scratch**: `$(git rev-parse --git-dir)/cops/evidence/<slug>/`, captures in progress and the draft manifest, local only.
 - **Never the working tree or the PR branch**: no `.cops/` folder, no `.gitignore` change. Nothing is pushed for evidence.
-- `api`/`cli` text is scanned for secrets before it enters the body; a hit stops the capture. Evidence of a merged or closed PR stays; pruning is a human decision.
+- Before captured `api`/`cli` text goes into the body, scan it for `Authorization`, `Bearer`, `Set-Cookie`, `api[_-]key` headers, token-shaped values and private-key blocks. A hit lists `path:line`, posts nothing, the scenario becomes `not-captured — possible secret`. A backstop, not a guarantee.
+- The main chat writes the manifest at pr-start Step 5b from the capture handoffs' lines. A screenshot goes to scratch; the body says `pending: drop <name>.png here` until the user's drop makes it `captured-by-user`.
+- Evidence of a merged or closed PR stays; pruning is a human decision.
 
 ## Staleness is not a `sweep-diff` check
 
-`sweep-diff` flags only remembered-rule matches. The skill that recaptures runs the stale check itself, with no oracle call.
+`sweep-diff` flags only remembered-rule matches. The skill that recaptures runs the stale check itself.

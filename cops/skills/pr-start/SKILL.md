@@ -6,8 +6,6 @@ disable-model-invocation: true
 
 # Start a PR from a task
 
-It pins the task on a user-confirmed card, runs one scoped loop (implement, test, commit), checks it against remembered rules, and opens a draft PR.
-
 GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENTIONS-github.md` → "GitHub access" says.
 
 ## Where the task comes from
@@ -18,7 +16,7 @@ Read, in order:
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
-The oracle supplies the repo profile and remembered rules, never intent. No stated reason for the change → ask the user.
+The oracle supplies the repo profile and remembered rules, never intent.
 
 ## 1. Gate
 
@@ -85,13 +83,13 @@ Confirm, or edit any line.
   The card's Approach and Size become the picked option's.
 - Never suggest or hand off to another plugin's skill from the card.
 
-A Goal or likely-files edit that changes what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`). Branch declined → stop.
+A Goal or likely-files edit that changes what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`).
 
 ## 4. Fix loop
 
 Read [fix-loop.md](fix-loop.md) now. Scenarios → `before` capture first. Hand the loop to `pr-sidekick` (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent") in one handoff carrying the card's Goal, Approach, scope and Done when, `Rules that apply:` from the brief, the profile's test command, at most 3 attempts, and a commit with this skill's trailers. The sidekick never pushes.
 
-A question back → ask the user, then respawn with `Resuming:`; in autopilot it stops the run. Failure after 3 attempts → stop; the work stays uncommitted.
+A question back → ask the user, then respawn with `Resuming:`; in autopilot it stops the run. Failure after 3 attempts leaves the work uncommitted.
 
 ## 5. Sweep
 
@@ -105,7 +103,7 @@ Nothing is pushed before a clean `sweep-diff`.
 
 ## 5b. Write the evidence manifest
 
-Write the `<details>` manifest block ([evidence.md](evidence.md)) for the body. Nothing is pushed for evidence.
+Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body. Nothing is pushed for evidence.
 
 ## 6. Push and open the PR
 
