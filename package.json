@@ -3,9 +3,16 @@
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "render:memory-flow": "bash scripts/render-memory-flow.sh"
+    "render:memory-flow": "bash scripts/render-memory-flow.sh",
+    "test:hooks": "claude plugin test cops"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-code": "2.1.302",
     "playwright": "1.63.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@anthropic-ai/claude-code"
+    ]
   }
 }
