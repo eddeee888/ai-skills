@@ -48,7 +48,7 @@ Read [research.md](research.md) now, before researching or drafting any answer. 
 
 ## Step 6: Wrap up
 
-Never run `cops:pr-sync`. If implementation changes were pushed to the user's own PR, suggest `pr-sync` exactly as `CONVENTIONS-orchestration.md` → "Suggesting next steps" says. After a pushed batch, run the stale check from `../pr-sync/recapture.md` on a body with an evidence manifest: no model call, no oracle, no capture, no PR edit, read-only in autopilot too. Any stale scenario → one report line `evidence stale: <scenario>, … — run /cops:pr-sync`, which strengthens that suggestion. Report counts implemented/replied and still open for manual resolution. End with the `CONVENTIONS-orchestration.md` → "Handoffs in the final report" list, in execution order, using `triage-threads + scout-repo`, `learn-feedback` when run, one `5a batch` per batch, `sweep-diff` per check, and `5b research` when applicable.
+Never run `cops:pr-sync`. If implementation changes were pushed to the user's own PR, suggest `pr-sync` exactly as `CONVENTIONS-orchestration.md` → "Suggesting next steps" says. After a pushed batch, run the stale check from `CONVENTIONS-evidence.md` on a body with an evidence manifest: no model call, no oracle, no capture, no PR edit, read-only in autopilot too. Any stale scenario → one report line `evidence stale: <scenario>, … — run /cops:pr-sync`, which strengthens that suggestion. Report counts implemented/replied and still open for manual resolution. End with the `CONVENTIONS-orchestration.md` → "Handoffs in the final report" list, in execution order, using `triage-threads + scout-repo`, `learn-feedback` when run, one `5a batch` per batch, `sweep-diff` per check, and `5b research` when applicable.
 
 ## When to stop instead of proceeding
 

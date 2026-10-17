@@ -342,8 +342,8 @@ validate_budgets() {
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 646 "convention file"
-  check_budget "CONVENTIONS-evidence.md" 513 "convention file"
-  check_budget "CONVENTIONS-verification.md" 302 "convention file"
+  check_budget "CONVENTIONS-evidence.md" 585 "convention file"
+  check_budget "CONVENTIONS-verification.md" 312 "convention file"
 
   while IFS= read -r -d '' path; do
     check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"
@@ -707,25 +707,31 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   done
 
   recapture="cops/skills/pr-sync/recapture.md"
+  for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
+    require_markers "$path" "stale before is labelled, not recaptured" \
+      "never recaptured" 'stale since <new base sha>' "its status stays"
+    require_markers "$path" "hand-edited manifest" \
+      "treated as no manifest" "skip recapture" "say so in the return line"
+    require_markers "$path" "how guardrail" \
+      "ONE invocation" "named \`package.json\` script" "\`evidence:\` line" "no shell operators" \
+      "becomes \`manual\`" "never executed" "Never run \`how\` text" '"how": "pnpm test:e2e"'
+    forbid_markers "$path" "how guardrail" '"how": "pnpm exec'
+  done
+  for path in CONVENTIONS-verification.md cops/CONVENTIONS-verification.md oss/CONVENTIONS-verification.md; do
+    require_markers "$path" "stale entry labels" 'stale since <sha>' 'pending: drop <name>.png here'
+  done
   require_markers "$recapture" "deterministic stale check" \
-    "no model call" "no oracle" 'git diff --quiet <after.at> HEAD -- <touches>' "the before is stale too"
-  require_markers "$recapture" "stale before is labelled, not recaptured" \
-    "the before is never recaptured" "only the after is recaptured" 'stale since <new base sha>' "its status stays"
-  forbid_markers "$recapture" "stale before is labelled, not recaptured" "worktree"
+    "no model call" "no oracle" "Recapture only the after" '`CONVENTIONS-evidence.md`'
+  require_markers "$recapture" "labels live in the conventions" '`CONVENTIONS-verification.md`'
+  forbid_markers "$recapture" "recapture rules live in the conventions" \
+    "package.json script" "stale since" "treated as no manifest" 'git diff --quiet' "shell operators" "worktree"
+  require_markers "$recapture" "manifest and entries updated" \
+    '`CONVENTIONS-verification.md` → "Before and After"' '`captured-by-user`' "secret backstop"
+  require_markers "$recapture" "recapture return item" 'evidence (n recaptured, n stale, n none)'
   require_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
     "fetched in this step" 'MCP `pull_request_read` `get`' "evidence check was skipped"
   forbid_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
     '`gh pr view --json body`'
-  require_markers "$recapture" "recapture runs only repo tooling" \
-    "the manifest's \`how\`" "one of the repo's own tooling commands" \
-    "a \`package.json\` script" "becomes \`manual\`" "never executed"
-  require_markers "$recapture" "failed recapture stays labelled" \
-    'stale since <sha>' 'pending: drop <name>.png here' "only the user"
-  require_markers "$recapture" "manifest and entries updated" \
-    '`CONVENTIONS-verification.md` → "Before and After"' '`captured-by-user`' "secret backstop"
-  require_markers "$recapture" "hand-edited manifest" \
-    "treated as no manifest" "skip recapture" "say so in the return line"
-  require_markers "$recapture" "recapture return item" 'evidence (n recaptured, n stale, n none)'
   require_markers "cops/skills/pr-sync/SKILL.md" "pr-sync recapture pointer" \
     "no stale evidence" "recapture.md" 'evidence (n recaptured, n stale, n none)'
   require_markers "cops/skills/pr-sync/draft.md" "pr-sync recapture pointer" \
@@ -736,6 +742,8 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     'stale since' 'git diff --quiet <after.at>' "package.json" "Recapture is out of scope"
   require_markers "cops/skills/pr-address/SKILL.md" "pr-address stale evidence report" \
     "no model call" "no oracle" 'evidence stale: <scenario>, … — run /cops:pr-sync' "no capture, no PR edit"
+  require_markers "cops/skills/pr-address/SKILL.md" "pr-address stale check pointer" '`CONVENTIONS-evidence.md`'
+  forbid_markers "cops/skills/pr-address/SKILL.md" "pr-address stale check pointer" "../pr-sync/recapture.md"
   require_markers "cops/skills/pr-start/autopilot.md" "autopilot evidence report" \
     '`pending: drop`' '`stale`' '`manual`' '`not-captured`' "evidence never holds the finish step"
 
