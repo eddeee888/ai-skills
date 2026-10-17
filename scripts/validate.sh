@@ -343,10 +343,10 @@ validate_budgets() {
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 646 "convention file"
   check_budget "CONVENTIONS-evidence.md" 513 "convention file"
-  check_budget "CONVENTIONS-verification.md" 260 "convention file"
+  check_budget "CONVENTIONS-verification.md" 302 "convention file"
 
   while IFS= read -r -d '' path; do
-    check_budget "${path#"$ROOT"/}" 1470 "SKILL.md"
+    check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"
   done < <(repository_files 'SKILL.md')
   for path in "$ROOT"/cops/agents/*.md; do
     [ -f "$path" ] && check_budget "${path#"$ROOT"/}" 1000 "agent instruction"
@@ -614,7 +614,7 @@ validate_behavioral_contracts() {
 
   require_markers "CONVENTIONS-evidence.md" "evidence contract" \
     '`captured`' '`captured-by-user`' '`drawn`' '`mock`' '`manual`' '`not-captured`' \
-    '"touches"' 'orphan branch `cops-evidence`' '$(git rev-parse --git-dir)/cops/evidence/<slug>/' \
+    '"touches"' '$(git rev-parse --git-dir)/cops/evidence/<slug>/' \
     '## Evidence manifest: `<slug>/manifest.json`' 'the branch name with `/` replaced by `-`' \
     "Never the working tree or the PR branch" \
     '## Staleness is not a `sweep-diff` check' \
@@ -625,7 +625,16 @@ validate_behavioral_contracts() {
     "## Verification checklist: name the test type, not the command" \
     "## Don't checklist an intentionally-failing check as done" \
     '## Before and After: `### Before` / `### After` under `## Verification`' \
-    '`### Before` then `### After` as two separate subsections under `## Verification`'
+    '`### Before` then `### After` as two separate subsections under `## Verification`' \
+    '**<name>** — <status> @ <sha>' "pending: drop <name>.png here" \
+    "collapsed \`<details>\` evidence manifest" "keeps all of it verbatim"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "Before/After rules live in the convention" \
+    "same names and order"
+  require_markers "cops/skills/pr-start/SKILL.md" "Before/After pointer" \
+    '`CONVENTIONS-verification.md` → "Before and After"'
+  require_markers "cops/skills/pr-sync/draft.md" "keep Before/After and manifest" \
+    "Keep existing \`### Before\` / \`### After\`" "evidence manifest verbatim" \
+    '`CONVENTIONS-verification.md` → "Before and After"'
   require_order "CONVENTIONS-verification.md" "Done when clause under Before and After" \
     '## Before and After: `### Before` / `### After` under `## Verification`' \
     "never satisfies a card's Done when"
@@ -657,16 +666,39 @@ validate_behavioral_contracts() {
 Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   require_order "cops/skills/pr-start/fix-loop.md" "capture handoff before the size check" \
     "## Fix-loop handoff" "## Capture handoff" "## Size after the loop"
-  require_markers "cops/skills/pr-start/SKILL.md" "publish evidence" \
-    "## 5b. Publish evidence" "orphan branch \`cops-evidence\`" "temporary \`git worktree\` outside the repo" \
-    "Never commit evidence to the PR branch" "Evidence: not published — <reason>" \
-    "\`### Before\` then \`### After\` under it" "Evidence never holds the PR"
-  require_order "cops/skills/pr-start/SKILL.md" "publish after sweep, before the body" \
-    "## 5. Sweep" "## 5b. Publish evidence" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
-  require_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" \
-    "under \`<slug>/\`" "no PR number exists yet"
+  require_markers "cops/skills/pr-start/SKILL.md" "manifest step" \
+    "## 5b. Write the evidence manifest" "Write the \`<details>\` manifest block" \
+    "\`### Before\` then \`### After\` under it" "evidence never holds the PR"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "nothing is published to a branch" \
+    "publish scratch" "worktree" "not published"
+  require_order "cops/skills/pr-start/SKILL.md" "manifest after sweep, before the body" \
+    "## 5. Sweep" "## 5b. Write the evidence manifest" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
+  for path in cops/skills/pr-start/SKILL.md \
+    cops/skills/pr-start/fix-loop.md CONVENTIONS-evidence.md; do
+    forbid_markers "$path" "no evidence branch" "cops-evidence"
+  done
   require_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" \
     "cops/evidence/<slug>/"
+  for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
+    require_markers "$path" "local-only captures" "no real credentials" "else \`manual\`"
+    require_markers "$path" "manifest written by the main chat" \
+      "Step 5b" "capture handoffs" "pending: drop <name>.png here" "\`captured-by-user\`"
+    require_markers "$path" "secret backstop" \
+      "\`Authorization\`" "private-key" "\`path:line\`" "possible secret" "backstop, not a guarantee"
+  done
+  for path in CONVENTIONS-verification.md cops/CONVENTIONS-verification.md oss/CONVENTIONS-verification.md; do
+    require_markers "$path" "manual block" \
+      "manual: <scenario>" "\`Needs:\`" "\`Expect:\`" "never runs it" "no tooling"
+  done
+  for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/fix-loop.md; do
+    require_markers "$path" "evidence rules pointer" '`CONVENTIONS-evidence.md`'
+    forbid_markers "$path" "evidence rules live in the conventions" \
+      "(evidence.md)" "[evidence.md]" '`evidence.md`'
+  done
+  for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
+    require_markers "$path" "manifest and drop rules" \
+      "source of truth" "no real credentials" "dropped by the user"
+  done
   forbid_markers "cops/skills/pr-start/fix-loop.md" "evidence folder is the branch slug" "<pr | branch-slug>"
   forbid_markers "cops/skills/pr-start/SKILL.md" "evidence folder is the branch slug" "under \`<pr>/\`"
   for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do

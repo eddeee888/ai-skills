@@ -85,6 +85,8 @@ Return one line per scenario: <name> — <file> — <status>. Can't capture →
 
 A `not-captured` scenario never blocks.
 
+Rules: `CONVENTIONS-evidence.md`.
+
 ## Size after the loop
 
 Once the loop has committed, run `git diff --stat <commit before the loop>..HEAD` and compare the files it lists with the card's In scope bullets and Approach; don't rely on the sidekick's report alone. A `blast radius:` line in the reply, or commits that reach further than the card said → apply `CONVENTIONS-pr-metadata.md` → "Task size" again to what was actually changed. The size only goes up, never down. A raised size is reported at Step 7 as `Size: <card size> → <new size> — <what reached further>`; say nothing when it didn't change.

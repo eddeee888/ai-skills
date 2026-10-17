@@ -6,8 +6,6 @@ disable-model-invocation: true
 
 # Start a PR from a task
 
-It pins the task on a user-confirmed card, runs one scoped loop (implement, test, commit), checks it against remembered rules, and opens a draft PR.
-
 GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENTIONS-github.md` → "GitHub access" says.
 
 ## Where the task comes from
@@ -18,7 +16,7 @@ Read, in order:
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
-The oracle supplies the repo profile and remembered rules, never intent. No stated reason for the change → ask the user.
+The oracle supplies the repo profile and remembered rules, never intent. No stated reason → ask the user.
 
 ## 1. Gate
 
@@ -85,13 +83,13 @@ Confirm, or edit any line.
   The card's Approach and Size become the picked option's.
 - Never suggest or hand off to another plugin's skill from the card.
 
-A Goal or likely-files edit that changes what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`). Branch declined → stop.
+A Goal or likely-files edit that changes what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`).
 
 ## 4. Fix loop
 
 Read [fix-loop.md](fix-loop.md) now. Scenarios → `before` capture first. Hand the loop to `pr-sidekick` (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent") in one handoff carrying the card's Goal, Approach, scope and Done when, `Rules that apply:` from the brief, the profile's test command, at most 3 attempts, and a commit with this skill's trailers. The sidekick never pushes.
 
-A question back → ask the user, then respawn with `Resuming:`; in autopilot it stops the run. Failure after 3 attempts → stop; the work stays uncommitted.
+A question back → ask the user, then respawn with `Resuming:`; in autopilot it stops the run. Failure after 3 attempts leaves the work uncommitted.
 
 ## 5. Sweep
 
@@ -103,9 +101,9 @@ Call `pr-oracle` in `sweep-diff` mode over the new commits (pre-loop commit to `
 
 Nothing is pushed before a clean `sweep-diff`.
 
-## 5b. Publish evidence
+## 5b. Write the evidence manifest
 
-After `after` capture, publish scratch to orphan branch `cops-evidence` under `<slug>/` (branch slug; no PR number exists yet) via a temporary `git worktree` outside the repo: its own commit and push, linked by SHA. Never commit evidence to the PR branch. Can't → scratch only; the body says `Evidence: not published — <reason>`.
+Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body. Nothing is pushed for evidence.
 
 ## 6. Push and open the PR
 
@@ -119,7 +117,7 @@ rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
-- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it, same names and order, each with status and SHA (base for Before). Evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write the files with `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
+- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it, as in `CONVENTIONS-verification.md` → "Before and After"; Before is taken at the base; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write the files with `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
 
 ## 7. Wrap up
 

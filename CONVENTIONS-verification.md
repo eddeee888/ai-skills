@@ -16,4 +16,13 @@ For intentionally failing checkpoint tests, write `- [ ] Unit tests — intentio
 
 - **Verification is proof** (tests, commands, results) on every PR. **Before/After is demonstration**, only for an observable surface. It never replaces Verification and never satisfies a card's Done when.
 
-The PR body shows `### Before` then `### After` as two separate subsections under `## Verification`: never new top-level sections, never side by side in one block. Both list the same scenarios, by name and in order, each with its status and the SHA it was taken at. Verification keeps its tests and commands. Evidence never holds a PR: a pending, stale or failed scenario is labelled, not blocking.
+The PR body shows `### Before` then `### After` as two separate subsections under `## Verification`: never new top-level sections or side by side. Both list the same scenarios, by name and in order. Each scenario is `**<name>** — <status> @ <sha>` then a fenced text block (`api`/`cli` output, `architecture` Mermaid labelled `drawn`, or a `mock` labelled `mock`), the `manual` block, or `pending: drop <name>.png here`. The collapsed `<details>` evidence manifest sits there too; a rewritten body keeps all of it verbatim. Evidence never holds a PR: a pending, stale or failed scenario is labelled.
+
+```text
+manual: <scenario>
+Needs: <what must be running or set up>
+Expect: <what the output should show>
+  <command>
+```
+
+Commands: the repo's own tooling only; `Needs:` and `Expect:` required; nothing invented (no tooling: say what is missing). The agent never runs it.
