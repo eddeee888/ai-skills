@@ -662,10 +662,14 @@ validate_behavioral_contracts() {
   forbid_markers "cops/skills/pr-start/SKILL.md" "Evidence line is required" \
     "**Evidence** (optional)" "omitted when the profile's" "nothing captures it"
   require_markers "cops/skills/pr-start/fix-loop.md" "capture handoff" \
-    "## Capture handoff" "Phase: <before | after>" "Write to
+    "## Capture handoff" "Write to
 Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
+  forbid_markers "cops/skills/pr-start/fix-loop.md" "pr-start captures only the before" \
+    "Phase:" "\`after\`"
   require_order "cops/skills/pr-start/fix-loop.md" "capture handoff before the size check" \
     "## Fix-loop handoff" "## Capture handoff" "## Size after the loop"
+  require_markers "cops/skills/pr-start/SKILL.md" "after left to pr-sync" \
+    'pending: run /cops:pr-sync' "suggest \`/cops:pr-sync\`"
   require_markers "cops/skills/pr-start/SKILL.md" "manifest step" \
     "## 5b. Write the evidence manifest" "Write the \`<details>\` manifest block" \
     "\`### Before\` then \`### After\` under it" "evidence never holds the PR"
@@ -710,6 +714,8 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   for path in CONVENTIONS-evidence.md cops/CONVENTIONS-evidence.md oss/CONVENTIONS-evidence.md; do
     require_markers "$path" "stale before is labelled, not recaptured" \
       "never recaptured" 'stale since <new base sha>' "its status stays"
+    require_markers "$path" "who captures what" \
+      "pr-start" "before the first edit" "pr-sync" "final code" "absent until"
     require_markers "$path" "hand-edited manifest" \
       "treated as no manifest" "skip recapture" "say so in the return line"
     require_markers "$path" "how guardrail" \
@@ -718,22 +724,23 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     forbid_markers "$path" "how guardrail" '"how": "pnpm exec'
   done
   for path in CONVENTIONS-verification.md cops/CONVENTIONS-verification.md oss/CONVENTIONS-verification.md; do
-    require_markers "$path" "stale entry labels" 'stale since <sha>' 'pending: drop <name>.png here'
+    require_markers "$path" "stale entry labels" 'stale since <sha>' 'pending: drop <name>.png here' \
+      'pending: run /cops:pr-sync'
   done
   require_markers "$recapture" "deterministic stale check" \
-    "no model call" "no oracle" "Recapture only the after" '`CONVENTIONS-evidence.md`'
+    "no model call" "no oracle" "Capture the after" '`CONVENTIONS-evidence.md`'
   require_markers "$recapture" "labels live in the conventions" '`CONVENTIONS-verification.md`'
   forbid_markers "$recapture" "recapture rules live in the conventions" \
     "package.json script" "stale since" "treated as no manifest" 'git diff --quiet' "shell operators" "worktree"
   require_markers "$recapture" "manifest and entries updated" \
     '`CONVENTIONS-verification.md` → "Before and After"' '`captured-by-user`' "secret backstop"
-  require_markers "$recapture" "recapture return item" 'evidence (n recaptured, n stale, n none)'
+  require_markers "$recapture" "recapture return item" 'evidence (n captured, n stale, n none)'
   require_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
     "fetched in this step" 'MCP `pull_request_read` `get`' "evidence check was skipped"
   forbid_markers "cops/skills/pr-sync/SKILL.md" "stale-evidence check reads the body on any route" \
     '`gh pr view --json body`'
   require_markers "cops/skills/pr-sync/SKILL.md" "pr-sync recapture pointer" \
-    "no stale evidence" "recapture.md" 'evidence (n recaptured, n stale, n none)'
+    "no evidence to capture" "recapture.md" 'evidence (n captured, n stale, n none)'
   require_markers "cops/skills/pr-sync/draft.md" "pr-sync recapture pointer" \
     "recapture.md" "before Step 4"
   forbid_markers "cops/skills/pr-sync/SKILL.md" "recapture rules live in recapture.md" \

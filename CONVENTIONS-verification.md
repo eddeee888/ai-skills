@@ -14,9 +14,9 @@ For intentionally failing checkpoint tests, write `- [ ] Unit tests — intentio
 
 ## Before and After: `### Before` / `### After` under `## Verification`
 
-- **Verification is proof** (tests, commands, results) on every PR. **Before/After is demonstration**, only for an observable surface. It never replaces Verification and never satisfies a card's Done when.
+- **Verification is proof** on every PR. **Before/After is demonstration**, only for an observable surface. It never replaces Verification and never satisfies a card's Done when.
 
-The PR body shows `### Before` then `### After` as two separate subsections under `## Verification`: never new top-level sections or side by side. Both list the same scenarios, by name and in order. Each scenario is `**<name>** — <status> @ <sha>` then a fenced text block (`api`/`cli` output, `architecture` Mermaid labelled `drawn`, or a `mock` labelled `mock`), the `manual` block, or `pending: drop <name>.png here`. The collapsed `<details>` evidence manifest sits there too; a rewritten body keeps all of it verbatim. Evidence never holds a PR: a stale entry is labelled `stale since <sha>`, a stale screenshot goes back to `pending: drop <name>.png here`.
+The PR body shows `### Before` then `### After` as two separate subsections under `## Verification`: never new top-level sections or side by side. Both list the same scenarios, by name and in order. Each scenario is `**<name>** — <status> @ <sha>` then a fenced text block (`api`/`cli` output, `architecture` Mermaid labelled `drawn`, or a `mock` labelled `mock`), the `manual` block, or `pending: drop <name>.png here`. No After yet: `pending: run /cops:pr-sync`. The collapsed `<details>` evidence manifest sits there too; a rewritten body keeps all of it verbatim. A stale entry is labelled `stale since <sha>`, a stale screenshot goes back to `pending: drop <name>.png here`.
 
 ```text
 manual: <scenario>

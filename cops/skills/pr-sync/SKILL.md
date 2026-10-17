@@ -35,7 +35,7 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    working tree. Don't edit the PR.
    Return at most 5 lines: pushed (sha, or "nothing to push"), changeset
    (created | updated | none), title changed (yes/no),
-   evidence (n recaptured, n stale, n none), one line on what moved — or the
+   evidence (n captured, n stale, n none), one line on what moved — or the
    question, or "already current".
    ```
 
@@ -63,7 +63,7 @@ git fetch origin <baseRefName> --quiet
 git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 ```
 
-`no diff` and no stale evidence → say the PR is already current and stop. A `<details>` evidence manifest in the PR body (already fetched in this step by the selected route: `gh pr view` fields or MCP `pull_request_read` `get`) means `recapture.md`'s stale check runs here too; any stale scenario → go on. Body can't be read → the "nothing to sync" stop is not taken on evidence grounds; say the evidence check was skipped.
+`no diff` and no evidence to capture → say the PR is already current and stop. A `<details>` evidence manifest in the PR body (already fetched in this step by the selected route: `gh pr view` fields or MCP `pull_request_read` `get`) means `recapture.md`'s check runs here too; any after missing or stale → go on. Body can't be read → the "nothing to sync" stop is not taken on evidence grounds; say the evidence check was skipped.
 
 Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`. Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline. With an `autopilot profile:` line in the stage prompt (see Step 7's autopilot exception), call `brief-task` alone and use that profile.
 
