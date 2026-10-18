@@ -9,7 +9,7 @@ Read this only after the user confirmed the task card in Step 3, immediately bef
 3. `sweep-diff` — Step 5, over the loop's commits, before any push.
 4. `learn-feedback` — a separate call, only after the user explicitly asks to remember something.
 
-Each call gets `memory-root:` / `memory-login:` and its tier's model from session context (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). The sidekick prompt gets neither. Each oracle call also gets the selected `GitHub route:`; calls after Step 2 get its profile as `profile:`.
+Each call gets `memory-root:` / `memory-login:` and its tier's model from session context (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). The sidekick prompt gets neither. Each oracle call also gets the selected `GitHub route:`.
 
 ## Fix-loop handoff
 
