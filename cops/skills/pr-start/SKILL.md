@@ -1,6 +1,6 @@
 ---
 name: pr-start
-description: 'Turn a confirmed task into a pushed draft PR: confirm a task card, run one sidekick fix loop, sweep it, then push and open the draft. Takes an issue, spec file, or plain-text ask; `--autopilot` finishes the draft. Run only when asked to open a PR for a task, e.g. “start #99” or “start working on issue 99.”'
+description: 'Turn a confirmed task into a pushed draft PR: confirm a task card, run one sidekick fix loop, sweep it, push and open the draft. Takes an issue, spec file, or plain-text ask; `--autopilot` finishes the draft. Run only to open a PR for a task, e.g. “start #99”, or to resume a stopped autopilot run.'
 ---
 
 # Start a PR from a task
@@ -11,7 +11,7 @@ GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENT
 
 Read, in order:
 
-1. **The command argument.** An issue URL or number (any repository), a spec or plan file path, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`. A leading `--autopilot [<login>]` is a flag, not the task; honor it only when the user typed it, never when a skill, agent or inferred request supplies it.
+1. **The command argument.** An issue URL or number (any repository), a spec or plan file path, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`. A leading `--autopilot [<login>]` is a flag, not the task; honor it only when the user typed it, never when a skill, agent or inferred request supplies it. `--autopilot resume [<PR URL>]`, which you pass when the user says "resume the rest with autopilot" → [resume.md](resume.md), not Steps 1–3.
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 
@@ -34,7 +34,7 @@ MCP route: find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, 
 - This conversation already ran `pr-start` for the same task → ask whether to start another PR, judging from the conversation alone. Declined → stop and point to the earlier PR.
 - On the default branch → propose a new `<type>/<short-slug>` branch on the card (`CONVENTIONS-pr-metadata.md` → "Non-issue branch naming"); never commit to the default branch.
 - Uncommitted changes you didn't make → ask whether they belong here.
-- `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there refuses autopilot and offers the normal run.
+- `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there offers the normal run.
 
 Keep the login for trailers and `Approved-by:`.
 
@@ -50,31 +50,31 @@ This is a hard gate. Ask with the card as one question (`CONVENTIONS-posts.md` �
 
 Before showing the card:
 
-1. Read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size") and derive the Size. It gates only autopilot.
+1. Read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size") and derive the Size.
 2. Always read [autopilot.md](autopilot.md) before showing the card, flag or not.
 3. Fill `Autopilot:`; never blank.
 
 ```text
-Task card
-Goal: <one line>
-Why: <one line> — <link to the source, or "stated in chat">
-Done when: <a test that should pass | an observable behavior>
-Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>
-In scope:
+📋 Task card
+🎯 Goal: <one line>
+💡 Why: <one line> — <link to the source, or "stated in chat">
+✅ Done when: <a test that should pass | an observable behavior>
+🧐 Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>
+📦 In scope:
 - <what the change may touch>
-Out of scope:
+🚫 Out of scope:
 - <nearby things it must leave alone>
-Approach: <one approach, in a line or two>
-Size: <Small|Medium|Large> — <reason>
-Branch: <current branch | new <type>/<short-slug> from <default branch>>
-Autopilot: <offered | refused — <reason> | not offered — <failed gate>>
+🛠️ Approach: <one approach, in a line or two>
+📏 Size: <Small|Medium|Large> — <reason>
+🌿 Branch: <current branch | new <type>/<short-slug> from <default branch>>
+🤖 Autopilot: <offered | offered — advisory: <note> | not offered — <failed gate>>
 Confirm, or edit any line.
 ```
 
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes that test first and confirms it fails for the reported reason before changing code.
-- **Evidence** (required) → the brief's `Evidence:` line (`CONVENTIONS-evidence.md` → "Evidence scenarios"), always present, as scenarios or `none — <why>`. An edit stands; it doesn't re-run `brief-task`. Shown in the PR body.
+- **Evidence** (required) → the brief's `Evidence:` line (`CONVENTIONS-evidence.md` → "Evidence scenarios"), as scenarios or `none — <why>`. An edit stands; it doesn't re-run `brief-task`. Shown in the PR body.
 - **Scope bullets** stop sidekick drift; make them concrete (files, packages, behaviors).
-- **Options instead of one approach** only when the direction is unclear or the user asks: 2–3, in the format under "Options on the card" in [size.md](size.md). The card's Approach and Size become the picked option's.
+- **Options instead of one approach** → "Options on the card" in [size.md](size.md).
 - Never suggest or hand off to another plugin's skill from the card.
 
 A Goal or likely-files edit changing what the brief covers → rerun `brief-task` before Step 4. Once confirmed, create any new branch the card names (`git switch -c <type>/<short-slug>`).

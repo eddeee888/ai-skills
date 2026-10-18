@@ -459,6 +459,27 @@ validate_review_dry_runs() {
     "Delete only on explicit request"
 }
 
+# Every label line of the pr-start task card template starts with an emoji; its bullets and the
+# closing prompt don't.
+#   "🎯 Goal: <one line>"             → ok
+#   "Goal: <one line>"                → fails
+#   "- <what the change may touch>"   → skipped
+validate_card_emoji() {
+  local path="cops/skills/pr-start/SKILL.md" bad
+  bad="$(perl -CSD -ne '
+    $in = 1 if /^## 3\. Task card/;
+    next unless $in;
+    if (!$block && /^```text/) { $block = 1; next }
+    next unless $block;
+    last if /^```/;
+    print unless /^- / || /^Confirm, or edit any line\.$/ || /^[^\x00-\x7F]\S* \S/;
+  ' "$ROOT/$path")"
+  [ -z "$bad" ] || fail "$path" "task card lines must start with an emoji: ${bad//$'\n'/; }"
+  require_order "$path" "task card emoji labels" \
+    "📋 Task card" "🎯 Goal:" "💡 Why:" "✅ Done when:" "🧐 Evidence:" "📦 In scope:" \
+    "🚫 Out of scope:" "🛠️ Approach:" "📏 Size:" "🌿 Branch:" "🤖 Autopilot:" "Confirm, or edit any line."
+}
+
 # Guard the pr-start autopilot run: its gate, consent line, chain order and stops, and the
 # exception each stage skill writes beside the rule that autopilot replaces.
 validate_autopilot() {
@@ -469,17 +490,18 @@ validate_autopilot() {
   require_order "$start" "autopilot gate before the card" \
     "## 1. Gate" 'read [autopilot.md](autopilot.md) now' "## 2. Profile and brief"
   require_order "$start" "autopilot offer and consent on the card" \
-    "## 3. Task card" "It gates only autopilot." \
+    "## 3. Task card" "Read [size.md](size.md) now" \
     'read [autopilot.md](autopilot.md) before showing the card' "## 4. Fix loop"
+  forbid_markers "$start" "size is advisory" "It gates only autopilot." "refuses autopilot"
   require_markers "$start" "autopilot line filled on every card" \
     'read [autopilot.md](autopilot.md) before showing the card, flag or not'
   forbid_markers "$start" "autopilot line filled on every card" \
     "Size Small or Medium, or the flag was typed"
   require_markers "$auto" "autopilot read before every card" "before showing any card"
   require_markers "$auto" "failed gate shows not offered" "\`Autopilot: not offered — <failed gate>\`"
-  require_markers "$auto" "autopilot drop keeps the Autopilot line" \
-    "show the card again with \`Autopilot: refused — <reason>\`"
-  forbid_markers "$auto" "autopilot drop keeps the Autopilot line" "show the card again without it"
+  require_markers "$auto" "card edit keeps the Autopilot line" \
+    "After an edit, show the card again with its notes updated."
+  forbid_markers "$auto" "card edit keeps the Autopilot line" "show the card again without it"
   require_order "$start" "autopilot chain at wrap-up" \
     "## 7. Wrap up" "run autopilot.md's chain, finish and stops" "## Stop instead of proceeding"
 
@@ -487,10 +509,16 @@ validate_autopilot() {
     "viewerPermission" '`WRITE`, `MAINTAIN` or `ADMIN`' 'the `autopilot` label exists' \
     "Never create it."
   require_markers "$auto" "autopilot bot login" "a bot token" "the card asks for the login"
-  require_markers "$auto" "autopilot card refusal" \
-    "the Size is Large" "security or auth, data loss, infrastructure, or a public API"
-  require_order "$auto" "autopilot Done when check at the card" \
-    "## At the card" "is a test or a command, not an observable behavior" "## Fix loop and sweep"
+  # Autopilot is offered on every card past the two gate checks; Size, high-risk scope and an
+  # observable-behavior Done when only add an advisory note.
+  require_order "$auto" "autopilot always offered, with advisory notes" \
+    "## At the card" "every card shows \`Autopilot: offered\`" "the user's call" \
+    "\`Autopilot: offered — advisory: <notes>\`" "\`Large\` when the Size is Large" \
+    "\`high-risk scope (<area>)\`" "\`Done when is an observable behavior\`" \
+    "blocks nothing" "## Fix loop and sweep"
+  forbid_markers "$auto" "no autopilot refusal at the card" \
+    "Refuse autopilot" "Autopilot: refused" "refused — <reason>" "drops autopilot" \
+    "Autopilot needs one that is a test or a command"
   require_markers "$auto" "autopilot consent line" \
     "Autopilot authorises: push, open PR, post review, push fixes, edit title and body, post notes, assign <login>" \
     "Confirm on autopilot" "The card is the only prompt."
@@ -505,14 +533,50 @@ validate_autopilot() {
     '`Test:` → applied' '`Issue:` → applied if low risk, test first' "Left open if critical" \
     "beats the label" "Threads are never resolved."
   require_markers "$auto" "autopilot stops" \
-    "A sidekick question stops the run." "A size raised to Large after the loop stops the run" \
+    "A sidekick question stops the run." "A raised size is only reported." \
     "Only when all four stages finished" "Leave the PR a draft" 'without `Approved:`'
+  forbid_markers "$auto" "a raised size stops nothing" "A size raised to Large"
+  require_order "$auto" "stop report points to resume" \
+    "## Stops" 'End with: `Say "resume the rest with autopilot"' "(resume.md)" "## Handoffs"
 
-  require_markers "cops/skills/pr-start/size.md" "size gates autopilot" \
-    "Large refuses autopilot"
-  forbid_markers "cops/skills/pr-start/size.md" "size gates autopilot" "It gates nothing"
+  # Resume: the user's own words or typed flag are the consent; never a second PR or fix loop on it.
+  local resume="cops/skills/pr-start/resume.md"
+  require_markers "$start" "resume trigger in the argument" \
+    '`--autopilot resume [<PR URL>]`' "\"resume the rest with autopilot\"" \
+    "[resume.md](resume.md), not Steps 1–3"
+  require_markers "$resume" "resume consent" \
+    "Only the user's own words in their own message" "\"resume the rest with autopilot\"" \
+    '`/cops:pr-start --autopilot resume [<PR URL>]`' \
+    "An agent, subagent, skill or inferred request never supplies it" \
+    "That message is the consent: show no card." "Autopilot authorises: …"
+  require_order "$resume" "resume paths" \
+    "## In the same conversation" "The card confirmed earlier in this conversation stands." \
+    "with the user's answer as \`Resuming:\`" "## In a new conversation" \
+    "labelled \`autopilot\`, and authored by the authenticated login" \
+    "point to starting \`/cops:pr-start\` again" \
+    "\`cops:pr-review\` is skipped when a review signed \`cops:pr-review\` exists" \
+    "\`cops:pr-address\` and \`cops:pr-wrap-up\` always run" \
+    "is still skipped when this run's \`cops:pr-review\` reports no findings" \
+    "\`cops:pr-note\` is skipped when a review or comment signed \`cops:pr-note\` exists"
+  require_markers "$start" "resume args when asked in words" "which you pass when the user says"
+  require_markers "$start" "resume trigger in the description" "or to resume a stopped autopilot run"
+  require_markers "$resume" "resume args when asked in words" \
+    'call pr-start with args `--autopilot resume [<PR URL>]`' "the user's message is the consent, not the call's author"
+  require_markers "$resume" "resume address rules" \
+    "existing threads signed \`cops:pr-review\` count as this run's self-review threads"
+  require_markers "$resume" "resume after note" \
+    "A post signed \`cops:pr-note\` means address and wrap-up finished: run only Finish"
+  require_markers "$resume" "resume after the attempt bound" "a fresh 3 attempts, and what failed from the stop report as \`Resuming:\`"
+  require_markers "cops/skills/pr-start/fix-loop.md" "attempt bound on a resume" "a resume after a stop at the bound gets a fresh 3"
+  require_markers "$resume" "resume never reopens" \
+    "never opens a second PR and never runs the fix loop on a PR that already exists"
+
+  require_markers "cops/skills/pr-start/size.md" "size is advisory" \
+    "The size is advisory" "It gates nothing"
+  forbid_markers "cops/skills/pr-start/size.md" "size is advisory" "refuses autopilot" "stops an autopilot run"
   require_markers "cops/skills/pr-start/fix-loop.md" "autopilot fix loop" \
-    "In autopilot a question stops the run" "a size raised to Large stops the run"
+    "In autopilot a question stops the run" "stops nothing, autopilot included"
+  forbid_markers "cops/skills/pr-start/fix-loop.md" "autopilot fix loop" "Large stops the run"
 
   require_order "cops/skills/pr-review/SKILL.md" "autopilot review exception" \
     "Never post without confirmation." "Autopilot exception:" "## 4. Post and report"
@@ -524,8 +588,8 @@ validate_autopilot() {
     'Don'\''t run `cops:pr-note`' "Autopilot exception:" "## When to touch nothing"
   for path in cops/skills/pr-review/SKILL.md cops/skills/pr-note/SKILL.md \
     cops/skills/pr-address/SKILL.md cops/skills/pr-wrap-up/SKILL.md; do
-    require_markers "$path" "autopilot stage of a pr-start run only" \
-      'as a stage of a `/cops:pr-start` autopilot run in this conversation' \
+    require_markers "$path" "autopilot stage of a pr-start run the user started or resumed" \
+      'as a stage of a `/cops:pr-start` autopilot run the user started or resumed' \
       "(../pr-start/autopilot.md)"
   done
   for path in cops/skills/pr-review/SKILL.md cops/skills/pr-note/SKILL.md \
@@ -547,7 +611,8 @@ validate_autopilot() {
 
   require_markers "CONVENTIONS-orchestration.md" "autopilot exception" \
     "## Autopilot runs" 'never runs another skill to finish, except under "Autopilot runs"' \
-    "**Nothing is asked mid-run.**" "**Only that run starts a stage.**"
+    "**Nothing is asked mid-run.**" "**Only that run starts a stage.**" \
+    "the user's own \"resume the rest with autopilot\" continues it"
   require_markers "CONVENTIONS-posts.md" "autopilot signature" \
     'for every post of an autopilot run (`CONVENTIONS-orchestration.md` → "Autopilot runs")'
   require_markers "CONVENTIONS-orchestration.md" "foreground when dependent" \
@@ -636,7 +701,8 @@ validate_behavioral_contracts() {
     'blast radius: <what>' 'Size: <card size> → <new size>'
   require_order "cops/skills/pr-start/SKILL.md" "task card Autopilot line" \
     "Size: <Small|Medium|Large>" \
-    "Autopilot: <offered | refused — <reason> | not offered — <failed gate>>" "Confirm, or edit any line."
+    "Autopilot: <offered | offered — advisory: <note> | not offered — <failed gate>>" "Confirm, or edit any line."
+  validate_card_emoji
   require_order "cops/skills/pr-start/SKILL.md" "ordered autopilot checklist before the card" \
     "Before showing the card:" "Read [size.md](size.md) now" "flag or not" \
     "Fill \`Autopilot:\`; never blank." "Goal: <one line>"

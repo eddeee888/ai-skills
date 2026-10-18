@@ -63,7 +63,7 @@ above, never a `blast radius:` line.
 
 Fill `Approved-by:` with the login from Step 1; the user's card confirmation is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). Host trailers follow the block without a blank line.
 
-A question → ask the user, then spawn again with `Resuming:` filled in; the same 3-attempt bound carries over. In autopilot a question stops the run instead: nothing is asked mid-run ([autopilot.md](autopilot.md)). A reply that says Done when holds without a failing-before result on a bug → treat it as incomplete and ask the user before Step 5.
+A question → ask the user, then spawn again with `Resuming:` filled in; the same 3-attempt bound carries over; a resume after a stop at the bound gets a fresh 3 ([resume.md](resume.md)). In autopilot a question stops the run instead: nothing is asked mid-run ([autopilot.md](autopilot.md)). A reply that says Done when holds without a failing-before result on a bug → treat it as incomplete and ask the user before Step 5.
 
 No subagent capability → run the same steps here, in the same order, and mark `fix loop` as `inline (no subagent capability)`.
 
@@ -90,7 +90,7 @@ Rules: `CONVENTIONS-evidence.md`.
 
 Once the loop has committed, run `git diff --stat <commit before the loop>..HEAD` and compare the files it lists with the card's In scope bullets and Approach; don't rely on the sidekick's report alone. A `blast radius:` line in the reply, or commits that reach further than the card said → apply `CONVENTIONS-pr-metadata.md` → "Task size" again to what was actually changed. The size only goes up, never down. A raised size is reported at Step 7 as `Size: <card size> → <new size> — <what reached further>`; say nothing when it didn't change.
 
-The raise is a report, not a gate: it needs no new confirmation and stops nothing. The one exception is autopilot, where a size raised to Large stops the run before Step 5. A change that needs something out of scope still comes back as a question, as the handoff says.
+The raise is a report, not a gate: it needs no new confirmation and stops nothing, autopilot included. A change that needs something out of scope still comes back as a question, as the handoff says.
 
 ## Bug: test first
 
