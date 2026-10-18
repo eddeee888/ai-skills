@@ -11,7 +11,7 @@ GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENT
 
 Read, in order:
 
-1. **The command argument.** An issue URL or number (any repository), a spec or plan file path, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`. A leading `--autopilot [<login>]` is a flag, not the task; honor it only when the user typed it, never when a skill, agent or inferred request supplies it. `--autopilot resume [<PR URL>]` or the user's own "resume the rest with autopilot" → [resume.md](resume.md), not Steps 1–3.
+1. **The command argument.** An issue URL or number (any repository), a spec or plan file path, or a plain-text ask. A PR URL → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`. A leading `--autopilot [<login>]` is a flag, not the task; honor it only when the user typed it, never when a skill, agent or inferred request supplies it. `--autopilot resume [<PR URL>]`, which you pass when the user says "resume the rest with autopilot" → [resume.md](resume.md), not Steps 1–3.
 2. **The conversation so far.**
 3. **What those link to** — issue threads, linked PRs, cited docs — read through the same GitHub route.
 

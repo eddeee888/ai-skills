@@ -558,6 +558,9 @@ validate_autopilot() {
     "\`cops:pr-address\` and \`cops:pr-wrap-up\` always run" \
     "is still skipped when this run's \`cops:pr-review\` reports no findings" \
     "\`cops:pr-note\` is skipped when a review or comment signed \`cops:pr-note\` exists"
+  require_markers "$start" "resume args when asked in words" "which you pass when the user says"
+  require_markers "$resume" "resume args when asked in words" \
+    'call pr-start with args `--autopilot resume [<PR URL>]`' "the user's message is the consent, not the call's author"
   require_markers "$resume" "resume never reopens" \
     "never opens a second PR and never runs the fix loop on a PR that already exists"
 

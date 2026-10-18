@@ -212,6 +212,18 @@ describe('describeChain', () => {
     expect(describe_({ runs: [resume] })).toBeUndefined()
   })
 
+  test('a resume the model passes for a spoken ask counts the stages before its first as done', () => {
+    const resume = skill({ name: 'cops:pr-start', args: `--autopilot resume ${URL}`, at: 1, by: 'model' })
+    const runs = [resume, ...['address', 'wrap-up', 'note'].map((name, at) => stage({ name, at: at + 2 }))]
+    const chain = describe_({ runs, turnEndedAt: 6, v: view({ hasNotes: true }) })
+    expect(chain?.line).toBe('Autopilot · PR #81 · fix → review ✓ → address ✓ → wrap-up ✓ → note ✓ → ready · · finished, still a draft')
+    expect(chain?.warnings).toEqual([])
+  })
+
+  test('a plain autopilot run the model passes starts no chain', () => {
+    expect(describe_({ runs: [start({ at: 1, by: 'model' })] })).toBeUndefined()
+  })
+
   test('a second autopilot run shows from its fix stage', () => {
     const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), start({ at: 3 })]
     const chain = describe_({ runs })
