@@ -16,6 +16,12 @@ jobs:
       - uses: actions/checkout@v7
       - name: Validate repository instructions
         run: bash scripts/validate.sh
+      - name: Check the memory-flow version stamp
+        run: |
+          if ! { node scripts/sync-memory-flow-versions.mjs && git diff --exit-code docs/memory-flow.html; }; then
+            echo 'run `pnpm render:memory-flow` and commit docs/memory-flow.html and docs/memory-flow.png'
+            exit 1
+          fi
 
   hook-tests:
     name: Hook tests
