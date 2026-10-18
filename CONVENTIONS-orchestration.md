@@ -22,7 +22,7 @@ Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-wrap-up
 
 A round is all fix commits between two pushes: the fix loop, its one sweep follow-up, and user-directed changes on the open PR. Sweep and push once per round, not per commit.
 
-- `sweep-diff` runs once over `<round-start>..HEAD` (pre-loop HEAD for the first round, last pushed SHA after). A follow-up fix commit is swept with the round, not alone.
+- `sweep-diff` runs over `<round-start>..HEAD` (pre-loop HEAD first, then last pushed SHA), again after the follow-up. A follow-up fix commit is swept with the round, not alone.
 - The sweep-before-push gate is unchanged: push when the round is `clean`.
 - **No squash per round.** Commits stay as made.
 
