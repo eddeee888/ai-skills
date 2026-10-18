@@ -14,7 +14,7 @@ That message is the consent: show no card. Print the `Autopilot authorises: …`
 
 The card confirmed earlier in this conversation stands. Continue from the step the stop report named:
 
-- the fix loop → spawn the sidekick again with the user's answer as `Resuming:`;
+- the fix loop → spawn the sidekick again with the user's answer as `Resuming:`; a stop at the 3-attempt bound has no answer, so it gets a fresh 3 attempts, and what failed from the stop report as `Resuming:`;
 - the sweep, or pushing and opening the PR → that step of SKILL.md;
 - a chain stage → that stage, then the rest of autopilot.md → "The chain".
 

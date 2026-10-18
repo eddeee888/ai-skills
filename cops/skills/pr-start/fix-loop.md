@@ -63,7 +63,7 @@ above, never a `blast radius:` line.
 
 Fill `Approved-by:` with the login from Step 1; the user's card confirmation is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). Host trailers follow the block without a blank line.
 
-A question → ask the user, then spawn again with `Resuming:` filled in; the same 3-attempt bound carries over. In autopilot a question stops the run instead: nothing is asked mid-run ([autopilot.md](autopilot.md)). A reply that says Done when holds without a failing-before result on a bug → treat it as incomplete and ask the user before Step 5.
+A question → ask the user, then spawn again with `Resuming:` filled in; the same 3-attempt bound carries over; a resume after a stop at the bound gets a fresh 3 ([resume.md](resume.md)). In autopilot a question stops the run instead: nothing is asked mid-run ([autopilot.md](autopilot.md)). A reply that says Done when holds without a failing-before result on a bug → treat it as incomplete and ask the user before Step 5.
 
 No subagent capability → run the same steps here, in the same order, and mark `fix loop` as `inline (no subagent capability)`.
 

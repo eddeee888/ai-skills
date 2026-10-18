@@ -566,6 +566,8 @@ validate_autopilot() {
     "existing threads signed \`cops:pr-review\` count as this run's self-review threads"
   require_markers "$resume" "resume after note" \
     "A post signed \`cops:pr-note\` means address and wrap-up finished: run only Finish"
+  require_markers "$resume" "resume after the attempt bound" "a fresh 3 attempts, and what failed from the stop report as \`Resuming:\`"
+  require_markers "cops/skills/pr-start/fix-loop.md" "attempt bound on a resume" "a resume after a stop at the bound gets a fresh 3"
   require_markers "$resume" "resume never reopens" \
     "never opens a second PR and never runs the fix loop on a PR that already exists"
 
