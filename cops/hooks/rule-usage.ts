@@ -16,8 +16,9 @@ const RECENT_LIMIT = 10
 //   'use `x()` (not `y`)  (seen 2x, from you)'                → 'use `x()` (not `y`)'
 //   'cite the doc (see (a) and (b))'                           → 'cite the doc'
 //   'no evidence here'                                         → 'no evidence here'
+//   'prefer early returns  (seen 2x)  applies-to: **/*.md'     → 'prefer early returns'
 const stripEvidence = ({ text }: { text: string }): string => {
-  const trimmed = text.trimEnd()
+  const trimmed = text.replace(/\s+applies-to:.*$/, '').trimEnd()
   if (!trimmed.endsWith(')')) {
     return trimmed
   }
