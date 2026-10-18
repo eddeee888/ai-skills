@@ -109,10 +109,10 @@ gh pr create --draft --base <default branch> --title "$(cat "$d/pr-start-title.t
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 ```
 
-A lint failure → fix, rerun; an overridden rule stands. MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and banner (autopilot.md).
+A lint failure → fix, rerun; an override stands. MCP route: `create_pull_request` with `draft: true` and both files' contents. Autopilot adds its label and banner (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
-- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-wrap-up` per scenario; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write them to `d`, chosen first, per `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
+- **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-wrap-up` per scenario; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write them to `d` per `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
 
 ## 7. Wrap up
 
