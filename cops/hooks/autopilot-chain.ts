@@ -48,9 +48,13 @@ export type Chain = {
 //   all four started, PR closed, no notes posted   → `… → note ■ → ready · · stopped at note`, pickUp `/cops:pr-note <PR URL> `
 //   a plain cops run on the PR after the stages    → status resumed, no stop
 //   view is another PR, or not ready               → `ready ?`
+//   `--autopilot resume` after a stop at wrap-up   → the same chain, review and address still ✓
+//   new session: `--autopilot resume`, then address → `… → review ✓ → address ⠋ …`, no `⚑ skipped review`
+// A `--autopilot resume` picks up a stopped chain rather than starting one.
+const isResume = (one: SkillRun): boolean => /^\s*--autopilot\s+resume\b/.test(one.args || '')
 // Only the person's own `/cops:pr-start --autopilot` starts a chain: pr-start ignores an `--autopilot` the model passes.
 const isAutopilotStart = (one: SkillRun): boolean =>
-  one.by === 'you' && isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && /^\s*--autopilot\b/.test(one.args || '')
+  one.by === 'you' && isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && /^\s*--autopilot\b/.test(one.args || '') && !isResume(one)
 
 export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   runs: SkillRun[]
@@ -74,7 +78,10 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   const index = ({ run }: { run: SkillRun }): number => AUTOPILOT_STAGES.findIndex(stage => isSameSkill({ a: run.skill, b: stage }))
   // Per stage, where its first run sits among the chain's runs; -1 when it never ran.
   const order = AUTOPILOT_STAGES.map((stage, at) => chainRuns.findIndex(one => index({ run: one }) === at))
-  const started = order.map(one => one !== -1)
+  // A chain resumed in a new session begins mid-way: the stages before its first one ran in the earlier session.
+  const isResumed = fix !== undefined && isResume(fix)
+  const firstStage = order.findIndex(one => one !== -1)
+  const started = order.map((one, at) => one !== -1 || (isResumed && at < firstStage))
   const lastRun = chainRuns.at(-1)
   const lastStage = lastRun ? index({ run: lastRun }) : -1
   const last = lastRun || fix
@@ -138,7 +145,7 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
 
   const warnings = stages.flatMap((stage, at) => {
     const before = order.findIndex((position, other) => other > at && position !== -1 && (order[at] === -1 || position < order[at]))
-    if (before === -1) {
+    if (before === -1 || (order[at] === -1 && started[at])) {
       return []
     }
     return [order[at] === -1 ? `⚑ skipped ${stage}` : `⚑ ran ${stages[before]} before ${stage}`]

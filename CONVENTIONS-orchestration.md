@@ -59,11 +59,11 @@ Without `cops`, give only a manual-update `pr-wrap-up` line.
 
 ## Autopilot runs
 
-The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card listing every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-wrap-up`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`, and leaves the PR a draft.
+The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card naming every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-wrap-up`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`.
 
 - **The card is the only prompt.** Stages post and push without further confirmation and suggest no next step.
-- **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft.
-- **Only that run starts a stage.** No other skill does, and no argument typed to a stage makes it one.
+- **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft; the user's own "resume the rest with autopilot" continues it.
+- **Only that run starts a stage.** No other skill or stage argument does.
 
 ## Consulting the `pr-oracle` agent
 

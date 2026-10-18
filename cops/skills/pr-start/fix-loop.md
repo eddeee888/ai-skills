@@ -90,7 +90,7 @@ Rules: `CONVENTIONS-evidence.md`.
 
 Once the loop has committed, run `git diff --stat <commit before the loop>..HEAD` and compare the files it lists with the card's In scope bullets and Approach; don't rely on the sidekick's report alone. A `blast radius:` line in the reply, or commits that reach further than the card said → apply `CONVENTIONS-pr-metadata.md` → "Task size" again to what was actually changed. The size only goes up, never down. A raised size is reported at Step 7 as `Size: <card size> → <new size> — <what reached further>`; say nothing when it didn't change.
 
-The raise is a report, not a gate: it needs no new confirmation and stops nothing. The one exception is autopilot, where a size raised to Large stops the run before Step 5. A change that needs something out of scope still comes back as a question, as the handoff says.
+The raise is a report, not a gate: it needs no new confirmation and stops nothing, autopilot included. A change that needs something out of scope still comes back as a question, as the handoff says.
 
 ## Bug: test first
 
