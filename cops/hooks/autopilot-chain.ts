@@ -51,10 +51,10 @@ export type Chain = {
 //   `--autopilot resume` after a stop at wrap-up   → the same chain, review and address still ✓
 //   new session: `--autopilot resume`, then address → `… → review ✓ → address ⠋ …`, no `⚑ skipped review`
 // A `--autopilot resume` picks up a stopped chain rather than starting one.
-const isResume = (one: SkillRun): boolean => /^\s*--autopilot\s+resume\b/.test(one.args || '')
+const isResume = ({ run }: { run: SkillRun }): boolean => /^\s*--autopilot\s+resume\b/.test(run.args || '')
 // Only the person's own `/cops:pr-start --autopilot` starts a chain: pr-start ignores an `--autopilot` the model passes.
 const isAutopilotStart = (one: SkillRun): boolean =>
-  one.by === 'you' && isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && /^\s*--autopilot\b/.test(one.args || '') && !isResume(one)
+  one.by === 'you' && isSameSkill({ a: one.skill, b: 'cops:pr-start' }) && /^\s*--autopilot\b/.test(one.args || '') && !isResume({ run: one })
 
 export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   runs: SkillRun[]
@@ -79,7 +79,7 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   // Per stage, where its first run sits among the chain's runs; -1 when it never ran.
   const order = AUTOPILOT_STAGES.map((stage, at) => chainRuns.findIndex(one => index({ run: one }) === at))
   // A chain resumed in a new session begins mid-way: the stages before its first one ran in the earlier session.
-  const isResumed = fix !== undefined && isResume(fix)
+  const isResumed = fix !== undefined && isResume({ run: fix })
   const firstStage = order.findIndex(one => one !== -1)
   const started = order.map((one, at) => one !== -1 || (isResumed && at < firstStage))
   const lastRun = chainRuns.at(-1)
