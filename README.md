@@ -165,7 +165,7 @@ Then run a skill, e.g. `/cops:pr-review <PR URL>`: its report ends with a `Hando
 
 - Catalogs: [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) (Claude Code), [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) (Cursor).
 - Each plugin: `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json` manifests; skills in `skills/<skill-name>/SKILL.md`.
-- [`CONVENTIONS.md`](CONVENTIONS.md) and its six indexed reference files hold rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to them instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `cops/` each carry identical copies of all seven files — edit the root set, then copy it over both.
+- [`CONVENTIONS.md`](CONVENTIONS.md) and its six indexed reference files hold rules shared by more than one skill (e.g. the `[package-name]` monorepo title prefix), so skills point to them instead of restating them. Rules marked *Default* can be overridden by a repo's `CLAUDE.md`, the oracle's memory, or the current conversation; the rest are contracts. An installed plugin only gets its own directory, so `oss/` and `cops/` each carry identical copies of all seven files — edit the root set, then run `bash scripts/sync-conventions.sh` to copy it over both.
 
 ## Development
 
@@ -173,6 +173,12 @@ Run the repository checks (requires Bash, `jq`, and Perl):
 
 ```bash
 bash scripts/validate.sh
+```
+
+It also prints each word-capped file's count, cap, and headroom. After editing a root `CONVENTIONS*.md`, copy it over `cops/` and `oss/`:
+
+```bash
+bash scripts/sync-conventions.sh
 ```
 
 To render the diagram, install the locked dependencies first:
