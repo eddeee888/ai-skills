@@ -958,7 +958,7 @@ validate_pr_body_lint() {
     "fail-duplicate-heading.txt|29 duplicate heading" "fail-banner.txt|2 autopilot banner" \
     "fail-banner-mention.txt|2 autopilot banner" "fail-size.txt|14 Size line" \
     "fail-link-unpinned.txt|11 code link must be" "fail-link-text.txt|11 code link text" \
-    "fail-bold.txt|12 whole-sentence bold"; do
+    "fail-bold.txt|12 whole-sentence bold" "fail-comment-duplicate.txt|21 duplicate heading"; do
     path="$dir/${case_%%|*}"
     out="$(bash "$lint" "$path" 2>&1)" && rc=0 || rc=$?
     { [ "$rc" = 1 ] && printf '%s\n' "$out" | grep -Fq "$path:${case_#*|}"; } ||

@@ -9,7 +9,9 @@ if [ "$#" -ne 1 ] || [ ! -f "$1" ]; then
   exit 2
 fi
 
-# Lines inside fenced code blocks are skipped by every check.
+# Lines inside fenced code blocks are skipped by every check, and <!-- ... --> spans (one line or
+# several) are stripped from the text every check sees, outside fenced blocks.
+#   "<!--" / "## Why" / "-->" lines                 → no heading, so no duplicate-heading report
 #   "## Why" twice                                  → "duplicate heading '## Why' (first at line 3)"
 #   "> Opened on autopilot by ..." without the rest → "autopilot banner must be ..."
 #   "Size: Big — x"                                 → "Size line must be ..."
@@ -18,8 +20,26 @@ fi
 output="$(perl -CSD -Mutf8 -e '
   my $path = shift;
   open my $fh, "<:encoding(UTF-8)", $path or exit 2;
-  chomp(my @lines = <$fh>);
-  my (%seen, @out, $fence, $section);
+  chomp(my @raw = <$fh>);
+  my (%seen, @out, $fence, $section, $comment, @lines);
+  for my $r (@raw) {
+    if (!$comment && $r =~ /^\s*(```|~~~)/) { $fence = !$fence; push @lines, $r; next }
+    if ($fence) { push @lines, $r; next }
+    my $kept = "";
+    while (length $r) {
+      if ($comment) {
+        if ($r =~ s/^.*?-->//) { $comment = 0 } else { $r = "" }
+      } elsif ($r =~ s/^(.*?)<!--//) {
+        $kept .= $1;
+        $comment = 1;
+      } else {
+        $kept .= $r;
+        $r = "";
+      }
+    }
+    push @lines, $kept;
+  }
+  $fence = 0;
   my $banner_note = qr/^> \[!NOTE\]$/;
   my $banner_by   = qr/^> Opened on autopilot by \[Code Ops\]\(https:\/\/github\.com\/eddeee888\/ai-skills\/tree\/main\/cops\) plugin;$/;
   my $banner_box  = qr/^> - \[[ x]\] Approved by \[([A-Za-z0-9-]+)\]\(https:\/\/github\.com\/([A-Za-z0-9-]+)\)$/;

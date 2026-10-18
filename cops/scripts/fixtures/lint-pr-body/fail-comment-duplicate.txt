@@ -1,0 +1,23 @@
+> [!NOTE]
+> Opened on autopilot by [Code Ops](https://github.com/eddeee888/ai-skills/tree/main/cops) plugin;
+> - [x] Approved by [eddeee888](https://github.com/eddeee888)
+
+<!-- ## Why: describe the change -->
+<!--
+## Why
+Size: Big
+-->
+
+## Why
+
+This PR lints bodies.
+
+## What <!-- one bullet per change -->
+
+- Adds the script.
+
+Size: Small — one script
+
+## Why
+
+A second heading.
