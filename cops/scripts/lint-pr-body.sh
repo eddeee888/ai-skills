@@ -26,18 +26,22 @@ output="$(perl -CSD -Mutf8 -e '
   for my $i (0 .. $#lines) {
     my ($n, $l) = ($i + 1, $lines[$i]);
     if ($l =~ /^\s*(```|~~~)/) { $fence = !$fence; next }
-    next if $fence;
+    if ($fence) { next }
 
     if ($l =~ /^## (.+?)\s*$/) {
       $section = $1;
-      push @out, "$n duplicate heading \x27## $1\x27 (first at line $seen{$1})" if $seen{$1};
+      if ($seen{$1}) {
+        push @out, "$n duplicate heading \x27## $1\x27 (first at line $seen{$1})";
+      }
       $seen{$1} ||= $n;
     }
 
     if ($l =~ /Opened on autopilot/) {
       my $ok = $i >= 1 && $lines[$i - 1] =~ $banner_note && $l =~ $banner_by
         && ($lines[$i + 1] // "") =~ $banner_box && $1 eq $2;
-      push @out, "$n autopilot banner must be \x27> [!NOTE]\x27, the Code Ops line, then \x27> - [ ] Approved by [<login>](https://github.com/<login>)\x27 verbatim" unless $ok;
+      if (!$ok) {
+        push @out, "$n autopilot banner must be \x27> [!NOTE]\x27, the Code Ops line, then \x27> - [ ] Approved by [<login>](https://github.com/<login>)\x27 verbatim";
+      }
     }
 
     if ($l =~ /^(?:[-*] )?Size:/ && $l !~ /^(?:[-*] )?Size: (?:Small|Medium|Large) \x{2014} \S/) {
@@ -51,13 +55,16 @@ output="$(perl -CSD -Mutf8 -e '
         next;
       }
       my $want = "`$1/$2` `$3:" . ($4 =~ s/-L/-/r) . "`";
-      push @out, "$n code link text must be $want, got: $text" if $text ne $want;
+      if ($text ne $want) {
+        push @out, "$n code link text must be $want, got: $text";
+      }
     }
 
     if (($section // "") =~ /^(?:Why|What|Verification)$/ && $l =~ /^\s*(?:[-*]|\d+\.) (?:\[[ x]\] )?(.*)$/) {
       my $body = $1;
-      push @out, "$n whole-sentence bold: bold only the critical claim, not the sentence"
-        if $body =~ /^\*\*[^*]+\*\*[.:]?$/ || $body =~ /^\*\*[^*]+[.!?]\*\*(?:\s|$)/;
+      if ($body =~ /^\*\*[^*]+\*\*[.:]?$/ || $body =~ /^\*\*[^*]+[.!?]\*\*(?:\s|$)/) {
+        push @out, "$n whole-sentence bold: bold only the critical claim, not the sentence";
+      }
     }
   }
   print "$_\n" for @out;
