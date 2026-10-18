@@ -30,9 +30,9 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    states the motivation for Why. When resuming, use the answer and pick up
    at the step that asked; don't redo a rebase, changeset commit or push
    that's already on origin.
-   Write the drafted title to $(git rev-parse --git-dir)/pr-wrap-up-title.txt
-   and the body to $(git rev-parse --git-dir)/pr-wrap-up-body.md, outside the
-   working tree. Don't edit the PR.
+   Write the drafted title to <scratch dir>/pr-wrap-up-title.txt and the body
+   to <scratch dir>/pr-wrap-up-body.md (the session's scratch directory, else
+   a `mktemp -d` directory; absolute paths). Return both paths. Don't edit the PR.
    Return at most 5 lines: pushed (sha, or "nothing to push"), changeset
    (created | updated | none), title changed (yes/no),
    evidence (n captured, n stale, n none), one line on what moved — or the
@@ -74,7 +74,7 @@ First, run `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Curso
 If the user explicitly asked to remember a concrete preference, call `learn-feedback` separately with the preference, provenance, and personal or `record-team:` intent. Show any other `memory-candidate:` result and ask for consent before a later `learn-feedback` call. Then apply:
 
 ```bash
-d="$(git rev-parse --git-dir)"
+d=<directory of the returned draft paths>
 gh pr edit <number> --title "$(cat "$d/pr-wrap-up-title.txt")" --body-file "$d/pr-wrap-up-body.md"
 rm "$d/pr-wrap-up-title.txt" "$d/pr-wrap-up-body.md"
 ```

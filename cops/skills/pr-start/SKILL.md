@@ -103,7 +103,7 @@ Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body, w
 
 ```bash
 git push -u origin <branch>
-d="$(git rev-parse --git-dir)"
+d=<scratch dir, else "$(mktemp -d)">
 gh pr create --draft --base <default branch> --title "$(cat "$d/pr-start-title.txt")" --body-file "$d/pr-start-body.md"
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 ```
