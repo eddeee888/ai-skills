@@ -4,7 +4,7 @@ Rules shared by marketplace skills and the `pr-oracle` checks that enforce them.
 
 ## Distribution and sync
 
-Each plugin carries an identical copy of this core file and its six reference files at its root, two levels above each `SKILL.md`. Edit the seven root files, then copy all seven over `cops/` and `oss/`.
+Each plugin carries an identical copy of this core file and its six reference files at its root, two levels above each `SKILL.md`. Edit the seven root files, then run `bash scripts/sync-conventions.sh` to copy all seven over `cops/` and `oss/`.
 
 ## Defaults and contracts
 

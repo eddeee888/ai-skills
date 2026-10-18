@@ -5,6 +5,7 @@ set -u
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 errors=()
+budget_rows=()
 review_workflow_words=0
 review_workflow_limit=1800
 
@@ -15,17 +16,34 @@ fail() {
   errors[${#errors[@]}]="$path: $message"
 }
 
-# Count whitespace-delimited instruction words.
+# Count whitespace-delimited words of a file ("-" reads stdin), decoding UTF-8 so the
+# count does not depend on the locale.
+#   "naïve café — ok" → 4
 word_count() {
-  wc -w < "$1" | tr -d ' '
+  perl -CSD -ne '$n += () = /\S+/g; END { print $n + 0 }' "$1"
+}
+
+# Record one budget row (count, cap, headroom) and fail when the count is over the cap.
+record_budget() {
+  local name="$1" count="$2" limit="$3" label="$4"
+  budget_rows[${#budget_rows[@]}]="$count"$'\t'"$limit"$'\t'"$((limit - count))"$'\t'"$name"
+  [ "$count" -le "$limit" ] ||
+    fail "$name" "$label is $count words; limit is $limit"
 }
 
 # Enforce one file's word budget.
 check_budget() {
-  local path="$ROOT/$1" limit="$2" label="$3" count
-  count="$(word_count "$path")"
-  [ "$count" -le "$limit" ] ||
-    fail "$path" "$label is $count words; limit is $limit"
+  local path="$ROOT/$1" limit="$2" label="$3"
+  record_budget "$path" "$(word_count "$path")" "$limit" "$label"
+}
+
+# Print the count / cap / headroom table for every budgeted file.
+print_budget_table() {
+  printf '%7s %7s %9s  %s\n' count cap headroom file
+  printf '%s\n' "${budget_rows[@]}" | LC_ALL=C sort -t$'\t' -k3,3n -k4,4 |
+    while IFS=$'\t' read -r count limit headroom name; do
+      printf '%7s %7s %9s  %s\n' "$count" "$limit" "$headroom" "${name#"$ROOT"/}"
+    done
 }
 
 # List matching repository files as NUL-delimited paths.
@@ -63,7 +81,7 @@ validate_convention_copies() {
       if [ ! -e "$plugin_copy" ]; then
         fail "$plugin_copy" "missing copy of ${root_copy##*/}"
       elif ! cmp -s "$root_copy" "$plugin_copy"; then
-        fail "$plugin_copy" "must be byte-identical to root ${root_copy##*/}"
+        fail "$plugin_copy" "must be byte-identical to root ${root_copy##*/}; run bash scripts/sync-conventions.sh"
       fi
     done
   done
@@ -317,9 +335,8 @@ validate_description_file() {
     fail "$path" "frontmatter description quote must close on the same line"
     return
   fi
-  count="$(printf '%s' "$value" | wc -w | tr -d ' ')"
-  [ "$count" -le 60 ] ||
-    fail "$path" "frontmatter description is $count words; limit is 60"
+  count="$(printf '%s' "$value" | word_count -)"
+  record_budget "$path (description)" "$count" 60 "frontmatter description"
 }
 
 # Validate descriptions for all skills and direct agent definitions.
@@ -336,7 +353,7 @@ validate_descriptions() {
 
 # Enforce general and normal-review instruction budgets.
 validate_budgets() {
-  local path filename count
+  local path filename count limit
   check_budget "CONVENTIONS.md" 500 "convention file"
   check_budget "CONVENTIONS-orchestration.md" 1462 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
@@ -385,8 +402,8 @@ validate_budgets() {
     count="$(word_count "$ROOT/$filename")"
     review_workflow_words=$((review_workflow_words + count))
   done
-  [ "$review_workflow_words" -le "$review_workflow_limit" ] ||
-    fail "normal review workflow" "instructions are $review_workflow_words words; limit is $review_workflow_limit"
+  record_budget "normal review workflow (sum)" "$review_workflow_words" "$review_workflow_limit" \
+    "normal review workflow instructions"
 }
 
 # Require every literal marker for a behavioral contract.
@@ -880,6 +897,8 @@ validate_behavioral_contracts
 validate_autopilot
 validate_review_dry_runs
 
+print_budget_table
+
 if [ "${#errors[@]}" -ne 0 ]; then
   echo "Validation failed with ${#errors[@]} error(s):" >&2
   for error in "${errors[@]}"; do
@@ -888,4 +907,4 @@ if [ "${#errors[@]}" -ne 0 ]; then
   exit 1
 fi
 
-echo "Validation passed: JSON, shell syntax, convention copies, orchestration handoffs, session-start model tiers, Markdown links/pointers, frontmatter descriptions, word budgets, behavioral contract markers, and the autopilot contract. Normal review workflow: $review_workflow_words/$review_workflow_limit words."
+echo "Validation passed: JSON, shell syntax, convention copies, orchestration handoffs, session-start model tiers, Markdown links/pointers, frontmatter descriptions, word budgets (table above), behavioral contract markers, and the autopilot contract. Normal review workflow: $review_workflow_words/$review_workflow_limit words."
