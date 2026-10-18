@@ -6,10 +6,10 @@ Read this only after the user confirmed the Step 3 card, just before the first e
 
 1. `scout-repo` + `brief-task` (`for: pr-sidekick`) — Step 2, one call, before the card. Re-run `brief-task` alone only if a card edit changed the Goal or likely files.
 2. The fix loop runs with the brief already in its prompt; the sidekick never calls the oracle.
-3. `sweep-diff` — Step 5, over the loop's commits, before any push.
+3. `sweep-diff` — Step 5, over the round, before any push.
 4. `learn-feedback` — a separate call, only after the user explicitly asks to remember something.
 
-Each oracle call gets `memory-root:` / `memory-login:`, the selected `GitHub route:` and its tier's model (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). The sidekick prompt gets neither.
+Each oracle call gets `memory-root:` / `memory-login:`, the selected `GitHub route:` and its tier's model from session context (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). The sidekick prompt gets neither.
 
 ## Fix-loop handoff
 
@@ -88,7 +88,7 @@ A `not-captured` scenario never blocks. Rules: `CONVENTIONS-evidence.md`.
 
 Once the loop has committed, run `git diff --stat <commit before the loop>..HEAD` and compare the files it lists with the card's In scope bullets and Approach; don't rely on the sidekick's report alone. A `blast radius:` line in the reply, or commits that reach further than the card said → apply `CONVENTIONS-pr-metadata.md` → "Task size" again to what was actually changed. The size only goes up, never down. A raised size is reported at Step 7 as `Size: <card size> → <new size> — <what reached further>`; say nothing when it didn't change.
 
-The raise is a report, not a gate: it needs no new confirmation and stops nothing, autopilot included.
+The raise is a report, not a gate: it needs no new confirmation and stops nothing, autopilot included. A change that needs something out of scope still comes back as a question, as the handoff says.
 
 ## Bug: test first
 
@@ -126,4 +126,4 @@ Skipped flags go to the user before Step 6. Step 5 then sweeps the round once mo
 
 ## Fix rounds
 
-`CONVENTIONS-orchestration.md` → "Fix rounds": the loop, its follow-up and later changes are one round. A user-directed fix (the user asks for a change on the open PR) is committed like the loop's, then swept and pushed once per round, not per commit.
+`CONVENTIONS-orchestration.md` → "Fix rounds": the loop, its follow-up and later changes are one round. A user-directed fix on the open PR is committed like the loop's, then swept and pushed once per round.
