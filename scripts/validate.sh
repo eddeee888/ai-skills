@@ -37,15 +37,6 @@ check_budget() {
   record_budget "$path" "$(word_count "$path")" "$limit" "$label"
 }
 
-# Print the count / cap / headroom table for every budgeted file.
-print_budget_table() {
-  printf '%7s %7s %9s  %s\n' count cap headroom file
-  printf '%s\n' "${budget_rows[@]}" | LC_ALL=C sort -t$'\t' -k3,3n -k4,4 |
-    while IFS=$'\t' read -r count limit headroom name; do
-      printf '%7s %7s %9s  %s\n' "$count" "$limit" "$headroom" "${name#"$ROOT"/}"
-    done
-}
-
 # List matching repository files as NUL-delimited paths.
 repository_files() {
   find "$ROOT" -type f -name "$1" ! -path '*/.git/*' ! -path '*/node_modules/*' -print0
@@ -897,7 +888,12 @@ validate_behavioral_contracts
 validate_autopilot
 validate_review_dry_runs
 
-print_budget_table
+# Print the count / cap / headroom table for every budgeted file.
+printf '%7s %7s %9s  %s\n' count cap headroom file
+printf '%s\n' "${budget_rows[@]}" | LC_ALL=C sort -t$'\t' -k3,3n -k4,4 |
+  while IFS=$'\t' read -r count limit headroom name; do
+    printf '%7s %7s %9s  %s\n' "$count" "$limit" "$headroom" "${name#"$ROOT"/}"
+  done
 
 if [ "${#errors[@]}" -ne 0 ]; then
   echo "Validation failed with ${#errors[@]} error(s):" >&2
