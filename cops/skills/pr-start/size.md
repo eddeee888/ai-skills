@@ -6,7 +6,7 @@ Read this at Step 3, while drafting the task card and before showing it.
 
 The card carries one line, `Size: <Small|Medium|Large> — <reason>`, sized by `CONVENTIONS-pr-metadata.md` → "Task size". Write the name in full and give one or two concrete reasons taken from the card, such as `Size: Medium — touches the shared retry helper and two packages`.
 
-The size is shown for the user to see. It gates one thing: Large refuses autopilot ([autopilot.md](autopilot.md)). Otherwise the steps, the handoff, the model choice and what the run may do are the same at every size.
+The size is advisory, shown for the user to see. It gates nothing: the steps, the handoff, the model choice and what the run may do are the same at every size, and autopilot is still offered at Large, with an advisory note ([autopilot.md](autopilot.md)).
 
 ## Derive it from what the card already holds
 
@@ -29,11 +29,11 @@ Only ever raise it: the card's scope or Approach reaching further than the analy
 
 An edit to scope or Approach → derive the size again before showing the card again. The user's own edit to the `Size:` line stands.
 
-After the card is confirmed, the size can still go up if the fix loop finds the change reaches further than the card said; fix-loop.md says how and where that is reported, and that a raise to Large stops an autopilot run.
+After the card is confirmed, the size can still go up if the fix loop finds the change reaches further than the card said; fix-loop.md says how and where that is reported.
 
 ## Options on the card
 
-Give 2–3 options, each as:
+Only when the direction is unclear or the user asks, the card shows options instead of one Approach. Give 2–3, each as:
 
 ```text
 Option <A>: <one-line name>
@@ -43,3 +43,5 @@ Option <A>: <one-line name>
   Effort: <rough size — a few lines | one file | several files>
   Size: <Small|Medium|Large> — <reason>
 ```
+
+The card's Approach and Size become the picked option's.

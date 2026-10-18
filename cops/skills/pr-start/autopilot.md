@@ -1,10 +1,10 @@
 # pr-start: autopilot
 
-Read this at Step 1 when `--autopilot` was passed; otherwise at Step 3, before showing a card whose Size is Small or Medium. Autopilot carries one confirmed card to a finished draft PR without another prompt (`CONVENTIONS-orchestration.md` → "Autopilot runs"). Everything SKILL.md says still holds unless this file names the difference.
+Read this at Step 1 when `--autopilot` was passed; otherwise at Step 3, before showing any card. Autopilot carries one confirmed card to a finished draft PR without another prompt (`CONVENTIONS-orchestration.md` → "Autopilot runs"). Everything SKILL.md says still holds unless this file names the difference.
 
 ## Flag and login
 
-`--autopilot [<login>]` leads the command argument and is not part of the task. Passing it skips the offer and runs autopilot unless a gate check or the card refuses.
+`--autopilot [<login>]` leads the command argument and is not part of the task. Passing it skips the offer and runs autopilot unless a gate check fails.
 
 The run acts for one human, who is assigned the PR and named in `Approved-by:`:
 
@@ -25,19 +25,17 @@ gh label list --search autopilot --json name --jq '.[].name'
 - **Write access:** the permission is `WRITE`, `MAINTAIN` or `ADMIN`.
 - **Label:** the `autopilot` label exists in the repo (MCP: `get_label`). Never create it.
 
-A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, make no offer. The normal run then goes on from Step 2 as SKILL.md says.
+A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, `Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
 
 ## At the card
 
-Refuse autopilot, with or without the flag, when:
+When the gate checks pass, every card shows `Autopilot: offered`, and choosing it is the user's call. Notes that apply make it `Autopilot: offered — advisory: <notes>`, joined with `; `:
 
-- the Size is Large;
-- the scope is high risk: security or auth, data loss, infrastructure, or a public API. This holds even when the Size is Small; or
-- Done when is an observable behavior. Autopilot needs one that is a test or a command, not an observable behavior.
+- `Large` when the Size is Large;
+- `high-risk scope (<area>)` when the scope touches security or auth, data loss, infrastructure or a public API;
+- `Done when is an observable behavior` when it is not a test or a command.
 
-Say why and show the normal card.
-
-Otherwise:
+A note informs the choice and blocks nothing. Once offered:
 
 - **With the flag**, the card gains this line above `Confirm, or edit any line.`:
 
@@ -47,14 +45,13 @@ Otherwise:
 
 - **Without the flag**, the confirm screen offers two choices, `Confirm` and `Confirm on autopilot`; the second one's description is that same line. Without a question tool, print the line under the card as the offer.
 
-The card is the only prompt. An edit that makes the card Large or high risk, or changes Done when to an observable behavior, drops autopilot; show the card again without it.
+The card is the only prompt. After an edit, show the card again with its notes updated.
 
 ## Fix loop and sweep
 
-Steps 4 and 5 run as SKILL.md and fix-loop.md say: at most 3 attempts, then stop with the work uncommitted. Three differences:
+Steps 4 and 5 run as SKILL.md and fix-loop.md say: at most 3 attempts, then stop with the work uncommitted. A raised size is only reported. Two differences:
 
 - A sidekick question stops the run. Nothing is asked mid-run; report the question.
-- A size raised to Large after the loop stops the run before Step 5.
 - A bug reply that says Done when holds without a failing-before result stops the run.
 
 A sweep flag that SKILL.md would bring to the user stops the run too.
@@ -126,6 +123,7 @@ Any failure or question ends the run:
 - Leave the PR a draft if one exists, and assign the user as "Finish" does. A stop before the PR exists has nothing to assign.
 - Don't retry the stage, start a later one, or undo what was already pushed or posted.
 - Report the stage reached, what stopped it, what was pushed and posted so far, the held `memory-candidate:` lines, and the command that picks up from there (`/cops:pr-address`, `/cops:pr-wrap-up`, …).
+- End with: `Say "resume the rest with autopilot" to continue on autopilot` ([resume.md](resume.md)).
 
 ## Handoffs
 

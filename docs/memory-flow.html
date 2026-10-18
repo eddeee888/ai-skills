@@ -1,7 +1,8 @@
 <!doctype html>
 <!--
   Source for docs/memory-flow.png. Edit the SVG to match the code, then run
-  `bash scripts/render-memory-flow.sh`. Plugin versions come from the manifests.
+  `bash scripts/render-memory-flow.sh`. `node scripts/sync-memory-flow-versions.mjs`
+  keeps the version stamp in line with the manifests; the render script runs it first.
   The update prompt is in the root README, under Development.
 -->
 <html lang="en" data-ready="">
@@ -40,7 +41,7 @@ svg .w { color: var(--write); } svg .w text { fill: var(--write); }
 <figure>
   <header>
     <strong>How memory flows through cops &amp; oss</strong>
-    <span id="versions">cops ? · oss ?</span>
+    <span id="versions">cops 0.1.34 · oss 0.1.10</span>
   </header>
   <svg viewBox="0 0 1040 580" role="img" aria-label="The main chat runs a cops or oss skill. It calls pr-oracle for read-only advice and pr-sidekick for edit, test, commit and push loops. A SessionStart hook injects the memory root. Only the oracle receives the memory root and reads the memory repo, and only its learn-feedback mode writes it. The sidekick gets remembered rules through its prompt.">
     <defs>
@@ -185,8 +186,6 @@ svg .w { color: var(--write); } svg .w text { fill: var(--write); }
   </div>
 </figure>
 <script>
-  const q = new URLSearchParams(location.search);
-  document.getElementById('versions').textContent = `cops ${q.get('cops')} · oss ${q.get('oss')}`;
   document.fonts.ready.then(() => { document.documentElement.dataset.ready = 'yes'; });
 </script>
 </html>

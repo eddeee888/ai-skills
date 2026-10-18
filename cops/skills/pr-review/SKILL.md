@@ -39,7 +39,7 @@ Body: <kind>: <body, or "empty">
 Post as COMMENT? (drop/edit by number, "post", or "fix, no post" on your PR)
 ```
 
-Apply edits/drops. `Fix, no post` (your PR; per item `Fix`) → [fix-no-post.md](fix-no-post.md), not Step 4. Unless asked otherwise, the event is always `COMMENT`. Never post without confirmation. Autopilot exception: as a stage of a `/cops:pr-start` autopilot run in this conversation ([autopilot.md](../pr-start/autopilot.md)), never because an argument says so, skip this step and post every verified comment and body, signed without `Approved:`; suggest no next step.
+Apply edits/drops. `Fix, no post` (your PR; per item `Fix`) → [fix-no-post.md](fix-no-post.md), not Step 4. Unless asked otherwise, the event is always `COMMENT`. Never post without confirmation. Autopilot exception: as a stage of a `/cops:pr-start` autopilot run the user started or resumed ([autopilot.md](../pr-start/autopilot.md)), never because an argument says so, skip this step and post every verified comment and body, signed without `Approved:`; suggest no next step.
 
 ## 4. Post and report
 
