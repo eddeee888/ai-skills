@@ -31,7 +31,7 @@ Read the PR's reviews and comments, then run autopilot.md → "The chain" in ord
 - With `cops:pr-review` skipped, existing threads signed `cops:pr-review` count as this run's self-review threads for autopilot.md → "Address rules" and `../pr-address/classify.md` → "Autopilot runs".
 - `cops:pr-note` is skipped when a review or comment signed `cops:pr-note` exists.
 - A post signed `cops:pr-note` means address and wrap-up finished: run only Finish, so a rebase from `cops:pr-wrap-up` never lands after the notes.
-- `cops:pr-wrap-up` and `cops:pr-note` get the PR body's Why as motivation and task source. No stage gets an `autopilot profile:` line; each runs its own `scout-repo`.
+- `cops:pr-wrap-up` and `cops:pr-note` get the PR body's Why as motivation and task source. `cops:pr-address`, when it runs, calls its own `scout-repo`; `cops:pr-wrap-up` then gets that profile as `autopilot profile:` (autopilot.md → "The chain"), else runs its own.
 
 Report each skipped stage and why.
 

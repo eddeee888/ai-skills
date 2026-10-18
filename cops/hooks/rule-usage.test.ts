@@ -219,6 +219,11 @@ describe('parseEntries', () => {
       .toEqual(['prefer early returns', 'cite (a) and (b)'])
   })
 
+  test('drops a trailing applies-to: segment along with the evidence', () => {
+    expect(parseEntries({ text: '## Code\n- prefer early returns  (seen 2x)  applies-to: **/*.md\n- use `x()` (not `y`)  (seen 3x)  applies-to: **/*.sh, **/*.bash\n' }))
+      .toEqual(['prefer early returns', 'use `x()` (not `y`)'])
+  })
+
   test('reads only the first MEMORY_LIMIT lines', () => {
     const lines = ['## Code', ...Array.from({ length: MEMORY_LIMIT + 5 }, (_, index) => `- rule ${index + 1}`)]
     const rules = parseEntries({ text: lines.join('\n') })

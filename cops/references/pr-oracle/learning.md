@@ -19,12 +19,12 @@ Never record secrets or tokens, reviewer traits, links, one-PR facts, or reposit
 
 ## Format and upkeep
 
-Use one flat list beneath `## Everywhere`. Direct rules use `(stated by user)`, reviewer candidates retain concise provenance, and team rules use `(stated by <github-login>)`.
+Use one flat list beneath `## Everywhere`. Direct rules use `(stated by user)`, reviewer candidates retain concise provenance, and team rules use `(stated by <github-login>)`. A rule that only concerns some file types ends with `applies-to: <glob>[, <glob>]`, by type, never a repository path, such as `**/*.md` or `**/*.sh, **/*.bash`; one that holds for any file has none.
 
 ```markdown
 ## Everywhere
 - Why section: one sentence, no bullets  (seen 3x)
-- A helper used by only one function lives inside that function  (stated by user)
+- A helper used by only one function lives inside that function  (stated by user)  applies-to: **/*.ts, **/*.js
 - Rejected: barrel `index.ts` re-exports — "hurts tree-shaking"
 ```
 
