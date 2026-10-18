@@ -90,7 +90,7 @@ A question back → ask the user, then respawn with `Resuming:`; in autopilot it
 Call `pr-oracle` in `sweep-diff` mode over the new commits (pre-loop commit to `HEAD`; pass `GitHub route:`, `memory-root:` / `memory-login:` again).
 
 - `clean` → Step 6.
-- In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits, never pushes. Then one more `sweep-diff` over that commit: `clean` → Step 6; any flag → stop, bring it to the user; no second follow-up.
+- In-scope flags → exactly one follow-up sidekick handoff with only those flags and the commit SHAs (template in fix-loop.md). It commits, never pushes. Then one more `sweep-diff` over the round: `clean` → Step 6; any flag → stop, bring it to the user; no second follow-up.
 - A flag outside the card's scope → bring it to the user; don't widen the PR.
 
 Nothing is pushed before a clean `sweep-diff`.

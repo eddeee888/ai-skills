@@ -613,6 +613,14 @@ validate_autopilot() {
     "## Autopilot runs" 'never runs another skill to finish, except under "Autopilot runs"' \
     "**Nothing is asked mid-run.**" "**Only that run starts a stage.**" \
     "the user's own \"resume the rest with autopilot\" continues it"
+  require_markers "CONVENTIONS-orchestration.md" "fix rounds" \
+    "## Fix rounds" "Sweep and push once per round, not per commit." \
+    "A follow-up fix commit is swept with the round, not alone." \
+    "**No squash per round.**"
+  require_markers "cops/skills/pr-start/fix-loop.md" "fix rounds" \
+    "## Fix rounds" "A user-directed fix"
+  require_markers "cops/skills/pr-review/fix-no-post.md" "fix rounds" '"Fix rounds"'
+  require_markers "oss/skills/issue-fix/fix-loop.md" "fix rounds" '"Fix rounds"'
   require_markers "CONVENTIONS-posts.md" "autopilot signature" \
     'for every post of an autopilot run (`CONVENTIONS-orchestration.md` → "Autopilot runs")'
   require_markers "CONVENTIONS-orchestration.md" "foreground when dependent" \

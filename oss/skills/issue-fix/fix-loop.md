@@ -36,6 +36,6 @@ The test must pass for the correct reason, and affected-package tests must show 
 
 ## Sweep follow-up
 
-After a successful commit, run `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `sweep-diff` mode over `<verify-commit-sha>..HEAD`, passing the selected `GitHub route:`. For flags inside the selected option's scope, run exactly one follow-up subagent with only the flags and commit SHA, using the same constraints and output shape. Out-of-scope flags do not authorize broader work.
+After a successful commit, run `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `sweep-diff` mode over `<verify-commit-sha>..HEAD`, passing the selected `GitHub route:`. For flags inside the selected option's scope, run exactly one follow-up subagent with only the flags and commit SHA, using the same constraints and output shape. Out-of-scope flags do not authorize broader work. Sweep and push once per round (`CONVENTIONS-orchestration.md` → "Fix rounds").
 
 If the implementation or follow-up stops, return its reason before push. A later `cops:pr-wrap-up` rebase may replay the checkpoint SHA while preserving its content and trailer; that is not the forbidden rewrite.

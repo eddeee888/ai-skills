@@ -1,6 +1,6 @@
 # pr-start: fix loop and sweep follow-up
 
-Read this only after the user confirmed the task card in Step 3, immediately before the first edit, test, or commit.
+Read this only after the user confirmed the Step 3 card, just before the first edit, test, or commit.
 
 ## Oracle order
 
@@ -9,11 +9,11 @@ Read this only after the user confirmed the task card in Step 3, immediately bef
 3. `sweep-diff` — Step 5, over the loop's commits, before any push.
 4. `learn-feedback` — a separate call, only after the user explicitly asks to remember something.
 
-Each call gets `memory-root:` / `memory-login:` and its tier's model from session context (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). The sidekick prompt gets neither. Each oracle call also gets the selected `GitHub route:`.
+Each oracle call gets `memory-root:` / `memory-login:`, the selected `GitHub route:` and its tier's model (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). The sidekick prompt gets neither.
 
 ## Fix-loop handoff
 
-Spawn `cops:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor. Model: `standard` tier when the card's scope is one package or a few files; `deep` when the Approach spans packages or needs design judgment. Note the commit before the loop (`git rev-parse HEAD`) for the sweep.
+Spawn `cops:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor. Model: `standard` tier when the card's scope is one package or a few files; `deep` when the Approach spans packages or needs design judgment. Note `git rev-parse HEAD` before the loop, for the sweep.
 
 ```text
 Repo <owner>/<repo>, branch <branch> (checked out), base <default branch>.
@@ -61,7 +61,7 @@ documented behavior change the card doesn't name, is a question as
 above, never a `blast radius:` line.
 ```
 
-Fill `Approved-by:` with the login from Step 1; the user's card confirmation is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). Host trailers follow the block without a blank line.
+`Approved-by:` is the Step 1 login; the card confirmation is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). Host trailers follow without a blank line.
 
 A question → ask the user, then spawn again with `Resuming:` filled in; the same 3-attempt bound carries over; a resume after a stop at the bound gets a fresh 3 ([resume.md](resume.md)). In autopilot a question stops the run instead: nothing is asked mid-run ([autopilot.md](autopilot.md)). A reply that says Done when holds without a failing-before result on a bug → treat it as incomplete and ask the user before Step 5.
 
@@ -82,15 +82,13 @@ Return one line per scenario: <name> — <file> — <status>. Can't capture →
 `not-captured — <reason>`, never a fake.
 ```
 
-A `not-captured` scenario never blocks.
-
-Rules: `CONVENTIONS-evidence.md`.
+A `not-captured` scenario never blocks. Rules: `CONVENTIONS-evidence.md`.
 
 ## Size after the loop
 
 Once the loop has committed, run `git diff --stat <commit before the loop>..HEAD` and compare the files it lists with the card's In scope bullets and Approach; don't rely on the sidekick's report alone. A `blast radius:` line in the reply, or commits that reach further than the card said → apply `CONVENTIONS-pr-metadata.md` → "Task size" again to what was actually changed. The size only goes up, never down. A raised size is reported at Step 7 as `Size: <card size> → <new size> — <what reached further>`; say nothing when it didn't change.
 
-The raise is a report, not a gate: it needs no new confirmation and stops nothing, autopilot included. A change that needs something out of scope still comes back as a question, as the handoff says.
+The raise is a report, not a gate: it needs no new confirmation and stops nothing, autopilot included.
 
 ## Bug: test first
 
@@ -100,7 +98,7 @@ For a bug, the failing test is the contract. It must:
 - fail before the fix for the reported reason — an assertion on the reported behavior, not an import error, typo, or missing fixture;
 - pass after the fix, with nothing else changed to make it pass.
 
-A bug that can't be reproduced in a test → stop and bring the attempt to the user; a manual check replaces the test only if the user says so, and then the card's Done when names that check.
+A bug that can't be reproduced in a test → stop and bring the attempt to the user; a manual check replaces the test only if the user says so, and the Done when names it.
 
 ## Sweep follow-up handoff
 
@@ -124,4 +122,8 @@ Return one line per flag: fixed (sha) | skipped (why) — then one line for
 the test run.
 ```
 
-Skipped flags go to the user before Step 6. After this follow-up, SKILL.md Step 5 sweeps its commit once more before Step 6.
+Skipped flags go to the user before Step 6. Step 5 then sweeps the round once more.
+
+## Fix rounds
+
+`CONVENTIONS-orchestration.md` → "Fix rounds": the loop, its follow-up and later changes are one round. A user-directed fix (the user asks for a change on the open PR) is committed like the loop's, then swept and pushed once per round, not per commit.
