@@ -159,7 +159,7 @@ Then run a skill, e.g. `/cops:pr-review <PR URL>`: its report ends with a `Hando
 
 ### Development tools
 
-`bash scripts/validate.sh` needs Bash, `jq`, and Perl; rendering the diagram also needs pnpm (see [Development](#development)).
+`bash scripts/validate.sh` needs Bash, `jq`, and Perl; rendering the diagram also needs Node and pnpm (see [Development](#development)).
 
 ## Layout
 
@@ -189,7 +189,7 @@ pnpm install
 
 ### Updating the diagram
 
-The diagram in [Plugins](#plugins) is [`docs/memory-flow.png`](docs/memory-flow.png), rendered from [`docs/memory-flow.html`](docs/memory-flow.html) by `pnpm render:memory-flow` (needs `jq` and pnpm). The script stamps plugin versions from the manifests, so a version bump only needs a re-run. When skills, agents, or memory access change, give an agent this prompt:
+The diagram in [Plugins](#plugins) is [`docs/memory-flow.png`](docs/memory-flow.png), rendered from [`docs/memory-flow.html`](docs/memory-flow.html) by `pnpm render:memory-flow` (needs Node and pnpm). The script first runs `node scripts/sync-memory-flow-versions.mjs`, which stamps plugin versions from the manifests, so a version bump only needs a re-run. CI runs the same sync script and fails if `docs/memory-flow.html` changes, so commit the HTML and PNG together. When skills, agents, or memory access change, give an agent this prompt:
 
 ```text
 Update docs/memory-flow.html so the diagram matches the current code. Read
