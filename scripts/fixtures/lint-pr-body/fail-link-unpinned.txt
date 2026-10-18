@@ -1,0 +1,27 @@
+> [!NOTE]
+> Opened on autopilot by [Code Ops](https://github.com/eddeee888/ai-skills/tree/main/cops) plugin;
+> - [x] Approved by [eddeee888](https://github.com/eddeee888)
+
+## Why
+
+This PR lints bodies. The **cause** is drift between drafts and the conventions.
+
+## What
+
+- Adds the script, see [`eddeee888/ai-skills` `scripts/lint-pr-body.sh:7`](https://github.com/eddeee888/ai-skills/blob/main/scripts/lint-pr-body.sh#L7).
+- Runs it **before** push.
+
+Size: Small — one new script and its fixtures
+
+## Verification
+
+- [x] `bash scripts/validate.sh` passes
+
+```markdown
+## Why
+**A fenced sentence.**
+```
+
+## Resources
+
+Relates to #99

@@ -944,6 +944,28 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     '`CHECKPOINT_FOUND`' '`CHECKPOINT_NOT_FOUND`' '`CHECKPOINT_AMBIGUOUS`'
 }
 
+# Run scripts/lint-pr-body.sh over its fixtures: `pass*` bodies print nothing and exit 0; each
+# `fail-*` body exits 1 with the `path:line message` named here.
+#   fail-size.txt 14 "Size line" → fixture must report "<path>:14 Size line must be ..."
+validate_pr_body_lint() {
+  local lint="$ROOT/scripts/lint-pr-body.sh" dir="$ROOT/scripts/fixtures/lint-pr-body" path out rc case_
+  for path in "$dir"/pass*.txt; do
+    out="$(bash "$lint" "$path" 2>&1)" && rc=0 || rc=$?
+    { [ "$rc" = 0 ] && [ -z "$out" ]; } ||
+      fail "$path" "must pass lint-pr-body.sh; exit $rc, got: $out"
+  done
+  for case_ in \
+    "fail-duplicate-heading.txt|29 duplicate heading" "fail-banner.txt|2 autopilot banner" \
+    "fail-banner-mention.txt|2 autopilot banner" "fail-size.txt|14 Size line" \
+    "fail-link-unpinned.txt|11 code link must be" "fail-link-text.txt|11 code link text" \
+    "fail-bold.txt|12 whole-sentence bold"; do
+    path="$dir/${case_%%|*}"
+    out="$(bash "$lint" "$path" 2>&1)" && rc=0 || rc=$?
+    { [ "$rc" = 1 ] && printf '%s\n' "$out" | grep -Fq "$path:${case_#*|}"; } ||
+      fail "$path" "lint-pr-body.sh must exit 1 reporting '${case_#*|}'; exit $rc, got: $out"
+  done
+}
+
 validate_json
 validate_shell
 validate_convention_copies
@@ -957,6 +979,7 @@ validate_budgets
 validate_behavioral_contracts
 validate_autopilot
 validate_review_dry_runs
+validate_pr_body_lint
 
 # Print the count / cap / headroom table for every budgeted file.
 printf '%7s %7s %9s  %s\n' count cap headroom file

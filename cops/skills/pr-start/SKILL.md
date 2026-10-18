@@ -97,18 +97,19 @@ Nothing is pushed before a clean `sweep-diff`.
 
 ## 5b. Write the evidence manifest
 
-Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body, with the before only. Nothing is pushed for evidence.
+Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body, with the before only.
 
 ## 6. Push and open the PR
 
 ```bash
-git push -u origin <branch>
 d=<absolute dir>
+bash scripts/lint-pr-body.sh "$d/pr-start-body.md"
+git push -u origin <branch>
 gh pr create --draft --base <default branch> --title "$(cat "$d/pr-start-title.txt")" --body-file "$d/pr-start-body.md"
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 ```
 
-MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
+A lint failure → fix, rerun. MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
 - **Body:** fit the profile's template headers; otherwise `## Why` (opens with `This PR ...`, carrying the card's Why), `## What`, `## Verification` (Done when check, result: `CONVENTIONS-verification.md` → "Verification checklist"; scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-wrap-up` per scenario; evidence never holds the PR), and `## Resources` with the task source. An issue is referenced non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask is named in a line. Write them to `d`, chosen first, per `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
@@ -126,5 +127,5 @@ Report the PR link, commits, Done when result and a raised Size. Show `memory-ca
 
 ## Other rules
 
-- **One editing subagent at a time**, never parallel, on the shared checkout.
+- **One editing subagent at a time** on the shared checkout.
 - **Commits** carry `Skill: cops:pr-start` and `Approved-by: <login>`, since the user confirmed the card (`CONVENTIONS-pr-metadata.md` → "Commit trailers").
