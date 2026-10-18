@@ -564,6 +564,8 @@ validate_autopilot() {
     'call pr-start with args `--autopilot resume [<PR URL>]`' "the user's message is the consent, not the call's author"
   require_markers "$resume" "resume address rules" \
     "existing threads signed \`cops:pr-review\` count as this run's self-review threads"
+  require_markers "$resume" "resume after note" \
+    "A post signed \`cops:pr-note\` means address and wrap-up finished: run only Finish"
   require_markers "$resume" "resume never reopens" \
     "never opens a second PR and never runs the fix loop on a PR that already exists"
 
