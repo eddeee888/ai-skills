@@ -32,7 +32,7 @@ if (!span.test(html)) {
   process.exit(1);
 }
 
-// <span id="versions">cops ? · oss ?</span> -> <span id="versions">cops 0.1.34 · oss 0.1.10</span>
+// versions `cops 0.1.34`, `oss 0.1.10` -> <span id="versions">cops 0.1.34 · oss 0.1.10</span>
 const stamped = html.replace(span, (_match, open, close) => `${open}${versions.join(' · ')}${close}`);
 if (stamped !== html) {
   writeFileSync(htmlPath, stamped);
