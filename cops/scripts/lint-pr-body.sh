@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lint a drafted PR body without a model. Usage: bash scripts/lint-pr-body.sh <body file>
+# Lint a drafted PR body without a model. Usage: bash cops/scripts/lint-pr-body.sh <body file>
 # Prints each failure as `path:line message` and exits 1 when there is any.
 
 set -u

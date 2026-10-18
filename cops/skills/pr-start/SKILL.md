@@ -103,7 +103,7 @@ Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body, w
 
 ```bash
 d=<absolute dir>
-bash scripts/lint-pr-body.sh "$d/pr-start-body.md"
+bash "${CLAUDE_PLUGIN_ROOT:-$CURSOR_PLUGIN_ROOT}/scripts/lint-pr-body.sh" "$d/pr-start-body.md"
 git push -u origin <branch>
 gh pr create --draft --base <default branch> --title "$(cat "$d/pr-start-title.txt")" --body-file "$d/pr-start-body.md"
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"

@@ -944,11 +944,11 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     '`CHECKPOINT_FOUND`' '`CHECKPOINT_NOT_FOUND`' '`CHECKPOINT_AMBIGUOUS`'
 }
 
-# Run scripts/lint-pr-body.sh over its fixtures: `pass*` bodies print nothing and exit 0; each
+# Run cops/scripts/lint-pr-body.sh over its fixtures: `pass*` bodies print nothing and exit 0; each
 # `fail-*` body exits 1 with the `path:line message` named here.
 #   fail-size.txt 14 "Size line" → fixture must report "<path>:14 Size line must be ..."
 validate_pr_body_lint() {
-  local lint="$ROOT/scripts/lint-pr-body.sh" dir="$ROOT/scripts/fixtures/lint-pr-body" path out rc case_
+  local lint="$ROOT/cops/scripts/lint-pr-body.sh" dir="$ROOT/cops/scripts/fixtures/lint-pr-body" path out rc case_
   for path in "$dir"/pass*.txt; do
     out="$(bash "$lint" "$path" 2>&1)" && rc=0 || rc=$?
     { [ "$rc" = 0 ] && [ -z "$out" ]; } ||
