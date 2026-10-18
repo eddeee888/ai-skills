@@ -7,13 +7,13 @@ When a skill names a handoff and the host can spawn a subagent, make it every ti
 - **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Other read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
 - **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from session context's `COPS models:` line as the call's model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
-- **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and passes its output, with `for: pr-sidekick` on `brief-task`.
+- **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes needed output, with `for: pr-sidekick` on `brief-task`.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
 - **Short results.** Return only requested lines, or a question rather than a guess; main chat asks the user and respawns.
 - **Every spawn/check is a main-chat step.** Batch as instructed.
 - **Foreground when dependent.** Foreground a call the next step needs; background only independent work.
 - **Bounded retries.** "Until" allows at most 3 attempts; then stop, leave work uncommitted, report attempts and the failure, and do not respawn unasked.
-- **Resume, don't restart.** After a question, carry question+answer on, checking completed rebase/commit/push work.
+- **Resume, don't restart.** After a question, carry question+answer and resume at that step, checking completed rebase/commit/push work.
 - **No way to spawn** means no subagent tool at all, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
 
 Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-wrap-up` (Steps 2–6); `cops:pr-review` (`review-pr`, fix loop); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
@@ -85,7 +85,7 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
   | `light` | sorting, extracting, formatting | `brief-task` |
   | `standard` | reading, summarising, drafting | `scout-repo`, `triage-threads`, `sweep-diff`, `grill-description`, `learn-feedback` |
   | `deep` | finding bugs, judging trade-offs | `review-pr`, `draft-author-notes` |
-- **Optional only when missing.** `cops` absent → perform the step inline and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
+- **Optional only when missing.** `cops` absent → perform the step inline, continue, and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** The current ask and skill rules win; remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rules belong in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known, and always the selected `GitHub route:`. Later `scout-repo` calls get the run's first profile as `profile:`; `overrides:` is rebuilt from current memory. Review modes get owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.

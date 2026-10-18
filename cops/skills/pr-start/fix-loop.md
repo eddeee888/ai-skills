@@ -126,4 +126,4 @@ Skipped flags go to the user before Step 6. Step 5 then sweeps the round once mo
 
 ## Fix rounds
 
-`CONVENTIONS-orchestration.md` → "Fix rounds": the loop, its follow-up and later changes are one round. A user-directed fix on the open PR is committed like the loop's, then swept and pushed once per round.
+`CONVENTIONS-orchestration.md` → "Fix rounds": the loop, its follow-up and changes before the push are one round. A user-directed fix on the open PR is committed, then swept and pushed once per round.
