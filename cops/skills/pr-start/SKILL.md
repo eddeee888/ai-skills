@@ -1,6 +1,6 @@
 ---
 name: pr-start
-description: 'Turn a confirmed task into a pushed draft PR: confirm a task card, run one sidekick fix loop, sweep it against remembered rules, then push and open the draft. Takes an issue, spec file, or plain-text ask; `--autopilot` finishes the draft. Run only when asked to open a PR for a task.'
+description: 'Turn a confirmed task into a pushed draft PR: confirm a task card, run one sidekick fix loop, sweep it, then push and open the draft. Takes an issue, spec file, or plain-text ask; `--autopilot` finishes the draft. Run only when asked to open a PR for a task, e.g. “start #99” or “start working on issue 99.”'
 ---
 
 # Start a PR from a task
@@ -48,6 +48,12 @@ Keep from the reply the profile (test command, packages, template, `evidence:`, 
 
 This is a hard gate. Ask with the card as one question (`CONVENTIONS-posts.md` → "Approving drafts: one question per item"), else show it; wait for the user to confirm or edit it. Nothing is edited, run or delegated before the user confirms the card.
 
+Before showing the card:
+
+1. Read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size") and derive the Size. It gates only autopilot.
+2. Always read [autopilot.md](autopilot.md) before showing the card, flag or not.
+3. Fill `Autopilot:`; never blank.
+
 ```text
 Task card
 Goal: <one line>
@@ -61,13 +67,12 @@ Out of scope:
 Approach: <one approach, in a line or two>
 Size: <Small|Medium|Large> — <reason>
 Branch: <current branch | new <type>/<short-slug> from <default branch>>
+Autopilot: <offered | refused — <reason> | not offered — <failed gate>>
 Confirm, or edit any line.
 ```
 
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes that test first and confirms it fails for the reported reason before changing code.
 - **Evidence** (required) → the brief's `Evidence:` line (`CONVENTIONS-evidence.md` → "Evidence scenarios"), always present, as scenarios or `none — <why>`. An edit stands; it doesn't re-run `brief-task`. Shown in the PR body.
-- **Size** → read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size"). It gates only autopilot.
-- **Autopilot** → with the flag, or without it on a Small or Medium card, read [autopilot.md](autopilot.md) before showing the card: it refuses a Large or high-risk card, and adds the card's authorised outward actions line or the confirm screen's offer.
 - **Scope bullets** stop sidekick drift; make them concrete (files, packages, behaviors).
 - **Options instead of one approach** only when the direction is unclear or the user asks: 2–3, in the format under "Options on the card" in [size.md](size.md). The card's Approach and Size become the picked option's.
 - Never suggest or hand off to another plugin's skill from the card.

@@ -1,6 +1,6 @@
 # pr-start: autopilot
 
-Read this at Step 1 when `--autopilot` was passed; otherwise at Step 3, before showing a card whose Size is Small or Medium. Autopilot carries one confirmed card to a finished draft PR without another prompt (`CONVENTIONS-orchestration.md` → "Autopilot runs"). Everything SKILL.md says still holds unless this file names the difference.
+Read this at Step 1 when `--autopilot` was passed; otherwise at Step 3, before showing any card. Autopilot carries one confirmed card to a finished draft PR without another prompt (`CONVENTIONS-orchestration.md` → "Autopilot runs"). Everything SKILL.md says still holds unless this file names the difference.
 
 ## Flag and login
 
@@ -25,7 +25,7 @@ gh label list --search autopilot --json name --jq '.[].name'
 - **Write access:** the permission is `WRITE`, `MAINTAIN` or `ADMIN`.
 - **Label:** the `autopilot` label exists in the repo (MCP: `get_label`). Never create it.
 
-A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, make no offer. The normal run then goes on from Step 2 as SKILL.md says.
+A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, `Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
 
 ## At the card
 
@@ -35,9 +35,9 @@ Refuse autopilot, with or without the flag, when:
 - the scope is high risk: security or auth, data loss, infrastructure, or a public API. This holds even when the Size is Small; or
 - Done when is an observable behavior. Autopilot needs one that is a test or a command, not an observable behavior.
 
-Say why and show the normal card.
+Show the normal card, `Autopilot: refused — <reason>`.
 
-Otherwise:
+Otherwise, `Autopilot: offered`:
 
 - **With the flag**, the card gains this line above `Confirm, or edit any line.`:
 
@@ -47,7 +47,7 @@ Otherwise:
 
 - **Without the flag**, the confirm screen offers two choices, `Confirm` and `Confirm on autopilot`; the second one's description is that same line. Without a question tool, print the line under the card as the offer.
 
-The card is the only prompt. An edit that makes the card Large or high risk, or changes Done when to an observable behavior, drops autopilot; show the card again without it.
+The card is the only prompt. An edit that makes the card Large or high risk, or changes Done when to an observable behavior, drops autopilot; show the card again with `Autopilot: refused — <reason>`.
 
 ## Fix loop and sweep
 
