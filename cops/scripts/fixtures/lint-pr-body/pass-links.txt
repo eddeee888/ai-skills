@@ -1,0 +1,5 @@
+## What
+
+- Whole-file link, see [`a/b` README](https://github.com/a/b/blob/0123456789abcdef0123456789abcdef01234567/README.md).
+- Spec on a branch, see [spec](https://github.com/a/b/blob/main/docs/spec.md).
+- Markdown line link, see [`a/b` `cops/SKILL.md:5`](https://github.com/a/b/blob/0123456789abcdef0123456789abcdef01234567/cops/SKILL.md?plain=1#L5).

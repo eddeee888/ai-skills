@@ -50,7 +50,8 @@ output="$(perl -CSD -Mutf8 -e '
 
     while ($l =~ /\[([^\]]*)\]\((https:\/\/github\.com\/[^)\s]*\/blob\/[^)\s]*)\)/g) {
       my ($text, $url) = ($1, $2);
-      if ($url !~ m{^https://github\.com/([^/]+)/([^/]+)/blob/[0-9a-f]{40}/([^#]+)#L(\d+(?:-L\d+)?)$}) {
+      if ($url !~ /#L\d/) { next }
+      if ($url !~ m{^https://github\.com/([^/]+)/([^/]+)/blob/[0-9a-f]{40}/([^#?]+)(?:\?plain=1)?#L(\d+(?:-L\d+)?)$}) {
         push @out, "$n code link must be https://github.com/<owner>/<repo>/blob/<40-char sha>/<path>#L<line>: $url";
         next;
       }
