@@ -894,7 +894,7 @@ validate_review_dry_runs
 
 # Print the count / cap / headroom table for every budgeted file.
 printf '%7s %7s %9s  %s\n' count cap headroom file
-printf '%s\n' "${budget_rows[@]}" | LC_ALL=C sort -t$'\t' -k3,3n -k4,4 |
+printf '%s\n' "${budget_rows[@]}" | LC_ALL=C sort -u -t$'\t' -k3,3n -k4,4 |
   while IFS=$'\t' read -r count limit headroom name; do
     printf '%7s %7s %9s  %s\n' "$count" "$limit" "$headroom" "${name#"$ROOT"/}"
   done
