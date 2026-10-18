@@ -34,6 +34,6 @@
 
 Never place drafted title/body/reply text in a double-quoted shell argument: backticks and `$` execute or expand.
 
-- **Multi-line text** → write with a file-writing tool, never `echo` or an unquoted heredoc. Use `--body-file <file>` for `gh issue create|comment` and `gh pr create|edit`, or `-F body=@<file>` for `gh api`. Inside a checkout place it under `$(git rev-parse --git-dir)/`; otherwise use `mktemp -d`; remove afterward.
+- **Multi-line text** → write with a file-writing tool, never `echo` or an unquoted heredoc. Use `--body-file <file>` for `gh issue create|comment` and `gh pr create|edit`, or `-F body=@<file>` for `gh api`. Place it by absolute path in the session's scratch directory, else a `mktemp -d` directory; never under `.git`, never `cd` there; remove afterward.
 - **One line** → single-quote it, escaping `'` as `'\''`, or use `--title "$(cat <file>)"`; command output is not re-expanded.
 - **MCP route** → pass text directly as the tool parameter.

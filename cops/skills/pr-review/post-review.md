@@ -8,10 +8,10 @@ Post accepted comments in one review anchored to the saved `headRefOid`.
 
 ## `gh` route
 
-Write the payload to a file (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
+Pick the absolute scratch dir `d` first (the session's, else `mktemp -d`; never under `.git`), then write the payload there (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
 ```bash
-d="$(git rev-parse --git-dir 2>/dev/null || mktemp -d)"
+d=<that absolute path>
 # $d/pr-review.json:
 # {"commit_id":"<saved headRefOid>","event":"<COMMENT unless explicitly chosen otherwise>","body":"<top-level body or empty>","comments":[{"path":"<path>","line":<line>,"side":"RIGHT","body":"<signed body>"},{"path":"<path>","start_line":<start>,"start_side":"RIGHT","line":<end>,"side":"RIGHT","body":"<signed body>"}]}
 gh api repos/<owner>/<repo>/pulls/<number>/reviews --input "$d/pr-review.json"
