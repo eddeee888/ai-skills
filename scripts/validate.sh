@@ -34,6 +34,10 @@ record_budget() {
 # Enforce one file's word budget.
 check_budget() {
   local path="$ROOT/$1" limit="$2" label="$3"
+  if [ ! -f "$path" ]; then
+    fail "$path" "$label is budgeted but the file does not exist"
+    return
+  fi
   record_budget "$path" "$(word_count "$path")" "$limit" "$label"
 }
 
