@@ -44,7 +44,7 @@ No subagent capability means perform the same implement/test/commit loop inline 
 
 If the final combined test run fails, do not push, reply, or start another batch. Bring the entire batch and failing tests to the user.
 
-For a passing batch, call `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor once in `sweep-diff` mode over the batch's commits, from the commit immediately before the batch through `HEAD`, passing the selected `GitHub route:` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Any in-scope flag gets one follow-up implementation handoff containing only the flags and commit SHAs, using the same prompt constraints. It commits fixes and still does not push. A flag outside all asks returns to the user rather than broadening the work.
+For a passing batch, call `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor once in `sweep-diff` mode over the batch's commits, from the commit immediately before the batch through `HEAD`, passing the selected `GitHub route:` and the kept repo profile as `profile:` (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Any in-scope flag gets one follow-up implementation handoff containing only the flags and commit SHAs, using the same prompt constraints. It commits fixes and still does not push. A flag outside all asks returns to the user rather than broadening the work.
 
 ## Push and reply gate
 

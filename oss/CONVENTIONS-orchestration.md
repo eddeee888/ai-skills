@@ -69,7 +69,7 @@ The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr
 
 Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
-- Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle` and supplies the mode plus every listed input because it starts blank. Foreground or background follows "Hand long loops to a subagent".
+- Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle` with the mode and every listed input. Foreground or background follows "Hand long loops to a subagent".
 - **Model by tier.** A call takes its mode's tier, or a combined call's highest; a mode's fallback subagent takes the same. Pass the model as "Hand long loops to a subagent" says.
 
   | Tier | For | Modes |
@@ -80,9 +80,9 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
 - **Optional only when missing.** If `cops` is absent, perform the step inline, continue, and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
-- **Pass what you have.** Include `login: <github-login>` if known; always include the selected `GitHub route:`. Review modes also receive owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
-- **Check what it loaded.** Every oracle reply lists `loaded:`. It must include `memory.md` and `modes/<mode>.md` for each named mode. Missing or no `loaded:` → call again once, naming the missing files to read first. Still missing → use the reply and mark the handoff `✓ (incomplete load: <files>)`.
-- **Pass memory context.** Session context supplies the verified COPS memory root and configured memory login, or says each is unavailable/unset. Pass `memory-root: <absolute path | unavailable>` and `memory-login: <login | unset>` to every `pr-oracle` call because agents start blank. Never pass them to `pr-sidekick`: it reads no memory, and gets remembered rules only as oracle lines in its prompt. Never fill `memory-login` from `gh`, `get_me`, or `login:`.
+- **Pass what you have.** Include `login: <github-login>` if known; always include the selected `GitHub route:`. Later calls get the run's first `scout-repo` profile as `profile:`; `scout-repo` returns a supplied one unchanged. Review modes get owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
+- **Check what it loaded.** Every reply's `loaded:` must include `memory.md` and `modes/<mode>.md` per named mode. Missing or no `loaded:` → call again once, naming the missing files to read first. Still missing → use the reply and mark the handoff `✓ (incomplete load: <files>)`.
+- **Pass memory context.** Session context supplies the verified COPS memory root and configured memory login, or says each is unavailable/unset. Pass `memory-root: <absolute path | unavailable>` and `memory-login: <login | unset>` to every `pr-oracle` call. Never pass them to `pr-sidekick`: it reads no memory, and gets remembered rules only as oracle lines in its prompt. Never fill `memory-login` from `gh`, `get_me`, or `login:`.
 - **Graduated memory consent.** Operational modes never write memory. Show `memory-candidate:` to the user; only explicit remember or promotion intent permits a separate `learn-feedback` call. On `not concrete:`, ask the user to restate the rule and call again with their wording; never rephrase it for them. Reviewer-derived rules stay inactive candidates until explicitly promoted.
 - **Team memory.** Only a separate `learn-feedback` call for an explicit team-memory request receives `record-team: <one line>`.
 
