@@ -64,15 +64,9 @@ Draft to the brief's description preferences and recurring review asks. The rule
 
 **Title** — one line naming the net effect of the change, imperative after any type prefix. Keep an existing conventional-commit prefix (`fix:`, `test:`, …), updating it when the change's kind changed: a checkpoint PR that now carries its fix goes from `test: reproduce … (failing)` to `fix: …`, dropping `(failing)`. Diff bundles unrelated things → name the most user-visible one, don't cram. Monorepo → apply the shared `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). Title ends in a `(#123)`-style issue reference → keep it in the same form (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference"); a wrap-up must not silently drop it.
 
-**Description** — three required sections, in this order, kept tight — a PR body a reviewer skims, not a design doc:
+**Description** — `## Why`, `## What`, `## Verification`, then `## Resources`, in the shared format (`CONVENTIONS-pr-metadata.md` → "PR body format"). Pull Why from commit messages, a linked issue, or the existing description, and Verification from commit messages, test files, and the diff; ask the user only if the branch gives no indication. Nothing verified → say so plainly. Checklist Verification per `CONVENTIONS-verification.md` → "Verification checklist" and "Don't checklist an intentionally-failing check as done".
 
-- **Why** — the reason this change exists, not a rephrasing of What. Pull it from commit messages, a linked issue, or the existing description; ask the user only if nothing indicates the motivation. Must open with a paragraph starting `This PR ...` stating the mechanism by which it solves the issue, not just what the issue was — motivation bullets can follow.
-- **What** — the concrete change in a few short bullets: files, behavior, APIs touched — specific enough that a reviewer needn't open the diff to know what they're looking at. The diff carries a drive-by → split What into `### Main` and `### Drive-by` (`CONVENTIONS-pr-metadata.md` → "Split What into Main and Drive-by").
-- **Verification** — how a reader can trust the change works: tests added/updated, commands run and their result, manual steps (with observed outcome), or covering CI checks. Pull it from commit messages, test files, and the diff; ask the user only if the branch gives no indication. No "should work" padding — nothing verified → say so plainly. Checklist it per `CONVENTIONS-verification.md` → "Verification checklist" and "Don't checklist an intentionally-failing check as done".
-
-One bullet per section is enough for a trivial PR; don't pad. In each section, bold the one claim that matters in a bullet — the causal reason, the chosen rationale, a caveat (`CONVENTIONS-pr-metadata.md` → "Bold the critical claim"); skip a bullet with nothing critical enough to call out.
-
-**Resources** — one more section, only when there's something to put in it:
+**Resources** — only when there's something to put in it:
 
 - The issue this PR tracks, wherever it lives. Pull it from an existing `Fixes #123`/`Relates to <KEY>`-style reference in a commit message or the PR body, the branch name, or the conversation. Preserve whichever keyword is in use, closing or non-closing — never normalize one to the other while rewriting; whether the PR closes the issue on merge isn't a wrap-up's call (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references").
 - External context that informed the fix — an upstream issue, a design doc, a blog post — only if one genuinely exists.
@@ -81,27 +75,7 @@ Don't hunt for tangential links. Use one openable link per line (`CONVENTIONS-po
 
 ## Step 6: Fit the update into the existing template — don't replace it
 
-Check the PR's current body (from Step 3) and the profile's template headers; read `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`) only when there's no profile. Repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist → map Why/What/Verification/Resources onto the closest existing header instead of inventing new ones. Verification usually has a home ("Testing", "Test plan", "QA steps"); add a standalone "## Verification" only if nothing fits. Leave sections you have no new information for untouched. No template to work from → default to:
-
-```markdown
-## Why
-This PR ...
-
-- ...
-
-## What
-- ...
-
-(with a drive-by: `### Main` and `### Drive-by` under What, each with its bullets)
-
-## Verification
-- ...
-
-## Resources
-- ...
-```
-
-(omit `## Resources` when Step 5 found nothing for it)
+Check the PR's current body (from Step 3) and the profile's template headers; read `.github/pull_request_template.md` (or `PULL_REQUEST_TEMPLATE.md`) only when there's no profile. Repo has its own headers — "Summary", "Testing", "How it was tested", "Screenshots", a checklist → map Why/What/Verification/Resources onto the closest existing header instead of inventing new ones. Verification usually has a home ("Testing", "Test plan", "QA steps"); add a standalone "## Verification" only if nothing fits. Leave sections you have no new information for untouched. No template to work from → use the shared format (`CONVENTIONS-pr-metadata.md` → "PR body format").
 
 A body that opens with a `> [!NOTE]` block starting `Opened on autopilot by` keeps that block verbatim as its first lines, a ticked `- [x]` box included; never regenerate, move or reword it.
 
