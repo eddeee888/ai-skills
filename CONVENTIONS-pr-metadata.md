@@ -47,7 +47,7 @@ Without a repo template: `## Why`, `## What`, `## Verification`, `## Resources`;
 - **Why** — 2-3 bullets: the cause, then the user-visible symptom; no `This PR ...` opener.
 - **What** — behavior and public API changes only; no file paths, mechanics, or bookkeeping the diff shows (changelog entries, docs, generated files) unless it's the PR's point.
 - **Verification** — per `CONVENTIONS-verification.md`.
-- **Resources** — the tracked issue ("Non-closing issue references"); omit when empty.
+- **Resources** — the tracked issue or task source, plus real external context; omit when empty.
 
 Bold per "Bold the critical claim"; drive-bys per "Split What into Main and Drive-by".
 
