@@ -42,7 +42,7 @@ Small is one place with no contract change. Medium reaches further, with no cont
 
 *Default* — the user's ask in this conversation, or an `overrides:` line in the `pr-oracle` profile naming this section (without the oracle: a different rule in the repo's `CLAUDE.md` or `CONTRIBUTING.md` — "Companion plugin: `cops`"), replaces it ("Defaults and contracts").
 
-Without a repo template: `## Why`, `## What`, `## Verification`, `## Resources`, about 3-5 one-line bullets each.
+Without a repo template: `## Why`, `## What`, `## Verification`, `## Resources`; What: 3-5 one-line bullets.
 
 - **Why** — 2-3 bullets: the cause, then the user-visible symptom; no `This PR ...` opener.
 - **What** — behavior and public API changes only; no file paths, mechanics, or bookkeeping the diff shows (changelog entries, docs, generated files) unless it's the PR's point.
