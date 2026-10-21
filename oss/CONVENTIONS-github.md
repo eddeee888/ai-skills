@@ -2,12 +2,12 @@
 
 ## GitHub access: `gh`, or the GitHub MCP tools
 
-- **Pick the route once.** At the first GitHub step run `gh api repos/<o>/<r> --jq .default_branch`. Success → `gh api` for the skill; failure → GitHub MCP throughout, loading on-demand tools with `ToolSearch`. Neither works → that step's own "no PR"/"can't reach the repo" failure.
+- **Pick the route once.** At the first GitHub step run `gh api repos/<o>/<r> --jq .default_branch`. Success → `gh api` for the skill; failure → GitHub MCP throughout, loading on-demand tools with `ToolSearch`. Neither works → that step's own failure.
 - **REST through `gh api`.** `gh pr|issue …` and `gh api graphql` use GraphQL, which Claude Code cloud blocks (403 "GitHub GraphQL is not available"); only review threads and ready try it first. Branches and commits go through `git push`.
 - **Access errors.** On the `gh` route, retry one read returning 401/403/404 through MCP before failing.
-- **Same effect, same gates.** MCP replaces commands one-for-one; writes retain every confirmation gate.
+- **Same gates.** MCP replaces commands one-for-one; writes keep every confirmation gate.
 - **Owner/repo.** Derive from `git remote get-url origin`.
-- **Subagents.** Always `gh api` through Bash, never MCP; prompts say `GitHub: gh api`. The main agent alone creates, edits, labels, assigns and reviews PRs; a subagent only replies to a thread when its prompt says to.
+- **Subagents.** Always `gh api` through Bash, never MCP; prompts say `GitHub: gh api`. The main agent alone creates, edits, labels, assigns and reviews PRs; a subagent replies to a thread only when told. On `gh api unavailable — read it in the main chat`, the main chat reads it.
 
 | `gh` | GitHub MCP |
 |---|---|
@@ -34,8 +34,8 @@
 
 ## Passing drafted text to `gh`
 
-Never place drafted title/body/reply text in a double-quoted shell argument: backticks and `$` execute or expand.
+Never put drafted text in a double-quoted shell argument: backticks and `$` expand.
 
-- **Multi-line text** → write with a file-writing tool, never `echo` or an unquoted heredoc. Pass it as `-F body=@<file>`. Place it by absolute path in the session's scratch directory, else a `mktemp -d` directory; never under `.git`, never `cd` there; remove afterward.
+- **Multi-line text** → write with a file-writing tool, never `echo` or an unquoted heredoc. Pass it as `-F body=@<file>`. Place it by absolute path in the session's scratch directory, else a `mktemp -d` directory; never under `.git`; remove afterward.
 - **One line** → single-quote it, escaping `'` as `'\''`, or use `-f title="$(cat <file>)"`; command output is not re-expanded.
 - **MCP route** → pass text directly as the tool parameter.

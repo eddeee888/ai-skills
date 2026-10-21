@@ -888,6 +888,10 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
   require_markers "cops/references/pr-oracle/github-access.md" "gh api oracle access" \
     'only through the `gh api` REST reads' "never MCP" '| Read | `gh api` read |' \
     'including `gh auth status`' "401/403/404" '`gh api unavailable — read it in the main chat`'
+  require_markers "CONVENTIONS-github.md" "oracle sentinel handled by the main chat" \
+    '`gh api unavailable — read it in the main chat`'
+  require_markers "cops/skills/pr-address/SKILL.md" "oracle sentinel handled by the main chat" \
+    '`gh api unavailable — read it in the main chat`'
   forbid_markers "cops/references/pr-oracle/github-access.md" "MCP-only oracle access" \
     'Do not use `gh`'
   require_markers "cops/agents/pr-oracle.md" "loaded files report" \
