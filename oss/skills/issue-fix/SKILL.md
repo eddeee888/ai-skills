@@ -44,7 +44,7 @@ Only after selection, explicitly read `./fix-loop.md`. Follow its oracle order, 
 Check the actual branch for an open PR:
 
 ```bash
-gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] | {number,author:{login:.user.login}}'
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] // empty | {number,author:{login:.user.login}}'
 ```
 
 - **Has one** → `git push` only. Never run `gh pr create`; preserve `author.login` for wrap-up.

@@ -46,7 +46,7 @@ No way to spawn a subagent → read `draft.md` and run Steps 2–6 here.
 ## Step 1: Check whether a PR exists
 
 ```bash
-gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] | {number, title, url: .html_url, author:{login:.user.login}, baseRefName: .base.ref, headRefName: .head.ref, body}'
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] // empty | {number, title, url: .html_url, author:{login:.user.login}, baseRefName: .base.ref, headRefName: .head.ref, body}'
 ```
 
 On the MCP route, find the branch's PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`), then `pull_request_read` method `get`.

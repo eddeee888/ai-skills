@@ -12,7 +12,7 @@ GitHub steps below are `gh` commands. Pick and keep one access route exactly as 
 ## Step 1: Identify the PR and whether it's the user's
 
 ```bash
-gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] | {number,url:.html_url,author:{login:.user.login},headRefName:.head.ref,baseRefName:.base.ref}'
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] // empty | {number,url:.html_url,author:{login:.user.login},headRefName:.head.ref,baseRefName:.base.ref}'
 gh api user --jq .login
 ```
 
