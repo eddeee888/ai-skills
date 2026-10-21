@@ -3,7 +3,6 @@ import type { AgentCall, SkillRun, Threads } from '../types'
 import { AUTOPILOT_STAGES, describeChain } from './autopilot-chain.ts'
 
 const URL = 'https://github.com/o/r/pull/81'
-const SUFFIX = `${URL} — autopilot stage of this pr-start run`
 
 let count = 0
 const skill = ({ name, args = '', at, by = 'model' }: { name: string; args?: string; at: number; by?: SkillRun['by'] }): SkillRun => {
@@ -11,7 +10,7 @@ const skill = ({ name, args = '', at, by = 'model' }: { name: string; args?: str
   return { n: count, skill: name, args, by, at }
 }
 const start = ({ at, by = 'you' }: { at: number; by?: SkillRun['by'] }): SkillRun => skill({ name: 'cops:pr-start', args: '--autopilot fix the thing', at, by })
-const stage = ({ name, at }: { name: string; at: number }): SkillRun => skill({ name: `cops:pr-${name}`, args: SUFFIX, at })
+const stage = ({ name, at }: { name: string; at: number }): SkillRun => skill({ name: `cops:pr-${name}`, args: `${URL} cops:stage:${name}`, at })
 const view = ({ isDraft = true, url = URL, hasNotes = false, state = 'OPEN' }: { isDraft?: boolean; url?: string; hasNotes?: boolean; state?: 'OPEN' | 'MERGED' | 'CLOSED' } = {}): Threads => ({
   status: 'ready', pr: 81, url, state, threads: [], isReviewed: false, hasNotes, isDraft,
 })
@@ -188,10 +187,35 @@ describe('describeChain', () => {
   test('with several chains it describes the latest PR', () => {
     const other = 'https://github.com/o/r/pull/5'
     const runs = [
-      start({ at: 1 }), skill({ name: 'cops:pr-review', args: `${other} - autopilot stage of this pr-start run`, at: 2 }),
+      start({ at: 1 }), skill({ name: 'cops:pr-review', args: `${other} cops:stage:review`, at: 2 }),
       start({ at: 3 }), stage({ name: 'review', at: 4 }),
     ]
     expect(describe_({ runs })?.line).toContain('PR #81 · fix → review ⠋ → address ·')
+  })
+
+  test('a marker with leading and trailing context counts as a stage', () => {
+    const runs = [start({ at: 1 }), skill({ name: 'cops:pr-review', args: `re-check ${URL} cops:stage:review focus on tests`, at: 2 })]
+    expect(describe_({ runs })?.line).toContain('PR #81 · fix → review ⠋ → address ·')
+  })
+
+  test('a marker naming another stage than the skill does not count', () => {
+    const runs = [start({ at: 1 }), skill({ name: 'cops:pr-review', args: `${URL} cops:stage:note`, at: 2 })]
+    expect(describe_({ runs })?.line).toContain('fix ⠋ → review ·')
+  })
+
+  test('a stage run without the marker does not count', () => {
+    const runs = [start({ at: 1 }), skill({ name: 'cops:pr-review', args: `${URL} — autopilot stage of this pr-start run`, at: 2 })]
+    expect(describe_({ runs })?.line).toContain('fix ⠋ → review ·')
+  })
+
+  test('the first URL wins when later URLs appear in the context', () => {
+    const runs = [start({ at: 1 }), skill({ name: 'cops:pr-review', args: `${URL} cops:stage:review see https://github.com/o/r/pull/5`, at: 2 })]
+    expect(describe_({ runs })?.title).toBe('Autopilot · PR #81')
+  })
+
+  test('a stage run with trailing context is not a plain run', () => {
+    const runs = [start({ at: 1 }), stage({ name: 'review', at: 2 }), skill({ name: 'cops:pr-address', args: `${URL} cops:stage:address more context`, at: 3 })]
+    expect(describe_({ runs, turnEndedAt: 4 })?.status).toBe('stopped')
   })
 
   test('a typed resume carries on the stopped chain', () => {

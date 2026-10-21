@@ -4,11 +4,6 @@ import { isSameSkill, SPINNER, SPINNER_MS } from './pr-panel.ts'
 // The skills of pr-start's autopilot chain, in the order autopilot.md → "The chain" runs them.
 export const AUTOPILOT_STAGES = ['cops:pr-review', 'cops:pr-address', 'cops:pr-wrap-up', 'cops:pr-note']
 
-// The phrase that ends the args of every stage run, after a dash.
-export const AUTOPILOT_SUFFIX = 'autopilot stage of this pr-start run'
-
-const SUFFIX = new RegExp(`\\s*[-\\u2010-\\u2015]*\\s*${AUTOPILOT_SUFFIX}\\s*$`, 'i')
-
 export type ChainStep = {
   name: string
   /** `✓` done, `■` stopped here, `·` not started, `?` unknown, a spinner frame in flight, '' for `fix` once a stage ran. */
@@ -36,7 +31,7 @@ export type Chain = {
 }
 
 // The state of the latest autopilot chain in the session, for the pane's strip; undefined when none ran.
-// A stage is a skill run whose args end in the suffix; the args' first URL is the PR. `fix` is the latest
+// A stage is a skill run whose args carry its own stage marker; the args' first URL is the PR. `fix` is the latest
 // cops:pr-start run before the first stage (or an `--autopilot` one while no stage ran yet).
 //   no autopilot run                               → undefined
 //   review done, wrap-up in flight                 → `Autopilot · PR #81 · fix → review ✓ → address ✓ → wrap-up ⠹ → note · → ready ·`
@@ -63,11 +58,19 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   turnEndedAt?: number | null
   now: number
 }): Chain | undefined => {
+  // A stage run carries `cops:stage:<review|address|wrap-up|note>` anywhere in its args, naming the stage its skill is:
+  //   cops:pr-review, `<URL> cops:stage:review focus on tests` → true
+  //   cops:pr-review, `<URL> cops:stage:note`                  → false
+  //   cops:pr-review, `<URL>`                                  → false
+  const isStageRun = ({ run }: { run: SkillRun }): boolean => {
+    const name = (run.args || '').match(/\bcops:stage:([\w-]+)/)?.[1]
+    return name !== undefined && AUTOPILOT_STAGES.some(stage => stage === `cops:pr-${name}` && isSameSkill({ a: run.skill, b: stage }))
+  }
   // A later `--autopilot` run starts a new chain, so stage runs from before it belong to an earlier one.
   const latestStart = runs.findLast(isAutopilotStart)
   const stageRuns = runs
-    .filter(one => one.n > (latestStart?.n ?? 0) && SUFFIX.test(one.args || '') && AUTOPILOT_STAGES.some(stage => isSameSkill({ a: one.skill, b: stage })))
-    .map(one => ({ run: one, url: ((one.args || '').replace(SUFFIX, '').match(/https?:\/\/\S+/) || [])[0] }))
+    .filter(one => one.n > (latestStart?.n ?? 0) && isStageRun({ run: one }))
+    .map(one => ({ run: one, url: ((one.args || '').match(/https?:\/\/\S+/) || [])[0] }))
   const url = stageRuns.at(-1)?.url
   const chainRuns = stageRuns.filter(one => one.url === url).map(one => one.run)
   const first = chainRuns[0]
@@ -92,7 +95,7 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
 
   const isReady = view.status === 'ready' && url !== undefined && view.url === url && view.isDraft === false
   const isReadyKnown = view.status === 'ready' && url !== undefined && view.url === url && view.isDraft !== undefined
-  const plain = url === undefined ? undefined : runs.findLast(one => one.n > last.n && one.skill.startsWith('cops:') && (one.args || '').includes(url) && !SUFFIX.test(one.args || ''))
+  const plain = url === undefined ? undefined : runs.findLast(one => one.n > last.n && one.skill.startsWith('cops:') && (one.args || '').includes(url) && !isStageRun({ run: one }))
   const busy = calls.some(one => one.startedAt >= last.at && (one.state === 'running' || one.state === 'background'))
   const isEnded = turnEndedAt !== undefined && turnEndedAt !== null && turnEndedAt >= last.at && !busy
   const isAllStarted = started.every(Boolean)
