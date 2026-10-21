@@ -39,6 +39,7 @@ Each indexed section is:
   - Checkpoint/fix branch naming: `repro/<issue-number>` / `fix/<issue-number>`
   - Non-issue branch naming: `<type>/<short-slug>`
   - Task size: `Size: Small — <reason>`
+  - PR body format
   - Bold the critical claim in Why/What/Verification bullets
   - Split What into Main and Drive-by
   - Commit trailers: `Skill:` / `Approved-by:`
