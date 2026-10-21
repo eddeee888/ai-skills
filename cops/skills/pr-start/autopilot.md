@@ -25,11 +25,11 @@ gh api repos/<owner>/<repo>/labels/autopilot --jq .name
 - **Write access:** `permissions.push` is `true`.
 - **Label:** the `autopilot` label exists; 404 → absent (MCP: `get_label`). Never create it.
 
-A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, `Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
+A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, the card shows `🤖 Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
 
 ## At the card
 
-When the gate checks pass, every card shows `Autopilot: offered`, and choosing it is the user's call. Notes that apply make it `Autopilot: offered — advisory: <notes>`, joined with `; `:
+When the gate checks pass, autopilot is offered, and choosing it is the user's call; the card shows no `Autopilot:` line unless a note applies. Each note is a bullet under `🤖 Autopilot: advisory`:
 
 - `Large` when the Size is Large;
 - `high-risk scope (<area>)` when the scope touches security or auth, data loss, infrastructure or a public API;

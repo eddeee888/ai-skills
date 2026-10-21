@@ -19,7 +19,7 @@ Spawn `cops:pr-sidekick` on Claude Code, or the `pr-sidekick` subagent on Cursor
 Repo <owner>/<repo>, branch <branch> (checked out), base <default branch>.
 login: <login>
 Goal: <card Goal>
-Approach: <card Approach, or the chosen option's Changes line>
+Approach: <card Approach bullets joined with "; ", or the chosen option's Changes line>
 In scope: <card In scope bullets, joined with "; ">
 Out of scope: <card Out of scope bullets, joined with "; ">
 Done when: <card Done when>
@@ -73,7 +73,7 @@ Only when the card's Evidence lists scenarios; autopilot too. `standard` tier. T
 
 ```text
 Repo <owner>/<repo>, branch <branch> (checked out).
-Scenarios: <card Evidence scenarios, in order, with kind>
+Scenarios: <card Evidence bullets, in order, with kind>
 Tooling: <the profile's `evidence:` line>
 Scratch: <$(git rev-parse --git-dir)/cops/evidence/<slug>/>
 Capture with only that tooling or a labelled fallback; install nothing. Write to

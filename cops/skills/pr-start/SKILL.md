@@ -53,27 +53,41 @@ Before showing the card:
 
 1. Read [size.md](size.md) now (`CONVENTIONS-pr-metadata.md` → "Task size") and derive the Size.
 2. Always read [autopilot.md](autopilot.md) before showing the card, flag or not.
-3. Fill `Autopilot:`; never blank.
+
+Blank line between groups, one fact per line (about 100 characters), `- ` bullets for anything that can hold more than one fact, no markdown bold or headings. Drop an optional line when it has nothing to say.
 
 ```text
 📋 Task card
+
 🎯 Goal: <one line>
-💡 Why: <one line> — <link to the source, or "stated in chat">
+💡 Why: <one line>
+- Source: <link, or "stated in chat">
+
 ✅ Done when: <a test that should pass | an observable behavior>
-🧐 Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>
+🧐 Evidence: <kind> | none — <why>
+- <scenario> (before/after)
+
 📦 In scope:
 - <what the change may touch>
 🚫 Out of scope:
 - <nearby things it must leave alone>
-🛠️ Approach: <one approach, in a line or two>
-📏 Size: <Small|Medium|Large> — <reason>
-🌿 Branch: <current branch | new <type>/<short-slug> from <default branch>>
-🤖 Autopilot: <offered | offered — advisory: <note> | not offered — <failed gate>>
+
+🛠️ Approach:
+- <one change per bullet, at most 3>
+
+📏 Size: <Small|Medium|Large>
+- <reason>
+🌿 Branch: new <type>/<short-slug> from <default branch>
+🤖 Autopilot: <not offered — <failed gate> | advisory>
+- <advisory note, per autopilot.md>
+
 Confirm, or edit any line.
 ```
 
+- **Branch** → only on a new branch; the current branch is not shown.
+- **Autopilot** → only when it is not offered or has advisory notes (autopilot.md → "At the card"); otherwise omit the line.
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes that test first and confirms it fails for the reported reason before changing code.
-- **Evidence** (required) → the brief's `Evidence:` line (`CONVENTIONS-evidence.md` → "Evidence scenarios"), as scenarios or `none — <why>`. An edit stands; it doesn't re-run `brief-task`. Shown in the PR body.
+- **Evidence** (required) → the brief's `Evidence:` line (`CONVENTIONS-evidence.md` → "Evidence scenarios"), one bullet per scenario, or `none — <why>`. An edit stands; it doesn't re-run `brief-task`.
 - **Scope bullets** stop sidekick drift; make them concrete (files, packages, behaviors).
 - **Options instead of one approach** → "Options on the card" in [size.md](size.md).
 - Never suggest or hand off to another plugin's skill from the card.

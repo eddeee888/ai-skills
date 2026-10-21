@@ -4,7 +4,7 @@ Read this at Step 3, while drafting the task card and before showing it.
 
 ## The line
 
-The card carries one line, `Size: <Small|Medium|Large> — <reason>`, sized by `CONVENTIONS-pr-metadata.md` → "Task size". Write the name in full and give one or two concrete reasons taken from the card, such as `Size: Medium — touches the shared retry helper and two packages`.
+The card carries `Size: <Small|Medium|Large>` with the reason as a bullet under it, sized by `CONVENTIONS-pr-metadata.md` → "Task size". Write the name in full and give one or two concrete reasons taken from the card, such as `Size: Medium` over `- touches the shared retry helper and two packages`.
 
 The size is advisory, shown for the user to see. It gates nothing: the steps, the handoff, the model choice and what the run may do are the same at every size, and autopilot is still offered at Large, with an advisory note ([autopilot.md](autopilot.md)).
 
