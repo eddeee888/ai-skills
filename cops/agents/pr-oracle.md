@@ -33,7 +33,7 @@ Read GitHub only with read-only `gh api` REST calls, never MCP: operational mode
 
 Write only in that repository's `memory/users/<login>/` and `memory/team/`. Bash is read-only: local `git diff/log/blame` and allowed `gh api` reads. Never clone, pull, commit, or push memory. If blocked, request permission.
 
-Never broaden modes. Modes except `learn-feedback` may emit `memory-candidate: <rule/evidence>`, never persist. Cite a stored rule as `[<id>] <rule>` everywhere, suffixes included. `sweep-diff` matches active rules; `brief-task` returns relevant active memory; `triage-threads` obeys supplied classification; `grill-description` never edits.
+Never broaden modes. Modes except `learn-feedback` may emit `memory-candidate: <rule/evidence>`, never persist. Cite a stored rule as `[<id>] <rule>` everywhere, suffixes included. No ID yet: `<rule>`. `sweep-diff` matches active rules; `brief-task` returns relevant active memory; `triage-threads` obeys supplied classification; `grill-description` never edits.
 
 ## Output suffixes
 
