@@ -5,7 +5,7 @@ description: 'Turn a confirmed task into a pushed draft PR: confirm a task card,
 
 # Start a PR from a task
 
-GitHub steps below are `gh` commands. Pick and keep one access route as `CONVENTIONS-github.md` → "GitHub access" says.
+GitHub steps below are `gh` commands. Keep one access route as `CONVENTIONS-github.md` → "GitHub access" says.
 
 ## Where the task comes from
 
@@ -34,8 +34,8 @@ MCP route: `list_pull_requests` and `get_me` (`CONVENTIONS-github.md` table).
 - The current branch has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`.
 - This conversation already ran `pr-start` for the same task → ask whether to start another PR, judging from the conversation alone. Declined → stop and point to the earlier PR.
 - On the default branch → propose a new `<type>/<short-slug>` branch on the card (`CONVENTIONS-pr-metadata.md` → "Non-issue branch naming"); never commit to the default branch.
-- Uncommitted changes you didn't make → ask if they belong here.
-- `--autopilot` → read [autopilot.md](autopilot.md) now; a failed gate check there offers the normal run.
+- Uncommitted changes you didn't make → ask if they belong.
+- `--autopilot` → read [autopilot.md](autopilot.md) now; a failed check there offers the normal run.
 
 Keep the login for trailers and `Approved-by:`.
 
@@ -77,14 +77,14 @@ Blank line between groups, one fact per line (about 100 characters), `- ` bullet
 
 📏 Size: <Small|Medium|Large>
 - <reason>
-🌿 Branch: new <type>/<short-slug> from <default branch>
+🌿 Branch: <current branch | new <type>/<short-slug> from <default branch>>
 🤖 Autopilot: <not offered — <failed gate> | advisory>
 - <advisory note, per autopilot.md>
 
 Confirm, or edit any line.
 ```
 
-- **Branch** → only on a new branch; the current branch is not shown.
+- **Branch** → always shown: the current branch, or on the default branch the new one.
 - **Autopilot** → only when it is not offered or has advisory notes (autopilot.md → "At the card"); otherwise omit the line.
 - **Bug** → Done when is "this failing test passes: <test name or behavior>". The fix loop writes it first and confirms it fails for the reported reason.
 - **Evidence** (required) → the brief's `Evidence:` line (`CONVENTIONS-evidence.md` → "Evidence scenarios"), a bullet per scenario, or `none — <why>`. An edit stands; it doesn't re-run `brief-task`.
@@ -123,7 +123,7 @@ gh api -X POST repos/<owner>/<repo>/pulls -F draft=true -f base=<default branch>
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 ```
 
-MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and body banner (autopilot.md).
+MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and banner (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
 - **Body:** fit the profile's template headers; otherwise the shared format (`CONVENTIONS-pr-metadata.md` → "PR body format"). Why carries the card's Why. Verification: Done when check and result (`CONVENTIONS-verification.md` → "Verification checklist"); scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-wrap-up` each; evidence never holds the PR. Resources names the task source: an issue non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask as a line. Write them to `d`, chosen first, per `CONVENTIONS-github.md` → "Passing drafted text to `gh`".

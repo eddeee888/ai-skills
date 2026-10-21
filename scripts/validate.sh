@@ -708,6 +708,11 @@ validate_behavioral_contracts() {
   require_order "cops/skills/pr-start/SKILL.md" "ordered autopilot checklist before the card" \
     "Before showing the card:" "Read [size.md](size.md) now" "flag or not" \
     "Goal: <one line>"
+  require_markers "cops/skills/pr-start/SKILL.md" "task card always shows the Branch line" \
+    "🌿 Branch: <current branch | new <type>/<short-slug> from <default branch>>" \
+    "- **Branch** → always shown"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "task card always shows the Branch line" \
+    "only on a new branch" "the current branch is not shown"
   require_markers "cops/skills/pr-start/SKILL.md" "raised size reported at wrap-up" \
     "a raised Size"
 
