@@ -2,7 +2,7 @@
 
 `pr-review` and `pr-note` read this only after the user confirms the draft. The caller supplies signed bodies and event (`COMMENT` by default).
 
-Immediately before writing, re-read full `headRefOid` (`gh pr view <number> --json headRefOid --jq .headRefOid`; MCP `pull_request_read` `get`). Saved-head mismatch → stop, post nothing, offer a fresh review.
+Immediately before writing, re-read full `headRefOid` (`gh api repos/<owner>/<repo>/pulls/<number> --jq .head.sha`; MCP `pull_request_read` `get`). Saved-head mismatch → stop, post nothing, offer a fresh review.
 
 Post accepted comments in one review anchored to the saved `headRefOid`.
 

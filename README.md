@@ -82,8 +82,8 @@ Local checkout for development: copy `oss` and `cops` into `~/.cursor/plugins/lo
 
 ### GitHub access
 
-- **`gh` CLI** — the skills use it when it's logged in (`gh auth login`); the [COPS HQ pane](cops/README.md#cops-hq-pane) needs it for review threads.
-- **GitHub MCP server** — the skills fall back to it without `gh`, and the `pr-oracle` agent reads GitHub only through it, so connect it even if you have `gh`.
+- **`gh` CLI** — the skills use `gh api` REST calls when a `gh api repos/<owner>/<repo>` read works, and the `pr-oracle` and `pr-sidekick` agents read GitHub only through it; the [COPS HQ pane](cops/README.md#cops-hq-pane) needs it for review threads.
+- **GitHub MCP server** — the main chat falls back to it when `gh api` doesn't work.
 
 ### Memory repository
 

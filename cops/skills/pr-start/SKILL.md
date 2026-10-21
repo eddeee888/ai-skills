@@ -22,12 +22,13 @@ The oracle supplies the repo profile and remembered rules, never intent. No stat
 ```bash
 git rev-parse --show-toplevel
 git branch --show-current
-gh repo view --json nameWithOwner,defaultBranchRef
-gh pr view --json number,url,state 2>&1
+git remote get-url origin
+gh api repos/<owner>/<repo> --jq .default_branch
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[].html_url'
 gh api user --jq .login
 ```
 
-MCP route: find an open PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`) and the login with `get_me`.
+MCP route: `list_pull_requests` and `get_me` (`CONVENTIONS-github.md` table).
 
 - No checkout, or a detached HEAD → stop; say what's missing.
 - The current branch already has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`.
@@ -104,7 +105,7 @@ Write the `<details>` manifest block (`CONVENTIONS-evidence.md`) for the body, w
 ```bash
 git push -u origin <branch>
 d=<absolute dir>
-gh pr create --draft --base <default branch> --title "$(cat "$d/pr-start-title.txt")" --body-file "$d/pr-start-body.md"
+gh api -X POST repos/<owner>/<repo>/pulls -F draft=true -f base=<default branch> -f head=<branch> -f title="$(cat "$d/pr-start-title.txt")" -F body=@"$d/pr-start-body.md"
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 ```
 

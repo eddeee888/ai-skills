@@ -36,9 +36,10 @@ The [COPS HQ pane](#cops-hq-pane) works out the same thing from the PR: its `Nex
 1. **Install the plugin** — `/plugin install cops` (see the
    [root README](../README.md#install)). Install `oss` too for the issue
    skills; they use this plugin's agents when it's there.
-2. **Connect GitHub.** The skills use `gh` when it's logged in, and the
-   GitHub MCP server otherwise. The `pr-oracle` agent reads GitHub only
-   through the GitHub MCP server, so connect it even if you have `gh`.
+2. **Connect GitHub.** The skills use `gh api` when a REST read works,
+   and the GitHub MCP server otherwise. The `pr-oracle` and `pr-sidekick`
+   agents read GitHub only through `gh api`, so set up `gh` even if you
+   connect the GitHub MCP server.
 3. **Attach memory when wanted.** Keep memory in its own Git repository, configure its workspace path, and attach it as described in [Workspace memory](#workspace-memory). With no valid path, COPS runs without memory and never creates a machine-local store. A direct rule is remembered only when you explicitly ask; reviewer feedback stays inactive until you explicitly promote it.
 4. **Check it.** Run a skill, e.g. `/cops:pr-review <PR URL>`. Its report
    ends with a `Handoffs:` list. `✓` on each line means the agents ran;

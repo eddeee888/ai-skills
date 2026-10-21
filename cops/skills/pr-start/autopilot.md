@@ -18,12 +18,12 @@ Stage checks that compare the PR author with the authenticated login keep using 
 Run these before the card; they only read. SKILL.md Step 1's own checks come first and stop the run as they always do.
 
 ```bash
-gh repo view --json viewerPermission --jq .viewerPermission
-gh label list --search autopilot --json name --jq '.[].name'
+gh api repos/<owner>/<repo> --jq .permissions.push
+gh api repos/<owner>/<repo>/labels/autopilot --jq .name
 ```
 
-- **Write access:** the permission is `WRITE`, `MAINTAIN` or `ADMIN`.
-- **Label:** the `autopilot` label exists in the repo (MCP: `get_label`). Never create it.
+- **Write access:** `permissions.push` is `true`.
+- **Label:** the `autopilot` label exists; 404 → absent (MCP: `get_label`). Never create it.
 
 A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, `Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
 
@@ -60,7 +60,7 @@ A sweep flag that SKILL.md would bring to the user stops the run too.
 
 Step 6, with two additions:
 
-- `gh pr create --draft --label autopilot ...` (MCP: add the label after `create_pull_request`, with `issue_write` `update` and `labels`).
+- After creating, `gh api -X POST repos/<owner>/<repo>/issues/<number>/labels -f 'labels[]=autopilot'` (MCP: `issue_write` `update` with `labels`).
 - The body file opens, above the template or `## Why`, with the banner:
 
   ```markdown
@@ -109,7 +109,7 @@ The risk gate in `../pr-address/classify.md` beats the label: high-risk work is 
 Only when all four stages finished, assign the user; they mark the draft ready:
 
 ```bash
-gh pr edit <number> --add-assignee <login>
+gh api -X POST repos/<owner>/<repo>/issues/<number>/assignees -f 'assignees[]=<login>'
 ```
 
 MCP: `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").

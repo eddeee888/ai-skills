@@ -7,7 +7,7 @@ description: 'Wrap up an open PR: rebase onto the current base, then update titl
 
 A PR description is a snapshot of intent from when the PR opened; the branch keeps moving — new commits, scope changes, an advancing base. This skill rebases the branch onto its base, then re-derives the title, description, and changeset from what's there, so a reviewer never reads a stale summary or a diff cluttered with already-merged commits.
 
-GitHub steps are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
+GitHub steps are `gh api` commands. On the MCP route, use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## How this runs
 
@@ -23,8 +23,7 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    evidence manifest in the PR body also means recapture.md beside it.
    Oracle profile and brief: <what it returned, or "none">
    Resuming: <"no" | the question you returned last time, and the user's answer>
-   GitHub: <"gh" | "MCP — read the PR body with pull_request_read method get
-   instead of gh; load it with ToolSearch first if needed">
+   GitHub: gh api (REST, through Bash). Do not use MCP.
    Stop and return a question instead of guessing when the branch may be
    shared with someone else, a rebase conflict isn't obvious, or nothing
    states the motivation for Why. When resuming, use the answer and pick up
@@ -47,12 +46,12 @@ No way to spawn a subagent → read `draft.md` and run Steps 2–6 here.
 ## Step 1: Check whether a PR exists
 
 ```bash
-gh pr view --json number,title,url,author,baseRefName,headRefName 2>&1
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] | {number, title, url: .html_url, author:{login:.user.login}, baseRefName: .base.ref, headRefName: .head.ref, body}'
 ```
 
 On the MCP route, find the branch's PR with `list_pull_requests` (`head: <owner>:<branch>`, `state: open`), then `pull_request_read` method `get`.
 
-Errors (no PR for the branch, or neither `gh` nor the GitHub MCP tools work) → stop, tell the user there's no PR to wrap up, and don't create one — opening a PR is a different task with its own judgment calls (base, reviewers, draft-or-not).
+Errors (no PR for the branch, or neither `gh api` nor the GitHub MCP tools work) → stop, tell the user there's no PR to wrap up, and don't create one — opening a PR is a different task with its own judgment calls (base, reviewers, draft-or-not).
 
 Succeeds → keep the PR number and `baseRefName`; everything downstream diffs against that base, not the last commit.
 
@@ -63,7 +62,7 @@ git fetch origin <baseRefName> --quiet
 git diff --quiet origin/<baseRefName>...HEAD && echo "no diff"
 ```
 
-`no diff` and no evidence to capture → say the PR is already current and stop. A `<details>` evidence manifest in the PR body (already fetched in this step by the selected route: `gh pr view` fields or MCP `pull_request_read` `get`) means `recapture.md`'s check runs here too; any after missing or stale → go on. Body can't be read → the "nothing to wrap up" stop is not taken on evidence grounds; say the evidence check was skipped.
+`no diff` and no evidence to capture → say the PR is already current and stop. A `<details>` evidence manifest in the PR body (already fetched in this step by the selected route: `gh api` `body` or MCP `pull_request_read` `get`) means `recapture.md`'s check runs here too; any after missing or stale → go on. Body can't be read → the "nothing to wrap up" stop is not taken on evidence grounds; say the evidence check was skipped.
 
 Get the repo's profile and a brief for "PR description" with `for: pr-sidekick` in one call (`scout-repo` + `brief-task`) from `cops:pr-oracle` on Claude Code, or the `pr-oracle` subagent on Cursor (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"), passing the selected `GitHub route:`. Both go into the subagent's prompt: the profile answers Steps 4–6's changeset, title-prefix and template questions; the brief shapes Step 5's draft. Apply any `caller only:` lines yourself; keep them out of the prompt. Not available → pass "none"; the steps check inline. With an `autopilot profile:` line in the stage prompt (see Step 7's autopilot exception), call `brief-task` alone and use that profile.
 
@@ -75,7 +74,7 @@ If the user explicitly asked to remember a concrete preference, call `learn-feed
 
 ```bash
 d=<directory of the returned draft paths>
-gh pr edit <number> --title "$(cat "$d/pr-wrap-up-title.txt")" --body-file "$d/pr-wrap-up-body.md"
+gh api -X PATCH repos/<owner>/<repo>/pulls/<number> -f title="$(cat "$d/pr-wrap-up-title.txt")" -F body=@"$d/pr-wrap-up-body.md" --jq .html_url
 rm "$d/pr-wrap-up-title.txt" "$d/pr-wrap-up-body.md"
 ```
 

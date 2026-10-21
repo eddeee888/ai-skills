@@ -506,7 +506,7 @@ validate_autopilot() {
     "## 7. Wrap up" "run autopilot.md's chain, finish and stops" "## Stop instead of proceeding"
 
   require_markers "$auto" "autopilot gate" \
-    "viewerPermission" '`WRITE`, `MAINTAIN` or `ADMIN`' 'the `autopilot` label exists' \
+    ".permissions.push" '`permissions.push` is `true`' 'the `autopilot` label exists' \
     "Never create it."
   require_markers "$auto" "autopilot bot login" "a bot token" "the card asks for the login"
   # Autopilot is offered on every card past the two gate checks; Size, high-risk scope and an
@@ -522,12 +522,12 @@ validate_autopilot() {
   require_markers "$auto" "autopilot consent line" \
     "Autopilot authorises: push, open PR, post review, push fixes, edit title and body, post notes, assign <login>" \
     "Confirm on autopilot" "The card is the only prompt."
-  require_markers "$auto" "autopilot PR marking" "--label autopilot" \
+  require_markers "$auto" "autopilot PR marking" "-f 'labels[]=autopilot'" \
     "Opened on autopilot by [Code Ops](https://github.com/eddeee888/ai-skills/tree/main/cops) plugin;" "- [ ] Approved by [<login>](https://github.com/<login>)"
   forbid_markers "$auto" "autopilot leaves the PR a draft" "assign <login>, mark ready" "draft: false"
   require_order "$auto" "autopilot chain order" \
     "## Open the PR" "## The chain" '1. `cops:pr-review`' '2. `cops:pr-address`' \
-    '3. `cops:pr-wrap-up`' '4. `cops:pr-note`' "## Finish" "--add-assignee"
+    '3. `cops:pr-wrap-up`' '4. `cops:pr-note`' "## Finish" "-f 'assignees[]=<login>'"
   require_markers "$auto" "autopilot address rules" \
     '`Question:` → left open for the user' '`Suggestion:` → applied if low risk' \
     '`Test:` → applied' '`Issue:` → applied if low risk, test first' "Left open if critical" \
@@ -649,7 +649,7 @@ validate_behavioral_contracts() {
   require_markers "cops/skills/pr-review/SKILL.md" "head anchoring" \
     'Keep `headRefOid`'
   require_markers "cops/skills/pr-review/SKILL.md" "changed files brief" \
-    ",files" 'equivalent `files` through the shared route contract' \
+    "/files --jq" '`pull_request_read` `get` and `get_files`' \
     "title/body, and changed files"
   require_markers "cops/skills/pr-review/SKILL.md" "review body confirmation" \
     "Body: <kind>:" 'non-empty `review_body`'
@@ -885,9 +885,9 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "COPS_MODEL_LIGHT" "COPS_MODEL_STANDARD" "COPS_MODEL_DEEP" "COPS models:"
   require_markers "cops/hooks/memory-context.sh" "unconfigured memory notice" \
     "COPS memory not configured:"
-  require_markers "cops/references/pr-oracle/github-access.md" "selected GitHub route" \
-    '`GitHub route: gh | MCP`' "none given → MCP route" '| `gh` route | GitHub MCP route |' \
-    'including `gh auth status`' "401/403/404"
+  require_markers "cops/references/pr-oracle/github-access.md" "gh api oracle access" \
+    'only through the `gh api` REST reads' "never MCP" '| Read | `gh api` read |' \
+    'including `gh auth status`' "401/403/404" '`gh api unavailable — read it in the main chat`'
   forbid_markers "cops/references/pr-oracle/github-access.md" "MCP-only oracle access" \
     'Do not use `gh`'
   require_markers "cops/agents/pr-oracle.md" "loaded files report" \

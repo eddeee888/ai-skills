@@ -9,7 +9,7 @@ Continue the TDD loop from an `issue-verify` failing-test checkpoint. Make the t
 
 **This skill never runs `cops:pr-wrap-up` itself.** When a push leaves a PR's description behind its branch, suggest it instead (`CONVENTIONS-orchestration.md` → "Suggesting next steps", Step 7).
 
-GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
+GitHub steps below are `gh api` commands. On the MCP route, use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## Step 1: Find the `issue-verify` checkpoint commit
 
@@ -44,14 +44,14 @@ Only after selection, explicitly read `./fix-loop.md`. Follow its oracle order, 
 Check the actual branch for an open PR:
 
 ```bash
-gh pr view --json number,author 2>&1
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] | {number,author:{login:.user.login}}'
 ```
 
 - **Has one** → `git push` only. Never run `gh pr create`; preserve `author.login` for wrap-up.
 - **Has none** → `git push -u origin <branch>` and open a draft PR. In a monorepo use the package Step 3's tracing identified as owning the affected code path, not the issue label, for `[package-name]` (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). Title: `[package-name] fix: <short description> (#<issue number>)`, with issue reference last (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference"). Link body sources (`CONVENTIONS-posts.md` → "Citing sources") and write title/body files (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
   ```bash
-  gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
+  gh api -X POST repos/<owner>/<repo>/pulls -F draft=true -f base=<default branch> -f head=<branch> -f title="$(cat <title-file>)" -F body=@<body-file> --jq .html_url
   ```
 
 Use a non-closing issue reference, never `Fixes #123`/`Closes #123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"). State the chosen option and why briefly.

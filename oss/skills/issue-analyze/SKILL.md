@@ -9,12 +9,12 @@ Size an issue before work starts: identify what is broken or requested, what it 
 
 This skill is read-only. Never reproduce a bug, run or write tests, edit code, commit, or push. `issue-verify` confirms bugs; `issue-fix` chooses and implements fixes.
 
-GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
+GitHub steps below are `gh api` commands. On the MCP route, use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## Step 1: Read and classify the issue
 
-- URL or number → fetch the body and last 10 comments: `gh issue view <url or number> --json number,title,body,url,labels,state,comments --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'`. Read earlier comments only when needed and `total` shows more.
-- Conversation description → treat it as the issue. If it is a one-liner without a use case or shape, ask a clarifying question before sizing. First search all states for duplicates: `gh issue list --repo <owner>/<repo> --search "<keywords>" --state all`. A match, including a closed one, means point the user to it and stop instead of duplicating the analysis.
+- URL or number → fetch the body and last 10 comments: `gh api repos/<owner>/<repo>/issues/<number> --jq '{number,title,body,url:.html_url,state,labels:[.labels[].name],total:.comments}'`, then `gh api --paginate repos/<owner>/<repo>/issues/<number>/comments --jq '.[] | {author:{login:.user.login},body} | @json' | tail -n 10`. Read earlier comments only when needed and `total` shows more.
+- Conversation description → treat it as the issue. If it is a one-liner without a use case or shape, ask a clarifying question before sizing. First search all states for duplicates: `gh api -X GET search/issues -f q='repo:<owner>/<repo> is:issue <keywords>' --jq '.items[] | {number,title,state,html_url}'`. A match, including a closed one, means point the user to it and stop instead of duplicating the analysis.
 
 In a monorepo, obtain the `scout-repo` profile from `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor when available (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass the selected `GitHub route:`, and pass its package map to the survey. If unavailable, let the survey discover the layout.
 
@@ -46,9 +46,9 @@ Say plainly that a bug analysis has not confirmed the bug is real. This skill en
 
 ## Step 4: Sharing and filing gates
 
-- Existing issue and user asks to share → draft a comment (`CONVENTIONS-posts.md` → "Comment body" and "Citing sources"), show it verbatim, and post only after confirmation. Sign it `oss:issue-analyze`, `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"), write it to a file, then run `gh issue comment <number> --body-file <file>` (`CONVENTIONS-github.md` → "Passing drafted text to `gh`").
+- Existing issue and user asks to share → draft a comment (`CONVENTIONS-posts.md` → "Comment body" and "Citing sources"), show it verbatim, and post only after confirmation. Sign it `oss:issue-analyze`, `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"), write it to a file, then run `gh api -X POST repos/<owner>/<repo>/issues/<number>/comments -F body=@<file> --jq .html_url` (`CONVENTIONS-github.md` → "Passing drafted text to `gh`").
 - Unfiled plain-text bug and user wants it filed → hand off to `issue-create`, carrying the root-cause hypothesis. Do not draft it here.
-- Unfiled plain-text feature and user wants it filed → because `issue-create` drafts only bug reports, draft the title/body here using the repository's feature-request template when present and link sources (`CONVENTIONS-posts.md` → "Citing sources"). Show it and wait for confirmation. Then sign the body as above, write title/body files, and run `gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>` (`CONVENTIONS-github.md` → "Passing drafted text to `gh`").
+- Unfiled plain-text feature and user wants it filed → because `issue-create` drafts only bug reports, draft the title/body here using the repository's feature-request template when present and link sources (`CONVENTIONS-posts.md` → "Citing sources"). Show it and wait for confirmation. Then sign the body as above, write title/body files, and run `gh api -X POST repos/<owner>/<repo>/issues -f title="$(cat <title-file>)" -F body=@<body-file> --jq .html_url` (`CONVENTIONS-github.md` → "Passing drafted text to `gh`").
 
 Show each draft as one question (`CONVENTIONS-posts.md` → "Approving drafts: one question per item"). Never post a draft before confirmation.
 

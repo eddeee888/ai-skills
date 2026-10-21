@@ -9,7 +9,7 @@ Turn a reported issue into evidence: a failing test proving the bug exists, or a
 
 **This skill never runs `cops:pr-wrap-up` itself.** The checkpoint PR is written from the test it opens with and pushed to only once, so it's always current.
 
-GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
+GitHub steps below are `gh api` commands. On the MCP route, use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## Step 1: Check for an existing checkpoint, then read the issue
 
@@ -18,8 +18,10 @@ Before discovery, explicitly read `../checkpoint.md`, then follow it for local/r
 `CHECKPOINT_FOUND` → stop, name the commit and branch, and point to `issue-fix`. Proceed only when the user explicitly asks to redo a wrong reproduction. `CHECKPOINT_AMBIGUOUS` → ask which issue. `CHECKPOINT_NOT_FOUND` → read the issue:
 
 ```bash
-gh issue view <number> --json number,title,body,url,labels,state,comments \
-  --jq '{number,title,body,url,state,labels:[.labels[].name],total:(.comments|length),comments:(.comments[-10:]|map({author:.author.login,body}))}'
+gh api repos/<owner>/<repo>/issues/<number> \
+  --jq '{number,title,body,url:.html_url,state,labels:[.labels[].name],total:.comments}'
+gh api --paginate repos/<owner>/<repo>/issues/<number>/comments \
+  --jq '.[] | {author:{login:.user.login},body} | @json' | tail -n 10
 ```
 
 If no reproduction appears and `total` shows earlier comments, read those too.
@@ -43,7 +45,7 @@ With a template field, name it: *“Could you share a link to a minimal reproduc
 Keep it short (`CONVENTIONS-posts.md` → "Comment body"). Show the exact draft as one question (`CONVENTIONS-posts.md` → "Approving drafts: one question per item") and wait: “confirmed” means the user approved the wording, not that the reporter replied. Sign it `oss:issue-verify`, `Approved: <login>` (`CONVENTIONS-posts.md` → "Skill signature"), write it to a file, and only after confirmation run (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
 ```bash
-gh issue comment <number> --body-file <file>
+gh api -X POST repos/<owner>/<repo>/issues/<number>/comments -F body=@<file> --jq .html_url
 ```
 
 Stop. Do not poll; rerun after a reporter response.

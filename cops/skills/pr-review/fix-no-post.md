@@ -18,7 +18,7 @@ Findings to fix:
 2. ...
 Rules that apply: none
 Tests: find out
-GitHub: <"gh" | "MCP — use the GitHub MCP tools in your tool list instead of gh; load each with ToolSearch first if needed">
+GitHub: gh api (REST, through Bash). Do not use MCP.
 Resuming: <"no" | the question you returned last time, and the user's answer>
 
 For each finding in order: fix it (apply a suggestion block literally;

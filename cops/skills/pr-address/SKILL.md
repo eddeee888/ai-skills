@@ -12,11 +12,11 @@ GitHub steps below are `gh` commands. Pick and keep one access route exactly as 
 ## Step 1: Identify the PR and whether it's the user's
 
 ```bash
-gh pr view --json number,url,author,headRefName,baseRefName 2>&1
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] | {number,url:.html_url,author:{login:.user.login},headRefName:.head.ref,baseRefName:.base.ref}'
 gh api user --jq .login
 ```
 
-Use the current branch's PR unless the user gave a PR number/URL. No PR found → stop. Compare `author.login` with the authenticated login before any action: only the user's own PR can have automatic threads; every thread on someone else's PR goes through Step 4.
+Use the current branch's PR unless the user gave a PR number/URL (then `gh api repos/<owner>/<repo>/pulls/<number>`). No PR found → stop. Compare `author.login` with the authenticated login before any action: only the user's own PR can have automatic threads; every thread on someone else's PR goes through Step 4.
 
 ## Steps 2–3: Fetch and classify
 

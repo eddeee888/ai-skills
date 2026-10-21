@@ -10,7 +10,8 @@ Pick and keep one route exactly as `CONVENTIONS-github.md` → "GitHub access" s
 ## 1. Gate
 
 ```bash
-gh pr view [<number-or-url>] --json number,url,title,body,author,headRefOid,state,files,closingIssuesReferences 2>&1
+gh api repos/<owner>/<repo>/pulls/<number> --jq '{number,url:.html_url,title,body,author:{login:.user.login},headRefOid:.head.sha,state,merged}'
+gh api --paginate repos/<owner>/<repo>/pulls/<number>/files --jq '.[].filename'
 gh api user --jq .login
 ```
 

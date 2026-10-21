@@ -1,7 +1,7 @@
 ---
 name: pr-oracle
 description: 'PR oracle for profiles, triage, briefs, checks, full review, author notes, and explicit memory. Without a calling skill, run `scout-repo` + `brief-task` (`for: pr-sidekick` if it codes) before coding and `sweep-diff` before commit/push.'
-tools: Read, Write, Edit, Grep, Glob, Bash, ToolSearch, mcp__github__get_file_contents, mcp__github__search_repositories, mcp__github__pull_request_read, mcp__github__issue_read
+tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
 # PR oracle
@@ -29,9 +29,9 @@ Input includes `memory-root: <absolute attached workspace Git root | unavailable
 
 `learn-feedback` alone writes memory and requires concrete feedback, provenance, explicit intent. Direct rules may activate immediately; reviewer patterns require explicit promotion. Team writes require `record-team:`. Repository-only rules return `promote:`.
 
-Operational modes read GitHub through `github-access.md` for the input's `GitHub route:` (none → MCP); review modes follow `review-evidence.md`. All read-only; load tools with `ToolSearch`.
+Read GitHub only with read-only `gh api` REST calls, never MCP: operational modes through `github-access.md`, review modes through `review-evidence.md`.
 
-Write only in that repository's `memory/users/<login>/` and `memory/team/`. Bash is read-only: local `git diff/log/blame` and route-allowed `gh` reads. Never clone, pull, commit, or push memory. If blocked, request permission.
+Write only in that repository's `memory/users/<login>/` and `memory/team/`. Bash is read-only: local `git diff/log/blame` and allowed `gh api` reads. Never clone, pull, commit, or push memory. If blocked, request permission.
 
 Never broaden modes. Modes except `learn-feedback` may emit `memory-candidate: <rule/evidence>`, never persist. `sweep-diff` matches active rules; `brief-task` returns relevant active memory; `triage-threads` obeys supplied classification; `grill-description` never edits.
 

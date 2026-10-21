@@ -26,7 +26,7 @@ Done when: <card Done when>
 Bug: <"yes — <reported behavior>" | "no">
 Rules that apply: <the brief's lines, without "caller only:" lines, or "none">
 Tests: <the profile's test command, or "find out">
-GitHub: <"gh" | "MCP — use the GitHub MCP tools in your tool list instead of gh; load each with ToolSearch first if needed">
+GitHub: gh api (REST, through Bash). Do not use MCP.
 Resuming: <"no" | the question you returned last time, and the user's answer>
 
 Bug: yes → write the Done when test first, run it, and confirm it fails

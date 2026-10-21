@@ -13,17 +13,13 @@ Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
 login: <the user's login from Step 1>
 Rules that apply: <the threads' "remembered" lines and the "edit-rules" lines from triage-threads, or "none">
 Tests: <the profile's tests line, or "find out">
-GitHub: <"gh" | "MCP — use the GitHub MCP tools named below instead of gh; load each with ToolSearch first if needed">
+GitHub: gh api (REST, through Bash). Do not use MCP.
 Threads:
 1. <path>:<line>, comment id <databaseId> — <one-line ask>
 2. ...
 
 Read each thread's full comment with
   gh api repos/<owner>/<repo>/pulls/comments/<databaseId> --jq .body
-  (MCP: call pull_request_read method get_review_comments once, following
-  `after` through every page, and look up every thread above in that one
-  result — the comment whose html_url ends in #discussion_r<databaseId>.
-  Never refetch the list per thread.)
 For each thread in order: implement it (apply a suggestion block
 literally), run the tests affected by it with a quiet reporter, and commit
 it on its own once they pass. Stay inside each ask. If a thread needs more
