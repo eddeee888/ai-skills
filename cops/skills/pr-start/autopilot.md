@@ -80,7 +80,7 @@ Run four stages on the new PR, in this fixed order, never in parallel, and never
 3. `cops:pr-wrap-up` — rebase, then refresh the title, description and changeset.
 4. `cops:pr-note` — posts `Note:` and `Drive-by:` comments on the final diff without confirmation.
 
-Each stage is its own skill run. On Claude Code, call the Skill tool with the stage's name and `<PR URL> — autopilot stage of this pr-start run`. On Cursor, read the stage's SKILL.md ([pr-review](../pr-review/SKILL.md), [pr-address](../pr-address/SKILL.md), [pr-wrap-up](../pr-wrap-up/SKILL.md), [pr-note](../pr-note/SKILL.md)) and follow it.
+Each stage is its own skill run. On Claude Code, call the Skill tool with the stage's name and `<PR URL> cops:stage:<review|address|wrap-up|note>` (context may follow). On Cursor, read the stage's SKILL.md ([pr-review](../pr-review/SKILL.md), [pr-address](../pr-address/SKILL.md), [pr-wrap-up](../pr-wrap-up/SKILL.md), [pr-note](../pr-note/SKILL.md)) and follow it.
 
 A stage follows its own SKILL.md, including its `Handoffs:` list, with the autopilot difference each file names:
 

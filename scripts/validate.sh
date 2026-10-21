@@ -120,9 +120,9 @@ validate_orchestration_handoffs() {
 }
 
 # Keep the HQ pane's autopilot strip in step with autopilot.md → "The chain": AUTOPILOT_STAGES must
-# list its numbered `cops:` skills in order, and AUTOPILOT_SUFFIX must be the phrase its stage args end in.
+# list its numbered `cops:` skills in order, and stage args must carry the `cops:stage:<name>` marker.
 validate_autopilot_chain() {
-  local doc="$ROOT/cops/skills/pr-start/autopilot.md" hooks="$ROOT/cops/hooks/autopilot-chain.ts" expected actual suffix
+  local doc="$ROOT/cops/skills/pr-start/autopilot.md" hooks="$ROOT/cops/hooks/autopilot-chain.ts" expected actual
   expected="$(perl -ne '
     $in = 1 if /^## The chain/;
     next unless $in;
@@ -135,9 +135,8 @@ validate_autopilot_chain() {
   if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
     fail "$hooks" "AUTOPILOT_STAGES must list ${expected//$'\n'/, } in order, as in ${doc#"$ROOT"/} → The chain; got: ${actual//$'\n'/, }"
   fi
-  suffix="$(perl -ne "print \$1 if /^export const AUTOPILOT_SUFFIX = '([^']+)'/" "$hooks")"
-  if [ -z "$suffix" ] || ! grep -Fq "\`<PR URL> — $suffix\`" "$doc"; then
-    fail "$hooks" "AUTOPILOT_SUFFIX must be the phrase after the dash in ${doc#"$ROOT"/} → The chain; got: $suffix"
+  if ! grep -Fq 'cops:stage:<review|address|wrap-up|note>' "$doc" || ! grep -Fq 'cops:stage:' "$hooks"; then
+    fail "$hooks" "stage args must carry the cops:stage:<name> marker, as in ${doc#"$ROOT"/} → The chain"
   fi
 }
 

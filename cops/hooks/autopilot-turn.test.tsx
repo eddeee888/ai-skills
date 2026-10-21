@@ -109,7 +109,7 @@ describe('finished autopilot card', () => {
     await until({ check: async () => (await text()).includes('PR #81') })
     await $.command.run({ command: 'cops:pr-start', args: '--autopilot fix the thing', origin: { kind: 'composer' } } as never)
     for (const stage of ['review', 'address', 'wrap-up', 'note']) {
-      await $.tool.call({ tool: 'Skill', skill: `cops:pr-${stage}`, args: `${PR_URL} — autopilot stage of this pr-start run` })
+      await $.tool.call({ tool: 'Skill', skill: `cops:pr-${stage}`, args: `${PR_URL} cops:stage:${stage}` })
     }
     await $.turn.complete({ answer: 'Autopilot finished.' })
     await until({ check: async () => (await text()).includes('finished · still a draft') })
