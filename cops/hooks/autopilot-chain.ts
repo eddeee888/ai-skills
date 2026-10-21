@@ -4,12 +4,6 @@ import { isSameSkill, SPINNER, SPINNER_MS } from './pr-panel.ts'
 // The skills of pr-start's autopilot chain, in the order autopilot.md → "The chain" runs them.
 export const AUTOPILOT_STAGES = ['cops:pr-review', 'cops:pr-address', 'cops:pr-wrap-up', 'cops:pr-note']
 
-// A stage run carries `cops:stage:<review|address|wrap-up|note>` anywhere in its args, naming the stage its skill is.
-const isStageRun = ({ run }: { run: SkillRun }): boolean => {
-  const name = (run.args || '').match(/\bcops:stage:([\w-]+)/)?.[1]
-  return name !== undefined && AUTOPILOT_STAGES.some(stage => stage === `cops:pr-${name}` && isSameSkill({ a: run.skill, b: stage }))
-}
-
 export type ChainStep = {
   name: string
   /** `✓` done, `■` stopped here, `·` not started, `?` unknown, a spinner frame in flight, '' for `fix` once a stage ran. */
@@ -64,6 +58,11 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   turnEndedAt?: number | null
   now: number
 }): Chain | undefined => {
+  // A stage run carries `cops:stage:<review|address|wrap-up|note>` anywhere in its args, naming the stage its skill is.
+  const isStageRun = ({ run }: { run: SkillRun }): boolean => {
+    const name = (run.args || '').match(/\bcops:stage:([\w-]+)/)?.[1]
+    return name !== undefined && AUTOPILOT_STAGES.some(stage => stage === `cops:pr-${name}` && isSameSkill({ a: run.skill, b: stage }))
+  }
   // A later `--autopilot` run starts a new chain, so stage runs from before it belong to an earlier one.
   const latestStart = runs.findLast(isAutopilotStart)
   const stageRuns = runs

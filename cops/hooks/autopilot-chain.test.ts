@@ -203,7 +203,7 @@ describe('describeChain', () => {
     expect(describe_({ runs })?.line).toContain('fix ⠋ → review ·')
   })
 
-  test('the old phrase alone no longer counts', () => {
+  test('a stage run without the marker does not count', () => {
     const runs = [start({ at: 1 }), skill({ name: 'cops:pr-review', args: `${URL} — autopilot stage of this pr-start run`, at: 2 })]
     expect(describe_({ runs })?.line).toContain('fix ⠋ → review ·')
   })
