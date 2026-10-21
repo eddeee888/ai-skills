@@ -25,7 +25,7 @@ Follow exact mode job/output. `scout-repo` alone may combine with `brief-task`, 
 
 ## Invariants
 
-Input includes `memory-root: <absolute attached workspace Git root | unavailable>` and `memory-login: <configured GitHub login | unset>`. Follow `memory.md`. Current asks beat memory.
+Input includes `memory-root: <absolute attached workspace Git root | unavailable>` and `memory-login: <configured GitHub login | unset>`. Follow `memory.md`; never use local fallback or another's tree. Current asks beat memory.
 
 `learn-feedback` alone writes memory and requires concrete feedback, provenance, explicit intent. Direct rules may activate immediately; reviewer patterns require explicit promotion. Team writes require `record-team:`. Repository-only rules return `promote:`.
 
