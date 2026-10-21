@@ -6,24 +6,21 @@ Read this file only after Step 4 has settled every user decision and immediately
 
 Send low-risk threads to `pr-sidekick` as required by `CONVENTIONS-orchestration.md` → "Hand long loops to a subagent". Put at most 10 threads in a batch, keep same-file threads together, and run batches sequentially on the shared checkout. Do not survey the repo with an explorer first. Start no later batch until the current batch has passed every test, sweep, push, and reply gate.
 
-Use this exact prompt shape; it intentionally carries no full comment bodies:
+Use this exact prompt shape. On the gh route it carries no comment bodies; on the MCP route the sidekick has no GitHub access, so you put each thread's full comment body in the prompt (from the Step 2 fetch):
 
 ```text
 Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
 login: <the user's login from Step 1>
 Rules that apply: <the threads' "remembered" lines and the "edit-rules" lines from triage-threads, or "none">
 Tests: <the profile's tests line, or "find out">
-GitHub: <"gh" | "MCP — use the GitHub MCP tools named below instead of gh; load each with ToolSearch first if needed">
+GitHub: gh api (REST, through Bash). Do not use MCP.   <- gh route; on the MCP route: GitHub: none
 Threads:
 1. <path>:<line>, comment id <databaseId> — <one-line ask>
 2. ...
 
 Read each thread's full comment with
   gh api repos/<owner>/<repo>/pulls/comments/<databaseId> --jq .body
-  (MCP: call pull_request_read method get_review_comments once, following
-  `after` through every page, and look up every thread above in that one
-  result — the comment whose html_url ends in #discussion_r<databaseId>.
-  Never refetch the list per thread.)
+(MCP route: its full comment body follows its line, indented; read that.)
 For each thread in order: implement it (apply a suggestion block
 literally), run the tests affected by it with a quiet reporter, and commit
 it on its own once they pass. Stay inside each ask. If a thread needs more

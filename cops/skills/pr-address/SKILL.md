@@ -12,15 +12,17 @@ GitHub steps below are `gh` commands. Pick and keep one access route exactly as 
 ## Step 1: Identify the PR and whether it's the user's
 
 ```bash
-gh pr view --json number,url,author,headRefName,baseRefName 2>&1
+gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[0] // empty | {number,url:.html_url,author:{login:.user.login},headRefName:.head.ref,baseRefName:.base.ref}'
 gh api user --jq .login
 ```
 
-Use the current branch's PR unless the user gave a PR number/URL. No PR found → stop. Compare `author.login` with the authenticated login before any action: only the user's own PR can have automatic threads; every thread on someone else's PR goes through Step 4.
+Use the current branch's PR unless the user gave a PR number/URL (then `gh api repos/<owner>/<repo>/pulls/<number>`). No PR found → stop. Compare `author.login` with the authenticated login before any action: only the user's own PR can have automatic threads; every thread on someone else's PR goes through Step 4.
 
 ## Steps 2–3: Fetch and classify
 
-Read [classify.md](classify.md) now. Hand Steps 2–3 to `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `triage-threads` + `scout-repo` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo/number, the selected `GitHub route:`, login, whether the PR is the user's, and the entire contents of `classify.md` verbatim as the classification rules; do not pass a summary or the GraphQL query. As a pr-start autopilot stage (the exception under Step 4), also pass the line `autopilot: yes`; never pass it otherwise. If the stage prompt carries an `autopilot profile:` line, call `triage-threads` alone, pass that profile as the repo profile, and skip `scout-repo`; the handoffs label is then `triage-threads`. The oracle fetches threads through that route and returns both buckets, remembered-rule matches, possible inactive memory candidates, and the repo profile. Keep the profile's `tests` line and each thread's remembered rules for Step 5.
+Read [classify.md](classify.md) now. Hand Steps 2–3 to `cops:pr-oracle` on Claude Code or the `pr-oracle` subagent on Cursor in `triage-threads` + `scout-repo` mode (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent"). Pass owner/repo/number, the selected `GitHub route:`, login, whether the PR is the user's, and the entire contents of `classify.md` verbatim as the classification rules; do not pass a summary or the GraphQL query. As a pr-start autopilot stage (the exception under Step 4), also pass the line `autopilot: yes`; never pass it otherwise. If the stage prompt carries an `autopilot profile:` line, call `triage-threads` alone, pass that profile as the repo profile, and skip `scout-repo`; the handoffs label is then `triage-threads`. The oracle fetches threads and returns both buckets, remembered-rule matches, possible inactive memory candidates, and the repo profile. Keep the profile's `tests` line and each thread's remembered rules for Step 5.
+
+Oracle returns `gh api unavailable — read it in the main chat` → read the threads yourself through the selected route (on MCP, the inline path in [fetch-threads.md](fetch-threads.md)) and apply `classify.md` inline.
 
 If the user explicitly asked to remember concrete feedback, call `learn-feedback` separately with their intent and the feedback's provenance; team intent must be a `record-team:` line. Never fold it into the combined operational call. Show any other `memory-candidate:` lines to the user and ask whether to save them as inactive candidates; do not persist them without that consent.
 

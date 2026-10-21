@@ -7,7 +7,7 @@ description: 'Draft and file a GitHub bug report covering Context, Problem, Repr
 
 A bug report missing context, a clear problem statement, a reproduction, or its environment bounces back with "can you provide more details", costing a round trip. This skill drafts a complete report against four sections before anything is posted, and never files anything the user hasn't seen.
 
-GitHub steps below are `gh` commands. Without `gh` (e.g. Claude Code on the web), use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
+GitHub steps below are `gh api` commands. On the MCP route, use the GitHub MCP tool for each (`CONVENTIONS-github.md` → "GitHub access").
 
 ## Step 1: Ask for the repo
 
@@ -16,7 +16,7 @@ Always ask which repo the issue is for (`owner/repo` or a full GitHub URL) befor
 ## Step 2: Check for a duplicate
 
 ```bash
-gh issue list --repo <owner>/<repo> --search "<keywords>" --state all
+gh api -X GET search/issues -f q='repo:<owner>/<repo> is:issue <keywords>' --jq '.items[] | {number,title,state,html_url}'
 ```
 
 Close match → show it and ask whether to proceed anyway. Nothing close → continue.
@@ -81,7 +81,7 @@ Show the full drafted title and body verbatim before touching GitHub, as one que
 End the body with the `oss:issue-create` signature and the `Approved: <login>` part — the user confirmed it (`CONVENTIONS-posts.md` → "Skill signature"). Write the confirmed title and body to files first — never inline them in `--title "…"`/`--body "…"`, where backticks in a bug report's code run as shell commands (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
 ```bash
-gh issue create --repo <owner>/<repo> --title "$(cat <title-file>)" --body-file <body-file>
+gh api -X POST repos/<owner>/<repo>/issues -f title="$(cat <title-file>)" -F body=@<body-file> --jq .html_url
 ```
 
 Report the issue URL, and end with the handoffs list (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), with the label `scout-repo`. Verifying the issue (writing a failing test against it) is `issue-verify`'s job, if the user wants to go further. If the user doesn't maintain `<owner>/<repo>` or have a local checkout, say so plainly — `issue-verify` assumes write access and a local checkout; without them, the issue waits on its own maintainers.
@@ -90,5 +90,5 @@ Report the issue URL, and end with the handoffs list (`CONVENTIONS-orchestration
 
 - No repo given yet → ask before anything else; don't guess from context.
 - Reproduction missing or too vague → push back for a concrete one in Step 4 rather than drafting around the gap.
-- User hasn't confirmed the draft → never run `gh issue create`, even if every section looks filled in.
+- User hasn't confirmed the draft → never create the issue, even if every section looks filled in.
 - Multiple templates and unclear which fits → ask; don't default to the first alphabetically.

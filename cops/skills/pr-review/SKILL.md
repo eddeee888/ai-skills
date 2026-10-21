@@ -10,11 +10,12 @@ Keep one route per `CONVENTIONS-github.md` → "GitHub access".
 ## 1. Gate
 
 ```bash
-gh pr view [<number-or-url>] --json number,url,title,body,author,baseRefName,headRefName,headRefOid,isDraft,state,files 2>&1
+gh api repos/<owner>/<repo>/pulls/<number> --jq '{number,url:.html_url,title,body,author:{login:.user.login},baseRefName:.base.ref,headRefName:.head.ref,headRefOid:.head.sha,draft,state,merged}'
+gh api --paginate repos/<owner>/<repo>/pulls/<number>/files --jq '.[].filename'
 gh api user --jq .login
 ```
 
-MCP obtains equivalent `files` through the shared route contract.
+MCP: `pull_request_read` `get` and `get_files`.
 
 Use the named PR or the current branch's. Missing/closed/merged → stop. Keep `headRefOid` (full SHA). On the user's PR, mention impossible self-approval.
 

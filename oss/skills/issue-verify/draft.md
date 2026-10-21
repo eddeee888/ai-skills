@@ -54,7 +54,7 @@ Body:
 Write title and body to files, then run (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
 ```bash
-gh pr create --draft --title "$(cat <title-file>)" --body-file <body-file>
+gh api -X POST repos/<owner>/<repo>/pulls -F draft=true -f base=<default branch> -f head=<branch> -f title="$(cat <title-file>)" -F body=@<body-file> --jq .html_url
 ```
 
 Return the PR URL. Red checks are expected.

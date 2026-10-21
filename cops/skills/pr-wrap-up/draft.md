@@ -24,10 +24,10 @@ Conflicts → stop. Resolve only obvious ones (same file, clearly compatible cha
 ```bash
 git diff origin/<baseRefName>...HEAD --stat
 git log origin/<baseRefName>..HEAD --format='%h %s%n%b'
-gh pr view <number> --json body --jq .body
+gh api repos/<owner>/<repo>/pulls/<number> --jq .body
 ```
 
-Your prompt says `GitHub: MCP` → read the body with `pull_request_read` method `get` instead.
+On the MCP route, use the prompt's `PR body:` instead of the last command.
 
 Use the file list, commits, and PR body for the *why*, rather than guessing from the diff. Diff only files needed to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR; Step 7's `grill-description` reads it all.
 
