@@ -900,6 +900,19 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     'PR body:'
   forbid_markers "cops/references/pr-oracle/github-access.md" "MCP-only oracle access" \
     'Do not use `gh`'
+  for path in cops/agents/pr-oracle.md cops/agents/pr-sidekick.md; do
+    forbid_markers "$path" "subagents never use MCP" "mcp__github__" "ToolSearch"
+  done
+  for path in cops/skills/pr-address/implement.md cops/skills/pr-start/fix-loop.md \
+    cops/skills/pr-wrap-up/SKILL.md cops/skills/pr-review/fix-no-post.md; do
+    forbid_markers "$path" "sidekick GitHub line is gh api or none" 'GitHub: <"gh' "GitHub: MCP"
+  done
+  for path in "$ROOT"/cops/skills/*/*.md "$ROOT"/oss/skills/*/*.md; do
+    forbid_markers "${path#"$ROOT"/}" "skills read GitHub through gh api REST" "gh pr view"
+  done
+  for path in "$ROOT"/cops/skills/*/*.md; do
+    forbid_markers "${path#"$ROOT"/}" "skills write GitHub through gh api REST" "gh pr create"
+  done
   require_markers "cops/agents/pr-oracle.md" "loaded files report" \
     '`loaded: <files actually read'
   for path in cops/references/pr-oracle/modes/review-pr.md \
