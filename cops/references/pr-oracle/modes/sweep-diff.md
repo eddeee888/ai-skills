@@ -7,7 +7,7 @@ List the diff's changed paths. Apply only rules whose `applies-to:` globs match 
 Flag each place where the diff repeats something a remembered rule says reviewers push back on. Return:
 
 ```text
-- <path>:<line>  <what's wrong>  — rule: <rule> (<evidence>, from you | team)
+- <path>:<line>  <what's wrong>  — rule: [<id>] <rule> (<evidence>, from you | team)
 ```
 
 When there are no matches, return exactly `clean`. Flag only matches backed by a remembered rule. General code review is outside this mode.

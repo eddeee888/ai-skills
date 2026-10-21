@@ -127,6 +127,24 @@ describe('rule usage counting', () => {
     expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 3, firstSeen: DAY, lastSeen: NOW, recent: [DAY, 2 * DAY, NOW] })
   })
 
+  test('a rule cited by ID alone or with its ID counts under the hash of its text', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = { ruleUsage: { [hashRule({ text: 'Prefer early returns' })]: { count: 1, firstSeen: DAY, lastSeen: DAY, recent: [DAY] } } }
+    const files = {
+      [PERSONAL]: '## Everywhere\n- [U-014] Prefer early returns  (stated by user 2x)\n',
+      [TEAM]: '## Everywhere\n- [T-002] Keep tests beside the code  (stated by octocat)\n',
+    }
+    world({
+      on,
+      stored,
+      files,
+      replies: { 'mode: sweep-diff': '- a.ts:3  nested ifs  — rule: [U-014]\n- a.test.ts:1  test in a separate folder  — rule: [T-002] keep tests beside the code (stated by octocat, from team)' },
+    })
+    await oracle({ $, mode: 'sweep-diff' })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 2, firstSeen: DAY, lastSeen: NOW, recent: [DAY, NOW] })
+    expect(used({ stored, rule: 'Keep tests beside the code' })?.count).toBe(1)
+    expect(Object.keys(toRuleUsage({ stored: stored.ruleUsage }))).toHaveLength(2)
+  })
+
   test('counts nothing for unmatched text, no relevant memory, clean, or other modes', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
     world({
@@ -178,6 +196,18 @@ describe('Rules tab', () => {
     await ui.unmount()
   })
 
+  test('shows a rule with its ID, and the Prune prompt names it', MEMORY, async ($, on) => {
+    const { fills } = world({ on, files: { [PERSONAL]: '## Everywhere\n- [U-014] Prefer early returns  (stated by user)\n' } })
+    const ui = await mount({ $ })
+    await until({ check: async () => (await ui.find({ key: 'tab-rules' })) !== undefined })
+    await ui.press({ key: 'tab-rules' })
+    await until({ check: async () => (await text({ ui })).includes('Stale rules (1)') })
+    expect(await text({ ui })).toContain('[U-014] Prefer early returns · never seen')
+    await ui.press({ key: 'prune-0' })
+    expect(fills).toEqual(['Use learn-feedback to prune this remembered rule: [U-014] Prefer early returns'])
+    await ui.unmount()
+  })
+
   test('a stale team rule is pruned with a record-team: prompt', MEMORY, async ($, on) => {
     const { fills } = world({ on })
     const ui = await mount({ $ })
@@ -224,6 +254,11 @@ describe('parseEntries', () => {
       .toEqual(['prefer early returns', 'use `x()` (not `y`)'])
   })
 
+  test('keeps a rule\'s leading ID', () => {
+    expect(parseEntries({ text: '## Everywhere\n- [U-014] prefer early returns  (stated by user)\n- [T-002] use `x()` (not `y`)  (seen 3x)  applies-to: **/*.sh\n' }))
+      .toEqual(['[U-014] prefer early returns', '[T-002] use `x()` (not `y`)'])
+  })
+
   test('reads only the first MEMORY_LIMIT lines', () => {
     const lines = ['## Code', ...Array.from({ length: MEMORY_LIMIT + 5 }, (_, index) => `- rule ${index + 1}`)]
     const rules = parseEntries({ text: lines.join('\n') })
@@ -238,6 +273,13 @@ describe('parseReply', () => {
       .toEqual(['prefer early returns', 'ask before pushing'])
     expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: use `x()` (not `y`) (stated by user 2x, from you)' })).toEqual(['use `x()` (not `y`)'])
     expect(parseReply({ text: 'no relevant memory' })).toEqual([])
+  })
+
+  test('reads rules cited with their ID, or by ID alone', () => {
+    expect(parseReply({ text: '- [U-014] prefer early returns  (stated by user, from you)' })).toEqual(['[U-014] prefer early returns'])
+    expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: [U-014] prefer early returns (stated by user, from you)' })).toEqual(['[U-014] prefer early returns'])
+    expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: [U-014]' })).toEqual(['[U-014]'])
+    expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: [U-014] (stated by user, from you)' })).toEqual(['[U-014]'])
     expect(parseReply({ text: 'clean' })).toEqual([])
   })
 })
@@ -254,6 +296,21 @@ describe('matching', () => {
     expect(matchEntries({ entries, cited: ['prefer early returns, always', 'PREFER EARLY RETURNS'] })).toEqual(['Prefer early returns'])
     expect(matchEntries({ entries, cited: ['keep tests'] })).toEqual(['Keep tests beside the code'])
     expect(matchEntries({ entries, cited: ['use pnpm', ''] })).toEqual([])
+  })
+
+  test('an ID prefix changes neither the hash nor text matching', () => {
+    expect(normalize({ text: '[U-014] Prefer early returns.' })).toBe('prefer early returns')
+    expect(hashRule({ text: '[U-014] Prefer early returns' })).toBe(hashRule({ text: 'Prefer early returns' }))
+    expect(hashRule({ text: '[T-002] Prefer early returns' })).toBe(hashRule({ text: '[U-014] prefer  early returns' }))
+    const entries = ['[U-014] Prefer early returns', '[T-002] Keep tests beside the code']
+    expect(matchEntries({ entries, cited: ['prefer early returns, always'] })).toEqual(['[U-014] Prefer early returns'])
+    expect(matchEntries({ entries: ['Prefer early returns'], cited: ['[U-014] prefer early returns'] })).toEqual(['Prefer early returns'])
+  })
+
+  test('matches a cited ID to the entry with that ID, each entry once', () => {
+    const entries = ['[U-014] Prefer early returns', '[T-002] Keep tests beside the code']
+    expect(matchEntries({ entries, cited: ['[T-002]', '[T-002] keep tests'] })).toEqual(['[T-002] Keep tests beside the code'])
+    expect(matchEntries({ entries, cited: ['[U-099]', '[C-014]'] })).toEqual([])
   })
 })
 

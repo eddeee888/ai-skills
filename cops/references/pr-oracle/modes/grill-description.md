@@ -18,4 +18,6 @@ Return:
 - unsupported | missing | convention | style: <what>  — <fix>
 ```
 
+A style flag from memory names its rule as `[<id>] <rule>`.
+
 When there are no flags, return exactly `clean`.

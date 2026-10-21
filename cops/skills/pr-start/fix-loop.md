@@ -24,7 +24,7 @@ In scope: <card In scope bullets, joined with "; ">
 Out of scope: <card Out of scope bullets, joined with "; ">
 Done when: <card Done when>
 Bug: <"yes — <reported behavior>" | "no">
-Rules that apply: <the brief's lines, without "caller only:" lines, or "none">
+Rules that apply: <the brief's lines, IDs kept, without "caller only:" lines, or "none">
 Tests: <the profile's test command, or "find out">
 GitHub: gh api (REST, through Bash). Do not use MCP.
 Resuming: <"no" | the question you returned last time, and the user's answer>
@@ -111,7 +111,7 @@ Repo <owner>/<repo>, branch <branch> (checked out).
 login: <login>
 Commits: <sha list from the fix loop>
 Flags to fix:
-1. <path>:<line> — <what's wrong> — rule: <rule>
+1. <path>:<line> — <what's wrong> — rule: [<id>] <rule>
 2. ...
 Rules that apply: <same as the fix loop>
 Tests: <same as the fix loop>

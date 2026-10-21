@@ -11,7 +11,7 @@ Use this exact prompt shape. On the gh route it carries no comment bodies; on th
 ```text
 Repo <owner>/<repo>, PR #<number>, branch <headRefName> (already checked out).
 login: <the user's login from Step 1>
-Rules that apply: <the threads' "remembered" lines and the "edit-rules" lines from triage-threads, or "none">
+Rules that apply: <the threads' "remembered" lines and the "edit-rules" lines from triage-threads, IDs kept, or "none">
 Tests: <the profile's tests line, or "find out">
 GitHub: gh api (REST, through Bash). Do not use MCP.   <- gh route; on the MCP route: GitHub: none
 Threads:

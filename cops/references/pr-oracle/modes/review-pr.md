@@ -11,7 +11,7 @@ Each body starts with exactly one bold label:
 - `**Issue:**` names a concrete failing input/case. Critical behavior is always an issue and suggests a `// FIXME`; without a failing case, use a question.
 - `**Test:**` names the missing case for changed behavior, a fix, or a new branch; never merely asks for tests.
 
-One point: 1–2 sentences. Multiple: answer, then one bullet per point/source. Remove restatements, hedges, and closings. Sources are openable links: code uses saved-SHA GitHub permalinks with repo/path/line text; others use URLs. Allow PR-repo/public sources; omit private/sign-in sources and note this in `unverified`. Never mention memory or add signatures.
+One point: 1–2 sentences. Multiple: answer, then one bullet per point/source. Remove restatements, hedges, and closings. Sources are openable links: code uses saved-SHA GitHub permalinks with repo/path/line text; others use URLs. Allow PR-repo/public sources; omit private/sign-in sources and note this in `unverified`. Never mention memory or rule IDs, or add signatures.
 
 Return only:
 

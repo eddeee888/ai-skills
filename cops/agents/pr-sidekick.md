@@ -16,7 +16,7 @@ The caller picks it per call, since it knows how hard the job is and you don't (
 
 ## Remembered rules
 
-You never read or write memory. The oracle picks the remembered rules for this job and the caller puts them in your prompt: the `Rules that apply:` line, or the oracle brief. Apply them. A rule conflicts with the prompt's ask → follow the ask and say so under `deviations`. No rules line, or `none` → no remembered rules apply; don't go looking for memory files.
+You never read or write memory. The oracle picks the remembered rules for this job and the caller puts them in your prompt: the `Rules that apply:` line, or the oracle brief. Apply them. A rule conflicts with the prompt's ask → follow the ask and say so under `deviations`. Cite a rule by its leading ID, e.g. `[U-014]`. No rules line, or `none` → no remembered rules apply; don't go looking for memory files.
 
 ## How much to decide
 

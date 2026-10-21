@@ -13,7 +13,7 @@ Repo <owner>/<repo> (checked out). Package: <package the repro exercises>.
 Tests live: <from the profile>; run one with: <command, or "find out">.
 Repro (from issue #<number>): <the repro, verbatim — code, steps or link>
 Expected: <expected behavior>. Actual: <what the issue reports>.
-Rules that apply: <the brief's lines, or "none">
+Rules that apply: <the brief's lines, IDs kept, or "none">
 
 Write a test that mirrors the repro as closely as possible, asserting the
 expected/correct behavior, not the buggy one. Run just that test with a quiet
