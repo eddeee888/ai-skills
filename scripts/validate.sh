@@ -135,7 +135,8 @@ validate_autopilot_chain() {
   if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
     fail "$hooks" "AUTOPILOT_STAGES must list ${expected//$'\n'/, } in order, as in ${doc#"$ROOT"/} → The chain; got: ${actual//$'\n'/, }"
   fi
-  if ! grep -Fq 'cops:stage:<review|address|wrap-up|note>' "$doc" || ! grep -Fq 'cops:stage:' "$hooks"; then
+  local names="${expected//cops:pr-/}"
+  if ! grep -Fq "cops:stage:<${names//$'\n'/|}>" "$doc" || ! grep -Fq "match(/\\bcops:stage:" "$hooks"; then
     fail "$hooks" "stage args must carry the cops:stage:<name> marker, as in ${doc#"$ROOT"/} → The chain"
   fi
 }
