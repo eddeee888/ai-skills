@@ -58,7 +58,10 @@ export const describeChain = ({ runs, calls = [], view, turnEndedAt, now }: {
   turnEndedAt?: number | null
   now: number
 }): Chain | undefined => {
-  // A stage run carries `cops:stage:<review|address|wrap-up|note>` anywhere in its args, naming the stage its skill is.
+  // A stage run carries `cops:stage:<review|address|wrap-up|note>` anywhere in its args, naming the stage its skill is:
+  //   cops:pr-review, `<URL> cops:stage:review focus on tests` → true
+  //   cops:pr-review, `<URL> cops:stage:note`                  → false
+  //   cops:pr-review, `<URL>`                                  → false
   const isStageRun = ({ run }: { run: SkillRun }): boolean => {
     const name = (run.args || '').match(/\bcops:stage:([\w-]+)/)?.[1]
     return name !== undefined && AUTOPILOT_STAGES.some(stage => stage === `cops:pr-${name}` && isSameSkill({ a: run.skill, b: stage }))
