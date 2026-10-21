@@ -4,7 +4,7 @@ Read this at Step 3, while drafting the task card and before showing it.
 
 ## The line
 
-The card carries `Size: <Small|Medium|Large>` with the reason as a bullet under it, sized by `CONVENTIONS-pr-metadata.md` → "Task size". Write the name in full and give one or two concrete reasons taken from the card, such as `Size: Medium` over `- touches the shared retry helper and two packages`.
+The card carries `Size: <Small|Medium|Large>` with the reason as a bullet under it, sized by `CONVENTIONS-pr-metadata.md` → "Task size". Write the name in full and give one or two concrete reasons taken from the card, such as `Size: Medium` with `- touches the shared retry helper and two packages` as the bullet under it.
 
 The size is advisory, shown for the user to see. It gates nothing: the steps, the handoff, the model choice and what the run may do are the same at every size, and autopilot is still offered at Large, with an advisory note ([autopilot.md](autopilot.md)).
 
@@ -23,7 +23,7 @@ Use only what the card already says — Goal, Done when, In scope and Approach �
 
 When the task is an issue whose thread, already read as a task source, carries a comment signed by the `issue-analyze` skill that states a size, start from that size. With several such comments, use the newest.
 
-Only ever raise it: the card's scope or Approach reaching further than the analysis did moves the size up, and nothing on the card moves it down. Name the starting point in the reason, such as `Size: Large — sized Medium in the issue analysis; the Approach also changes the documented config shape`.
+Only ever raise it: the card's scope or Approach reaching further than the analysis did moves the size up, and nothing on the card moves it down. Name the starting point in the reason, such as `📏 Size: Large` with `- sized Medium in the issue analysis; the Approach also changes the documented config shape` as the bullet under it.
 
 ## When the card changes
 

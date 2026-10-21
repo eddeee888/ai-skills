@@ -698,6 +698,11 @@ validate_behavioral_contracts() {
     require_markers "$path" "shared task size" \
       '`CONVENTIONS-pr-metadata.md` → "Task size"'
   done
+  require_markers "cops/skills/pr-start/size.md" "size reason is a bullet under the Size line" \
+    'with `- touches the shared retry helper and two packages` as the bullet under it' \
+    '`📏 Size: Large` with `- sized Medium in the issue analysis;'
+  forbid_markers "cops/skills/pr-start/size.md" "size reason is a bullet under the Size line" \
+    '`Size: Large — sized Medium' 'over `- touches'
   require_markers "cops/skills/pr-start/fix-loop.md" "size raised after the loop" \
     'blast radius: <what>' 'Size: <card size> → <new size>'
   require_order "cops/skills/pr-start/SKILL.md" "task card Autopilot line" \
