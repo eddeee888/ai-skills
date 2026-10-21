@@ -27,6 +27,8 @@ git log origin/<baseRefName>..HEAD --format='%h %s%n%b'
 gh api repos/<owner>/<repo>/pulls/<number> --jq .body
 ```
 
+On the MCP route, use the prompt's `PR body:` instead of the last command.
+
 Use the file list, commits, and PR body for the *why*, rather than guessing from the diff. Diff only files needed to state the behavior change (`git diff origin/<baseRefName>...HEAD -- <path>`), not the whole PR; Step 7's `grill-description` reads it all.
 
 Empty diff → the PR is already current; say so and stop.

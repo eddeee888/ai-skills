@@ -23,7 +23,8 @@ Only the short ends run here. Steps 2–6 — rebase, reading the branch, change
    evidence manifest in the PR body also means recapture.md beside it.
    Oracle profile and brief: <what it returned, or "none">
    Resuming: <"no" | the question you returned last time, and the user's answer>
-   GitHub: gh api (REST, through Bash). Do not use MCP.
+   GitHub: gh api (REST, through Bash). Do not use MCP.   <- gh route; on the MCP route: GitHub: none
+   PR body: <on the MCP route, the body from Step 1; otherwise omit>
    Stop and return a question instead of guessing when the branch may be
    shared with someone else, a rebase conflict isn't obvious, or nothing
    states the motivation for Why. When resuming, use the answer and pick up

@@ -892,6 +892,12 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     '`gh api unavailable — read it in the main chat`'
   require_markers "cops/skills/pr-address/SKILL.md" "oracle sentinel handled by the main chat" \
     '`gh api unavailable — read it in the main chat`'
+  require_markers "cops/skills/pr-address/implement.md" "sidekick gets comment bodies on MCP" \
+    'GitHub: none' 'its full comment body'
+  require_markers "cops/skills/pr-wrap-up/SKILL.md" "sidekick gets the PR body on MCP" \
+    'GitHub: none' 'PR body:'
+  require_markers "cops/skills/pr-wrap-up/draft.md" "sidekick gets the PR body on MCP" \
+    'PR body:'
   forbid_markers "cops/references/pr-oracle/github-access.md" "MCP-only oracle access" \
     'Do not use `gh`'
   require_markers "cops/agents/pr-oracle.md" "loaded files report" \
