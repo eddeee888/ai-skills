@@ -498,7 +498,7 @@ validate_autopilot() {
   forbid_markers "$start" "autopilot line filled on every card" \
     "Size Small or Medium, or the flag was typed"
   require_markers "$auto" "autopilot read before every card" "before showing any card"
-  require_markers "$auto" "failed gate shows not offered" "\`Autopilot: not offered — <failed gate>\`"
+  require_markers "$auto" "failed gate shows not offered" "Autopilot: not offered — <failed gate>\`"
   require_markers "$auto" "card edit keeps the Autopilot line" \
     "After an edit, show the card again with its notes updated."
   forbid_markers "$auto" "card edit keeps the Autopilot line" "show the card again without it"
@@ -512,8 +512,8 @@ validate_autopilot() {
   # Autopilot is offered on every card past the two gate checks; Size, high-risk scope and an
   # observable-behavior Done when only add an advisory note.
   require_order "$auto" "autopilot always offered, with advisory notes" \
-    "## At the card" "every card shows \`Autopilot: offered\`" "the user's call" \
-    "\`Autopilot: offered — advisory: <notes>\`" "\`Large\` when the Size is Large" \
+    "## At the card" "the user's call" "the card shows no \`Autopilot:\` line unless a note applies" \
+    "under \`🤖 Autopilot: advisory\`" "\`Large\` when the Size is Large" \
     "\`high-risk scope (<area>)\`" "\`Done when is an observable behavior\`" \
     "blocks nothing" "## Fix loop and sweep"
   forbid_markers "$auto" "no autopilot refusal at the card" \
@@ -691,21 +691,33 @@ validate_behavioral_contracts() {
     "## 5. Sweep" 'Nothing is pushed before a clean `sweep-diff`' "git push"
 
   require_order "cops/skills/pr-start/SKILL.md" "task card Size line" \
-    "Approach: <one approach" "Size: <Small|Medium|Large>" "Confirm, or edit any line."
+    "- <one change per bullet, at most 3>" "Size: <Small|Medium|Large>" "- <reason>" \
+    "Confirm, or edit any line."
   for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/size.md \
     oss/skills/issue-analyze/size-bug.md oss/skills/issue-analyze/size-feature.md; do
     require_markers "$path" "shared task size" \
       '`CONVENTIONS-pr-metadata.md` → "Task size"'
   done
+  require_markers "cops/skills/pr-start/size.md" "size reason is a bullet under the Size line" \
+    'with `- touches the shared retry helper and two packages` as the bullet under it' \
+    '`📏 Size: Large` with `- sized Medium in the issue analysis;'
+  forbid_markers "cops/skills/pr-start/size.md" "size reason is a bullet under the Size line" \
+    '`Size: Large — sized Medium' 'over `- touches'
   require_markers "cops/skills/pr-start/fix-loop.md" "size raised after the loop" \
     'blast radius: <what>' 'Size: <card size> → <new size>'
   require_order "cops/skills/pr-start/SKILL.md" "task card Autopilot line" \
     "Size: <Small|Medium|Large>" \
-    "Autopilot: <offered | offered — advisory: <note> | not offered — <failed gate>>" "Confirm, or edit any line."
+    "Autopilot: <not offered — <failed gate> | advisory>" "- <advisory note, per autopilot.md>" \
+    "Confirm, or edit any line."
   validate_card_emoji
   require_order "cops/skills/pr-start/SKILL.md" "ordered autopilot checklist before the card" \
     "Before showing the card:" "Read [size.md](size.md) now" "flag or not" \
-    "Fill \`Autopilot:\`; never blank." "Goal: <one line>"
+    "Goal: <one line>"
+  require_markers "cops/skills/pr-start/SKILL.md" "task card always shows the Branch line" \
+    "🌿 Branch: <current branch | new <type>/<short-slug> from <default branch>>" \
+    "- **Branch** → always shown"
+  forbid_markers "cops/skills/pr-start/SKILL.md" "task card always shows the Branch line" \
+    "only on a new branch" "the current branch is not shown"
   require_markers "cops/skills/pr-start/SKILL.md" "raised size reported at wrap-up" \
     "a raised Size"
 
@@ -753,9 +765,8 @@ validate_behavioral_contracts() {
   require_markers "cops/skills/pr-start/SKILL.md" "card brief request" \
     "with \`for: pr-sidekick\` and \`for: task-card\`"
   require_order "cops/skills/pr-start/SKILL.md" "required task card Evidence line" \
-    "Done when: <a test" "Evidence: <kind> — <scenario>, <scenario> (before/after) | none — <why>" \
-    "In scope:" "**Evidence** (required)" "An edit stands; it doesn't re-run \`brief-task\`." \
-    "Shown in the PR body."
+    "Done when: <a test" "Evidence: <kind> | none — <why>" "- <scenario> (before/after)" \
+    "In scope:" "**Evidence** (required)" "An edit stands; it doesn't re-run \`brief-task\`."
   forbid_markers "cops/skills/pr-start/SKILL.md" "Evidence line is required" \
     "**Evidence** (optional)" "omitted when the profile's" "nothing captures it"
   require_markers "cops/skills/pr-start/fix-loop.md" "capture handoff" \
