@@ -350,7 +350,7 @@ validate_descriptions() {
 validate_budgets() {
   local path filename count limit
   check_budget "CONVENTIONS.md" 500 "convention file"
-  check_budget "CONVENTIONS-orchestration.md" 1462 "convention file"
+  check_budget "CONVENTIONS-orchestration.md" 1464 "convention file"
   check_budget "CONVENTIONS-github.md" 600 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 786 "convention file"
@@ -384,8 +384,8 @@ validate_budgets() {
   review_files=(
     "cops/skills/pr-review/SKILL.md:410"
     "cops/skills/pr-review/post-review.md:220"
-    "cops/agents/pr-oracle.md:400"
-    "cops/references/pr-oracle/memory.md:220"
+    "cops/agents/pr-oracle.md:405"
+    "cops/references/pr-oracle/memory.md:233"
     "cops/references/pr-oracle/review-evidence.md:260"
     "cops/references/pr-oracle/modes/review-pr.md:420"
   )

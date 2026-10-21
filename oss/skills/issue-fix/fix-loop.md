@@ -13,7 +13,7 @@ Repo <owner>/<repo>, branch <branch> (already checked out), on top of
 checkpoint commit <verify-commit-sha> (the oss:issue-verify checkpoint).
 Failing test: <path> — run it with: <command from the profile, or "find out">
 Fix to make: <the chosen option, in two or three lines>
-Rules that apply: <the brief's lines, or "none">
+Rules that apply: <the brief's lines, IDs kept, or "none">
 
 Make only this fix, nothing broader. The failing test is the acceptance
 criterion. Never rewrite, squash, or drop the checkpoint commit.

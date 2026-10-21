@@ -17,16 +17,17 @@ Apply `learning.md`:
 3. Move a reviewer candidate into personal `MEMORY.md` only when the user explicitly asks to promote that candidate.
 4. Write team memory only for a literal `record-team:` line.
 5. Return repository-specific rules as `promote:` instead of storing them.
+6. Assign, keep, and retire rule IDs as `learning.md` → "IDs" says; never reuse one.
 
 Return exactly:
 
 ```text
 personal:
-  recorded: <rule | none>
-  candidate: <rule and provenance | none>
-  promoted: <rule | none>
+  recorded: <[U-nnn] rule | none>
+  candidate: <[C-nnn] rule and provenance | none>
+  promoted: <[C-nnn] → [U-nnn] rule | none>
 team:
-  recorded: <rule | none>
+  recorded: <[T-nnn] rule | none>
 promote:
   - <repository-specific rule | none>
 ```

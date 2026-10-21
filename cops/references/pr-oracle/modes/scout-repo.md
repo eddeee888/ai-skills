@@ -27,4 +27,4 @@ Given `profile:`, return it with `overrides:` rebuilt from current memory and re
 
 When repository `CLAUDE.md` or `CONTRIBUTING.md` states a fact differently from an inference, the repository file wins.
 
-`overrides:` lists every section marked *Default* in the shared convention set for which repository `CLAUDE.md`, repository `CONTRIBUTING.md`, team memory, or personal memory says to do something different. When several sources differ, name only the strongest in this order: repository `CLAUDE.md`, repository `CONTRIBUTING.md`, team, personal. Follow “Defaults and contracts” in `CONVENTIONS.md`. Never list a contract section.
+`overrides:` lists every section marked *Default* in the shared convention set for which repository `CLAUDE.md`, repository `CONTRIBUTING.md`, team memory, or personal memory says to do something different. A team or personal source adds the rule's ID, e.g. `(you [U-014])`. When several sources differ, name only the strongest in this order: repository `CLAUDE.md`, repository `CONTRIBUTING.md`, team, personal. Follow “Defaults and contracts” in `CONVENTIONS.md`. Never list a contract section.

@@ -5,7 +5,7 @@ Input: ask and affected files, or `PR description` for `cops:pr-wrap-up`, and op
 Return only applicable active rules, most relevant first, with evidence:
 
 ```text
-- <rule>  (<evidence from the entry>, from you | team)
+- [<id>] <rule>  (<evidence from the entry>, from you | team)
 ```
 
 If none, return exactly `no relevant memory`. Never pad.

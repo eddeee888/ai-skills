@@ -37,14 +37,19 @@ const stripEvidence = ({ text }: { text: string }): string => {
   return trimmed
 }
 
-// Rule text as matching compares it:
-//   '  Prefer   early returns. ' → 'prefer early returns'
-//   'Keep tests beside code;:'   → 'keep tests beside code'
-export const normalize = ({ text }: { text: string }): string =>
-  text.toLowerCase().replace(/\s+/g, ' ').trim().replace(/[\s.,;:!?…]+$/, '')
+// A rule's leading permanent ID, `[U-nnn]` personal, `[C-nnn]` candidate or `[T-nnn]` team, with the ID in group 1:
+//   '[U-014] prefer early returns' → 'U-014'
+const RULE_ID = /^\s*\[([UCT]-\d+)\]\s*/
 
-// A short key for a rule without its evidence, so a changing `2x` keeps it (FNV-1a over the normalized text):
-//   'Prefer early returns.' and 'prefer  early returns' → the same key
+// Rule text as matching compares it, without its ID:
+//   '  Prefer   early returns. '    → 'prefer early returns'
+//   'Keep tests beside code;:'      → 'keep tests beside code'
+//   '[U-014] Prefer early returns'  → 'prefer early returns'
+export const normalize = ({ text }: { text: string }): string =>
+  text.replace(RULE_ID, '').toLowerCase().replace(/\s+/g, ' ').trim().replace(/[\s.,;:!?…]+$/, '')
+
+// A short key for a rule without its ID or evidence, so a changing `2x` or a new ID keeps it (FNV-1a over the normalized text):
+//   'Prefer early returns.', 'prefer  early returns' and '[U-014] Prefer early returns' → the same key
 export const hashRule = ({ text }: { text: string }): string => {
   let hash = 0x811c9dc5
   for (const char of normalize({ text })) {
@@ -54,8 +59,9 @@ export const hashRule = ({ text }: { text: string }): string => {
   return hash.toString(16).padStart(8, '0')
 }
 
-// The rules of a MEMORY.md's first MEMORY_LIMIT lines, the ones the oracle reads, without their evidence: top-level `- ` bullets under `## ` headings:
+// The rules of a MEMORY.md's first MEMORY_LIMIT lines, the ones the oracle reads, with their IDs but without their evidence: top-level `- ` bullets under `## ` headings:
 //   '# Memory\n- loose\n## Code\n- prefer early returns  (stated by user 2x)\n  - detail' → ['prefer early returns']
+//   '## Everywhere\n- [U-014] prefer early returns  (stated by user)'                      → ['[U-014] prefer early returns']
 //   a rule on line MEMORY_LIMIT + 1                                                          → left out
 export const parseEntries = ({ text }: { text: string }): string[] => {
   const rules: string[] = []
@@ -80,6 +86,8 @@ export const parseEntries = ({ text }: { text: string }): string[] => {
 //   '- prefer early returns  (stated by user 2x, from you)'                          → ['prefer early returns']
 //   'caller only:\n- ask before pushing  (seen 2x, from you)'                        → ['ask before pushing']
 //   '- a.ts:3  nested ifs  — rule: prefer early returns (stated by user 2x, from team)' → ['prefer early returns']
+//   '- a.ts:3  nested ifs  — rule: [U-014] prefer early returns (stated by user)'     → ['[U-014] prefer early returns']
+//   '- a.ts:3  nested ifs  — rule: [U-014]'                                           → ['[U-014]']
 //   'no relevant memory', 'clean'                                                    → []
 export const parseReply = ({ text }: { text: string }): string[] =>
   text.split('\n').flatMap(line => {
@@ -91,17 +99,20 @@ export const parseReply = ({ text }: { text: string }): string[] =>
     return rule ? [rule] : []
   })
 
-// The entries a reply's rules match, each once: equal once normalized, or one a prefix of the other:
+// The entries a reply's rules match, each once: the same ID, or text equal once normalized, or one a prefix of the other:
 //   entries ['prefer early returns', 'keep tests beside code'], cited ['Prefer early returns, always.'] → ['prefer early returns']
 //   entries ['prefer early returns'], cited ['prefer'] → ['prefer early returns']
 //   entries ['prefer early returns'], cited ['use pnpm'] → []
+//   entries ['[U-014] prefer early returns'], cited ['[U-014]'] → ['[U-014] prefer early returns']
 export const matchEntries = ({ entries, cited }: { entries: string[]; cited: string[] }): string[] => {
+  const ids = cited.flatMap(text => RULE_ID.exec(text)?.[1] ?? [])
   const rules = cited.map(text => normalize({ text })).filter(Boolean)
-  return entries.filter((entry, index) => {
+  const matched = entries.filter(entry => {
     const own = normalize({ text: entry })
-    const isFirst = entries.findIndex(other => normalize({ text: other }) === own) === index
-    return own !== '' && isFirst && rules.some(rule => rule === own || rule.startsWith(own) || own.startsWith(rule))
+    const id = RULE_ID.exec(entry)?.[1]
+    return own !== '' && ((id !== undefined && ids.includes(id)) || rules.some(rule => rule === own || rule.startsWith(own) || own.startsWith(rule)))
   })
+  return matched.filter((entry, index) => matched.findIndex(other => normalize({ text: other }) === normalize({ text: entry })) === index)
 }
 
 // The usage after one reply matched `keys`, at `now`:
