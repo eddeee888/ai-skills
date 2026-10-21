@@ -107,13 +107,12 @@ export const parseReply = ({ text }: { text: string }): string[] =>
 export const matchEntries = ({ entries, cited }: { entries: string[]; cited: string[] }): string[] => {
   const ids = cited.flatMap(text => RULE_ID.exec(text)?.[1] ?? [])
   const rules = cited.map(text => normalize({ text })).filter(Boolean)
-  return entries.filter((entry, index) => {
+  const matched = entries.filter(entry => {
     const own = normalize({ text: entry })
     const id = RULE_ID.exec(entry)?.[1]
-    const isFirst = entries.findIndex(other => normalize({ text: other }) === own) === index
-    const isCited = (id !== undefined && ids.includes(id)) || rules.some(rule => rule === own || rule.startsWith(own) || own.startsWith(rule))
-    return own !== '' && isFirst && isCited
+    return own !== '' && ((id !== undefined && ids.includes(id)) || rules.some(rule => rule === own || rule.startsWith(own) || own.startsWith(rule)))
   })
+  return matched.filter((entry, index) => matched.findIndex(other => normalize({ text: other }) === normalize({ text: entry })) === index)
 }
 
 // The usage after one reply matched `keys`, at `now`:

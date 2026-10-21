@@ -312,6 +312,11 @@ describe('matching', () => {
     expect(matchEntries({ entries, cited: ['[T-002]', '[T-002] keep tests'] })).toEqual(['[T-002] Keep tests beside the code'])
     expect(matchEntries({ entries, cited: ['[U-099]', '[C-014]'] })).toEqual([])
   })
+
+  test('counts a cited ID whose text another entry shares', () => {
+    const entries = ['[U-003] Keep tests beside the code', '[T-001] Keep tests beside the code']
+    expect(matchEntries({ entries, cited: ['[T-001]'] })).toHaveLength(1)
+  })
 })
 
 describe('usage', () => {
