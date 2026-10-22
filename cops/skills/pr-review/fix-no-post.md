@@ -44,10 +44,10 @@ The user's Step 3 choice is the approval (`CONVENTIONS-pr-metadata.md` → "Comm
 
 ## Sweep and push
 
-Call `pr-oracle` in `sweep-diff` mode over the new commits, from the commit before the loop through `HEAD`, with the selected `GitHub route:` and `memory-root:` / `memory-login:`, on its tier's model (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent").
+Call `pr-oracle` in `sweep-diff` mode once over the round (`CONVENTIONS-orchestration.md` → "Round"), from the commit before the loop through `HEAD`, with the selected `GitHub route:` and `memory-root:` / `memory-login:`, on its tier's model (`CONVENTIONS-orchestration.md` → "Consulting the `pr-oracle` agent").
 
 - `clean` → `git push`.
-- In-scope flags → one follow-up sidekick handoff with only those flags and the commit SHAs; it commits and does not push. Sweep that commit once more: `clean` → push; any flag → stop and bring it to the user.
+- In-scope flags → one follow-up sidekick handoff with only those flags and the commit SHAs; it commits and does not push. Its commit stays in the round; re-sweep only that commit: `clean` → push; any flag → stop and bring it to the user.
 - A flag outside the findings → bring it to the user; don't widen the PR.
 
 No commits → push nothing.

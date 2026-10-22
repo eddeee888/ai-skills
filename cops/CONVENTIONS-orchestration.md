@@ -2,19 +2,19 @@
 
 ## Hand long loops to a subagent
 
-When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems pure overhead, say so and ask; never silently skip.
+When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems overhead, ask; never silently skip.
 
 - **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Other read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
-- **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from session context's `COPS models:` line as the call's model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
+- **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from the `COPS models:` line as the model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
-- **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes needed output, with `for: pr-sidekick` on `brief-task`.
+- **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes output, with `for: pr-sidekick` on `brief-task`.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
-- **Short results.** Return only requested lines; return a question rather than guess. Main chat asks the user, then respawns with the answer.
-- **Every spawn/check is a main-chat step.** Batch as instructed.
-- **Foreground when dependent.** Run a call in the foreground when the next step needs its result; background only independent work.
+- **Short results.** Return only requested lines; a question, not a guess. Main chat asks the user, then respawns with the answer.
+- **Round.** Every spawn/check is a main-chat step. A round's fix commits get one `sweep-diff` (pre-round to `HEAD`) and one push; a sweep follow-up's commit gets one more sweep.
+- **Foreground when dependent.** Run in the foreground when the next step needs its result; background only independent work.
 - **Bounded retries.** "Until" allows at most 3 attempts. After the third, stop, leave work uncommitted, and report attempts and remaining failure; do not respawn unasked.
-- **Resume, don't restart.** After a question, carry question+answer and resume at that step, checking completed rebase/commit/push work.
-- **No way to spawn** means no subagent tool at all, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
+- **Resume, don't restart.** After a question, carry question+answer and resume, checking completed rebase/commit/push work.
+- **No way to spawn** means no subagent tool, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
 
 Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-wrap-up` (Steps 2–6); `cops:pr-review` (`review-pr`, fix loop); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
 
@@ -43,7 +43,7 @@ Final-report users: every `cops` and `oss` skill.
 
 `oss` works alone; when installed, `cops` supplies `pr-oracle`, `pr-sidekick`, and `pr-wrap-up`.
 
-- **How to tell.** Installed when this session has `cops:pr-oracle`, `cops:pr-sidekick`, `/cops:pr-wrap-up` on Claude Code; or `pr-oracle`, `pr-sidekick`, `/pr-wrap-up` on Cursor. Check once and cache. Cursor itself is never "missing".
+- **How to tell.** Installed when this session has `cops:pr-oracle`, `cops:pr-sidekick`, `/cops:pr-wrap-up` on Claude Code; or `pr-oracle`, `pr-sidekick`, `/pr-wrap-up` on Cursor. Check once and cache. Cursor is never missing.
 - **Missing → fall back, never stop or ask for installation.** `pr-oracle` → perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → general-purpose/subagent fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
 - **Defaults without the oracle.** With no profile/`overrides:`, inspect repo `CLAUDE.md` and `CONTRIBUTING.md` before applying a *Default*.
 
@@ -59,15 +59,15 @@ Without `cops`, give only a manual-update `pr-wrap-up` line.
 
 ## Autopilot runs
 
-The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card naming every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-wrap-up`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`.
+The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card naming every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-wrap-up`, and `cops:pr-note` in that order, each its own skill run with its own `Handoffs:`.
 
-- **The card is the only prompt.** Stages post and push without further confirmation and suggest no next step.
+- **The card is the only prompt.** Stages post and push without confirmation and suggest no next step.
 - **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft; the user's own "resume the rest with autopilot" continues it.
 - **Only that run starts a stage.** No other skill or stage argument does.
 
 ## Consulting the `pr-oracle` agent
 
-Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
+Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
 - Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle` with the mode and every listed input. Foreground or background follows "Hand long loops to a subagent".
 - **Model by tier.** A call takes its mode's tier, or a combined call's highest; a mode's fallback subagent takes the same. Pass the model as "Hand long loops to a subagent" says.
