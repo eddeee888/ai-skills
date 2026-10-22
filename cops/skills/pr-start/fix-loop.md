@@ -124,4 +124,4 @@ Return one line per flag: fixed (sha) | skipped (why) — then one line for
 the test run.
 ```
 
-Skipped flags go to the user before Step 6. After this follow-up, SKILL.md Step 5 sweeps its commit once more before Step 6.
+Skipped flags go to the user before Step 6. The follow-up's commit stays in the same round (`CONVENTIONS-orchestration.md` → "Round"): SKILL.md Step 5 re-sweeps the round range before Step 6. User-directed chat fixes are committed locally, swept once, pushed once.
