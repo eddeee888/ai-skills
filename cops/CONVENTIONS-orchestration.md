@@ -2,19 +2,19 @@
 
 ## Hand long loops to a subagent
 
-When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems pure overhead, ask; never silently skip.
+When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems overhead, ask; never silently skip.
 
 - **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Other read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
 - **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from the `COPS models:` line as the model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
-- **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes needed output, with `for: pr-sidekick` on `brief-task`.
+- **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes output, with `for: pr-sidekick` on `brief-task`.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
 - **Short results.** Return only requested lines; a question, not a guess. Main chat asks the user, then respawns with the answer.
-- **Round.** Every spawn/check is a main-chat step. A round's fix commits get one `sweep-diff` (pre-round to `HEAD`), one push.
-- **Foreground when dependent.** Run a call in the foreground when the next step needs its result; background only independent work.
+- **Round.** Every spawn/check is a main-chat step. A round's fix commits get one `sweep-diff` (pre-round to `HEAD`) and one push; a sweep follow-up's commit gets one more sweep.
+- **Foreground when dependent.** Run in the foreground when the next step needs its result; background only independent work.
 - **Bounded retries.** "Until" allows at most 3 attempts. After the third, stop, leave work uncommitted, and report attempts and remaining failure; do not respawn unasked.
 - **Resume, don't restart.** After a question, carry question+answer and resume, checking completed rebase/commit/push work.
-- **No way to spawn** means no subagent tool at all, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
+- **No way to spawn** means no subagent tool, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
 
 Required handoffs: `cops:pr-address` (5a batches, 5b research); `cops:pr-wrap-up` (Steps 2–6); `cops:pr-review` (`review-pr`, fix loop); `cops:pr-note` (`draft-author-notes`); `cops:pr-start` (fix loop); `oss:issue-fix` (root cause, implementation); `oss:issue-verify` (failing test); `oss:issue-analyze` (code survey).
 
@@ -55,19 +55,19 @@ A skill never runs another skill to finish, except under "Autopilot runs"; it on
 - An existing PR was pushed; title/body may be stale → `The PR's title and description may now be stale; /cops:pr-wrap-up will update them.` (`/pr-wrap-up` on Cursor).
 - No thread comment by anyone else and no user `Note:`/`Drive-by:` in either label form → `/cops:pr-note will post your reasoning and drive-bys as inline comments for reviewers.` (`/pr-note` on Cursor).
 
-Without `cops`, give only a manual `pr-wrap-up` line.
+Without `cops`, give only a manual-update `pr-wrap-up` line.
 
 ## Autopilot runs
 
-The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card naming every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-wrap-up`, and `cops:pr-note` in that order, each as its own skill run with its own `Handoffs:`.
+The one exception to "Suggesting next steps". Once the user confirms a `/cops:pr-start` task card naming every outward action it authorises, that run opens the draft PR, then runs `cops:pr-review`, `cops:pr-address`, `cops:pr-wrap-up`, and `cops:pr-note` in that order, each its own skill run with its own `Handoffs:`.
 
-- **The card is the only prompt.** Stages post and push without further confirmation and suggest no next step.
+- **The card is the only prompt.** Stages post and push without confirmation and suggest no next step.
 - **Nothing is asked mid-run.** Any failure or subagent question ends the run, leaving the PR a draft; the user's own "resume the rest with autopilot" continues it.
 - **Only that run starts a stage.** No other skill or stage argument does.
 
 ## Consulting the `pr-oracle` agent
 
-Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine required operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
+Skills call it at their named points in modes `scout-repo`, `triage-threads`, `brief-task`, `sweep-diff`, `grill-description`, `review-pr`, `draft-author-notes`, and `learn-feedback`. At one point combine operational modes: `scout-repo` + `brief-task`, `triage-threads` + `scout-repo`, or `scout-repo` + `sweep-diff`. Review and learning modes are always separate calls.
 
 - Claude Code calls `cops:pr-oracle`; Cursor delegates to `pr-oracle` with the mode and every listed input. Foreground or background follows "Hand long loops to a subagent".
 - **Model by tier.** A call takes its mode's tier, or a combined call's highest; a mode's fallback subagent takes the same. Pass the model as "Hand long loops to a subagent" says.
@@ -78,7 +78,7 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
   | `standard` | reading, summarising, drafting | `scout-repo`, `triage-threads`, `sweep-diff`, `grill-description`, `learn-feedback` |
   | `deep` | finding bugs, judging trade-offs | `review-pr`, `draft-author-notes` |
 - **Optional only when missing.** If `cops` is absent, perform the step inline, continue, and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
-- **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory conflicts to the user.
+- **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known; always include the selected `GitHub route:`. Later `scout-repo` calls get the run's first profile as `profile:`; `overrides:` is rebuilt from current memory. Review modes get owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
 - **Check what it loaded.** Every reply's `loaded:` must include `memory.md` and `modes/<mode>.md` per named mode. Missing or no `loaded:` → call again once, naming the missing files to read first. Still missing → use the reply and mark the handoff `✓ (incomplete load: <files>)`.
