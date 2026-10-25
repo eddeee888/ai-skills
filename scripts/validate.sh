@@ -718,7 +718,7 @@ validate_behavioral_contracts() {
     "- **Branch** → always shown"
   forbid_markers "cops/skills/pr-start/SKILL.md" "task card always shows the Branch line" \
     "only on a new branch" "the current branch is not shown"
-  require_markers "cops/skills/pr-start/SKILL.md" "raised size reported at wrap-up" \
+  require_markers "cops/skills/pr-start/open-pr.md" "raised size reported at wrap-up" \
     "a raised Size"
 
   require_markers "CONVENTIONS-evidence.md" "evidence contract" \
@@ -739,7 +739,9 @@ validate_behavioral_contracts() {
     "collapsed \`<details>\` evidence manifest" "keeps all of it verbatim"
   forbid_markers "cops/skills/pr-start/SKILL.md" "Before/After rules live in the convention" \
     "same names and order"
-  require_markers "cops/skills/pr-start/SKILL.md" "Before/After pointer" \
+  forbid_markers "cops/skills/pr-start/open-pr.md" "Before/After rules live in the convention" \
+    "same names and order"
+  require_markers "cops/skills/pr-start/open-pr.md" "Before/After pointer" \
     '`CONVENTIONS-verification.md` → "Before and After"'
   require_markers "cops/skills/pr-wrap-up/draft.md" "keep Before/After and manifest" \
     "Keep existing \`### Before\` / \`### After\`" "evidence manifest verbatim" \
@@ -776,16 +778,23 @@ Scratch only" "At most 3 attempts per scenario" "\`not-captured — <reason>\`"
     "Phase:" "\`after\`"
   require_order "cops/skills/pr-start/fix-loop.md" "capture handoff before the size check" \
     "## Fix-loop handoff" "## Capture handoff" "## Size after the loop"
-  require_markers "cops/skills/pr-start/SKILL.md" "after left to pr-wrap-up" \
+  require_markers "cops/skills/pr-start/open-pr.md" "after left to pr-wrap-up" \
     'pending: run /cops:pr-wrap-up' "suggest \`/cops:pr-wrap-up\`"
   require_markers "cops/skills/pr-start/SKILL.md" "manifest step" \
-    "## 5b. Write the evidence manifest" "Write the \`<details>\` manifest block" \
+    "## 5b. Write the evidence manifest" "Write the \`<details>\` manifest block"
+  require_markers "cops/skills/pr-start/open-pr.md" "manifest step" \
     "\`### Before\` then \`### After\` under it" "evidence never holds the PR"
-  forbid_markers "cops/skills/pr-start/SKILL.md" "nothing is published to a branch" \
-    "publish scratch" "worktree" "not published"
-  require_order "cops/skills/pr-start/SKILL.md" "manifest after sweep, before the body" \
-    "## 5. Sweep" "## 5b. Write the evidence manifest" "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
-  for path in cops/skills/pr-start/SKILL.md \
+  require_markers "cops/skills/pr-start/SKILL.md" "open-pr.md is read at Step 6" \
+    "Read [open-pr.md](open-pr.md) now"
+  for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/open-pr.md; do
+    forbid_markers "$path" "nothing is published to a branch" \
+      "publish scratch" "worktree" "not published"
+  done
+  require_order "cops/skills/pr-start/SKILL.md" "manifest after sweep, before the push" \
+    "## 5. Sweep" "## 5b. Write the evidence manifest" "## 6. Push and open the PR"
+  require_order "cops/skills/pr-start/open-pr.md" "before and after under the body" \
+    "## 6. Push and open the PR" "\`### Before\` then \`### After\`"
+  for path in cops/skills/pr-start/SKILL.md cops/skills/pr-start/open-pr.md \
     cops/skills/pr-start/fix-loop.md CONVENTIONS-evidence.md; do
     forbid_markers "$path" "no evidence branch" "cops-evidence"
   done
