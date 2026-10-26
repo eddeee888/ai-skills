@@ -58,7 +58,7 @@ A sweep flag that SKILL.md would bring to the user stops the run too.
 
 ## Open the PR
 
-Step 6, with two additions:
+open-pr.md Step 6, with two additions:
 
 - After creating, `gh api -X POST repos/<owner>/<repo>/issues/<number>/labels -f 'labels[]=autopilot'` (MCP: `issue_write` `update` with `labels`).
 - The body file opens, above the template or `## Why`, with the banner:
@@ -114,7 +114,7 @@ gh api -X POST repos/<owner>/<repo>/issues/<number>/assignees -f 'assignees[]=<l
 
 MCP: `issue_write` `update` with `assignees` (`CONVENTIONS-github.md` → "GitHub access").
 
-Report as Step 7 says, adding each stage's result in one line, the open threads (label, `path:line`), held `memory-candidate:` lines, and each `pending: drop`, `stale`, `manual` and `not-captured` scenario; evidence never holds the finish step. End with `gh pr ready <number>`.
+Report as open-pr.md Step 7 says, adding each stage's result in one line, the open threads (label, `path:line`), held `memory-candidate:` lines, and each `pending: drop`, `stale`, `manual` and `not-captured` scenario; evidence never holds the finish step. End with `gh pr ready <number>`.
 
 ## Stops
 
@@ -127,4 +127,4 @@ Any failure or question ends the run:
 
 ## Handoffs
 
-pr-start's `Handoffs:` list keeps SKILL.md Step 7's labels; each stage reports its own.
+pr-start's `Handoffs:` list keeps open-pr.md Step 7's labels; each stage reports its own.
