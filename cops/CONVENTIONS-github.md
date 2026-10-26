@@ -2,9 +2,9 @@
 
 ## GitHub access: `gh`, or the GitHub MCP tools
 
-- **Pick the route once.** At the first GitHub step run `gh api repos/<o>/<r> --jq .default_branch`. Success → `gh api` for the skill; failure → GitHub MCP throughout, loading on-demand tools with `ToolSearch`. Neither works → that step's own failure.
+- **Pick the route once.** Run `gh api repos/<o>/<r> --jq '[.default_branch,.permissions.push]|@tsv'` and `gh api user --jq .login`. Use `gh` if both succeed with `push` true; else MCP. If unavailable, fail the step.
 - **REST through `gh api`.** `gh pr|issue …` and `gh api graphql` use GraphQL, which Claude Code cloud blocks (403 "GitHub GraphQL is not available"); only review threads and ready try it first. Branches and commits go through `git push`.
-- **Access errors.** On the `gh` route, retry one read returning 401/403/404 through MCP before failing.
+- **Access errors.** 401/403/404 reads retry via MCP. `Resource not accessible by integration` identifies an app token: use MCP for remaining steps and writes, not "no permission".
 - **Same gates.** MCP replaces commands one-for-one; writes keep every confirmation gate.
 - **Owner/repo.** Derive from `git remote get-url origin`.
 - **Subagents.** Always `gh api` through Bash, never MCP; prompts say `GitHub: gh api`. The main agent alone creates, edits, labels, assigns and reviews PRs; a subagent replies to a thread only when told. On `gh api unavailable — read it in the main chat`, the main chat reads it.
