@@ -11,7 +11,7 @@ gh api -X POST repos/<owner>/<repo>/pulls -F draft=true -f base=<default branch>
 rm "$d/pr-start-title.txt" "$d/pr-start-body.md"
 ```
 
-MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its label and banner (autopilot.md).
+MCP route: `create_pull_request` with `draft: true` and the two files' contents. Autopilot adds its banner, and its label when the repo has one (autopilot.md).
 
 - **Title:** conventional prefix matching the branch type, imperative, net effect. Monorepo → `[package-name]` prefix (`CONVENTIONS-pr-metadata.md` → "Monorepo title prefix"). An issue in this repo → end with `(#123)` (`CONVENTIONS-pr-metadata.md` → "Trailing issue reference").
 - **Body:** fit the profile's template headers; otherwise the shared format (`CONVENTIONS-pr-metadata.md` → "PR body format"). Why carries the card's Why. Verification: Done when check and result (`CONVENTIONS-verification.md` → "Verification checklist"); scenarios → `### Before` then `### After` under it (`CONVENTIONS-verification.md` → "Before and After"), After `pending: run /cops:pr-wrap-up` each; evidence never holds the PR. Resources names the task source: an issue non-closing, `Relates to #123` or `Relates to owner/repo#123` (`CONVENTIONS-pr-metadata.md` → "Non-closing issue references"); a spec file or chat ask as a line. Write them to `d`, chosen first, per `CONVENTIONS-github.md` → "Passing drafted text to `gh`".
