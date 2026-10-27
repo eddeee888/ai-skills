@@ -552,7 +552,7 @@ validate_autopilot() {
   require_order "$resume" "resume paths" \
     "## In the same conversation" "The card confirmed earlier in this conversation stands." \
     "with the user's answer as \`Resuming:\`" "## In a new conversation" \
-    "opened on autopilot (the banner opening its body, or the \`autopilot\` label when present), and authored by the authenticated login" \
+    "opened on autopilot (its body opens with a \`> [!NOTE]\` block starting \`Opened on autopilot by\`, or it has the \`autopilot\` label), and authored by the authenticated login" \
     "point to starting \`/cops:pr-start\` again" \
     "\`cops:pr-review\` is skipped when a review signed \`cops:pr-review\` exists" \
     "\`cops:pr-address\` and \`cops:pr-wrap-up\` always run" \
