@@ -60,7 +60,7 @@ A sweep flag that SKILL.md would bring to the user stops the run too.
 
 open-pr.md Step 6, with two additions:
 
-- After creating, add the `autopilot` label only if the repo already has it (`gh api repos/<owner>/<repo>/labels/autopilot --jq .name`; 404 → absent), with `gh api -X POST repos/<owner>/<repo>/issues/<number>/labels -f 'labels[]=autopilot'` (MCP: `issue_write` `update` with `labels`). Absent → skip it; never create the label.
+- After creating, add the `autopilot` label only if the repo already has it (`gh api repos/<owner>/<repo>/labels/autopilot --jq .name`; 404 → absent; MCP: `get_label`), with `gh api -X POST repos/<owner>/<repo>/issues/<number>/labels -f 'labels[]=autopilot'` (MCP: `issue_write` `update` with `labels`). Absent → skip it; never create the label.
 - The body file opens, above the template or `## Why`, with the banner:
 
   ```markdown
