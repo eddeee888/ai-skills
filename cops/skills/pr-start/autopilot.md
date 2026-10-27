@@ -4,7 +4,7 @@ Read this at Step 1 when `--autopilot` was passed; otherwise at Step 3, before s
 
 ## Flag and login
 
-`--autopilot [<login>]` leads the command argument and is not part of the task. Passing it skips the offer and runs autopilot unless a gate check fails.
+`--autopilot [<login>]` leads the command argument and is not part of the task. Passing it skips the offer and runs autopilot unless the gate check fails.
 
 The run acts for one human, who is assigned the PR and named in `Approved-by:`:
 
@@ -13,23 +13,23 @@ The run acts for one human, who is assigned the PR and named in `Approved-by:`:
 
 Stage checks that compare the PR author with the authenticated login keep using the authenticated login.
 
-## Gate checks
+## Gate check
 
-Run these before the card; they only read. SKILL.md Step 1's own checks come first and stop the run as they always do.
+Run this before the card; it only reads, after SKILL.md Step 1's own checks.
 
 ```bash
 gh api repos/<owner>/<repo> --jq .permissions.push
-gh api repos/<owner>/<repo>/labels/autopilot --jq .name
 ```
 
 - **Write access:** `permissions.push` is `true`.
-- **Label:** the `autopilot` label exists; 404 → absent (MCP: `get_label`). Never create it.
 
-A failed check refuses autopilot: with the flag, say which check failed and offer the normal run; without the flag, the card shows `🤖 Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
+The `autopilot` label is optional and never a gate.
+
+A failed check refuses autopilot: with the flag, say it failed and offer the normal run; without the flag, the card shows `🤖 Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
 
 ## At the card
 
-When the gate checks pass, autopilot is offered, and choosing it is the user's call; the card shows no `Autopilot:` line unless a note applies. Each note is a bullet under `🤖 Autopilot: advisory`:
+When the gate check passes, autopilot is offered, and choosing it is the user's call; the card shows no `Autopilot:` line unless a note applies. Each note is a bullet under `🤖 Autopilot: advisory`:
 
 - `Large` when the Size is Large;
 - `high-risk scope (<area>)` when the scope touches security or auth, data loss, infrastructure or a public API;
@@ -60,7 +60,7 @@ A sweep flag that SKILL.md would bring to the user stops the run too.
 
 open-pr.md Step 6, with two additions:
 
-- After creating, `gh api -X POST repos/<owner>/<repo>/issues/<number>/labels -f 'labels[]=autopilot'` (MCP: `issue_write` `update` with `labels`).
+- After creating, add the `autopilot` label only if the repo already has it (`gh api repos/<owner>/<repo>/labels/autopilot --jq .name`; 404 → absent; MCP: `get_label`), with `gh api -X POST repos/<owner>/<repo>/issues/<number>/labels -f 'labels[]=autopilot'` (MCP: `issue_write` `update` with `labels`). Absent → skip it; never create the label.
 - The body file opens, above the template or `## Why`, with the banner:
 
   ```markdown

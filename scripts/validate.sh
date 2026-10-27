@@ -506,10 +506,10 @@ validate_autopilot() {
     "## 7. Wrap up" "run autopilot.md's chain, finish and stops" "## Stop instead of proceeding"
 
   require_markers "$auto" "autopilot gate" \
-    ".permissions.push" '`permissions.push` is `true`' 'the `autopilot` label exists' \
-    "Never create it."
+    ".permissions.push" '`permissions.push` is `true`' 'The `autopilot` label is optional and never a gate' \
+    "never create the label"
   require_markers "$auto" "autopilot bot login" "a bot token" "the card asks for the login"
-  # Autopilot is offered on every card past the two gate checks; Size, high-risk scope and an
+  # Autopilot is offered on every card past the gate check; Size, high-risk scope and an
   # observable-behavior Done when only add an advisory note.
   require_order "$auto" "autopilot always offered, with advisory notes" \
     "## At the card" "the user's call" "the card shows no \`Autopilot:\` line unless a note applies" \
@@ -552,7 +552,7 @@ validate_autopilot() {
   require_order "$resume" "resume paths" \
     "## In the same conversation" "The card confirmed earlier in this conversation stands." \
     "with the user's answer as \`Resuming:\`" "## In a new conversation" \
-    "labelled \`autopilot\`, and authored by the authenticated login" \
+    "opened on autopilot (its body opens with a \`> [!NOTE]\` block starting \`Opened on autopilot by\`, or it has the \`autopilot\` label), and authored by the authenticated login" \
     "point to starting \`/cops:pr-start\` again" \
     "\`cops:pr-review\` is skipped when a review signed \`cops:pr-review\` exists" \
     "\`cops:pr-address\` and \`cops:pr-wrap-up\` always run" \

@@ -20,7 +20,7 @@ The card confirmed earlier in this conversation stands. Continue from the step t
 
 ## In a new conversation
 
-Without the card, only the chain resumes. Pick the PR the user names, else the current branch's, and check it is open, labelled `autopilot`, and authored by the authenticated login. Another PR → stop and say why.
+Without the card, only the chain resumes. Pick the PR the user names, else the current branch's, and check it is open, opened on autopilot (its body opens with a `> [!NOTE]` block starting `Opened on autopilot by`, or it has the `autopilot` label), and authored by the authenticated login. Another PR → stop and say why.
 
 The run stopped before a PR existed → say the card is gone and point to starting `/cops:pr-start` again.
 
