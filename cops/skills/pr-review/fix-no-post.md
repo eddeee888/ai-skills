@@ -55,4 +55,4 @@ No commits → push nothing.
 
 ## Report
 
-Report each finding as fixed (sha) or skipped (why), the push, the test result, and the sidekick's `applied:` line. Skipped findings stay with the user; never post them. Then suggest per `CONVENTIONS-orchestration.md` → "Suggesting next steps". Handoffs: `review-pr`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up), and `learn-feedback` when run.
+Report each finding as fixed (sha) or skipped (why), the push, the test result, and each sidekick handoff's `applied:` line. Skipped findings stay with the user; never post them. Then suggest per `CONVENTIONS-orchestration.md` → "Suggesting next steps". Handoffs: `review-pr`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up), and `learn-feedback` when run.
