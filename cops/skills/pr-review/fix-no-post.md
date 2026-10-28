@@ -16,7 +16,7 @@ login: <login>
 Findings to fix:
 1. <path>:<line> — <label>: <body exactly as approved> [+ suggestion block] [— answer: <the user's answer to a Question:>]
 2. ...
-Rules that apply: none
+Rules that apply: <the approved findings' non-null `rule:` values, IDs kept and repeats dropped, or "none">
 Tests: find out
 GitHub: gh api (REST, through Bash). Do not use MCP.
 Resuming: <"no" | the question you returned last time, and the user's answer>
