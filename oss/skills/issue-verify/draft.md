@@ -23,7 +23,7 @@ mistakes at most 3 times, then stop and report what's still wrong. Don't
 skip it, don't commit, don't push.
 Return at most 5 lines: test path, the failure in one or two lines, and
 whether it matches the issue (yes/no, why) — or, after 3 tries, why the
-test still doesn't run cleanly.
+test still doesn't run cleanly. Also return the `applied:` line.
 ```
 
 No matching failure → discard the test and return to the reporter. Matching failure → preserve the test exactly as a red checkpoint.
