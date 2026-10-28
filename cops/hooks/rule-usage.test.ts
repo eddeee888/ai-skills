@@ -368,6 +368,10 @@ describe('usage', () => {
     expect(parseReviewRules({ text: '  - path: a.ts\n    rule: [U-014] prefer early returns (stated by user)\n    rule: null\n    rule:\n    rule: "use pnpm"\n- a bullet' })).toEqual(['[U-014] prefer early returns', 'use pnpm'])
   })
 
+  test('ignores rule lines inside a comment body block', () => {
+    expect(parseReviewRules({ text: '  - path: a.yml\n    rule: null\n    body: |-\n      **Suggestion:** x\n      ```suggestion\n      rule: no\n      ```' })).toEqual([])
+  })
+
   test('drops stored values that are not usage', () => {
     expect(toRuleUsage({ stored: { a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] }, b: { count: 'x' }, c: null, d: { count: 1, flagged: 'x', firstSeen: 1, lastSeen: 1, recent: [1] } } })).toEqual({ a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } })
     expect(toRuleUsage({ stored: ['junk'] })).toEqual({})

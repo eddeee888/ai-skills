@@ -116,7 +116,7 @@ export const parseFlagged = ({ text }: { text: string }): string[] =>
 //   '    rule: null', '    rule:', 'no comments'                → []
 export const parseReviewRules = ({ text }: { text: string }): string[] =>
   text.split('\n').flatMap(line => {
-    const value = /^\s*(?:- )?rule:\s*(.*)$/.exec(line)?.[1] ?? ''
+    const value = /^(?: {4}|  - )rule:\s*(.*)$/.exec(line)?.[1] ?? ''
     const rule = stripEvidence({ text: value.trim().replace(/^(["'])(.*)\1$/, '$2') })
     return rule && rule !== 'null' ? [rule] : []
   })
