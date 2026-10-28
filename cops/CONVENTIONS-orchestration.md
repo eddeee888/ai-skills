@@ -4,12 +4,12 @@
 
 When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems overhead, ask; never silently skip.
 
-- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick` on Claude Code; `pr-sidekick` subagent on Cursor), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` on Claude Code or a subagent on Cursor. Other read-only survey/research → `Explore` on Claude Code or a subagent on Cursor.
+- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick`; Cursor: `pr-sidekick`), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` (Cursor: a subagent). Other read-only survey/research → `Explore` (Cursor: a subagent).
 - **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from the `COPS models:` line as the model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
 - **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes output, with `for: pr-sidekick` on `brief-task`.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
-- **Short results.** Return only requested lines; a question, not a guess. Sidekick adds `applied:`. Main chat asks the user, then respawns with the answer.
+- **Short results.** Return only requested lines; a question, not a guess. Sidekick adds `applied:`; main chat compares its `applied:`/`not applied:` IDs with the brief's (minus `caller only:`): missing → resume once naming them; still missing, or an unbriefed ID → ask the user.
 - **Round.** Every spawn/check is a main-chat step. A round's fix commits get one `sweep-diff` (pre-round to `HEAD`) and one push; a sweep follow-up's commit gets one more sweep.
 - **Foreground by default.** Never set `run_in_background` unless the user explicitly asks for a background run.
 - **Bounded retries.** "Until" allows at most 3 attempts. After the third, stop, leave work uncommitted, and report attempts and remaining failure; do not respawn unasked.
@@ -44,12 +44,12 @@ Final-report users: every `cops` and `oss` skill.
 `oss` works alone; when installed, `cops` supplies `pr-oracle`, `pr-sidekick`, and `pr-wrap-up`.
 
 - **How to tell.** Installed when this session has `cops:pr-oracle`, `cops:pr-sidekick`, `/cops:pr-wrap-up` on Claude Code; or `pr-oracle`, `pr-sidekick`, `/pr-wrap-up` on Cursor. Check once and cache. Cursor is never missing.
-- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → general-purpose/subagent fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
+- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
 - **Defaults without the oracle.** With no profile/`overrides:`, inspect repo `CLAUDE.md` and `CONTRIBUTING.md` before applying a *Default*.
 
 ## Suggesting next steps
 
-A skill never runs another skill to finish, except under "Autopilot runs"; it only suggests each applicable step once before `Handoffs:`, and only for the user's own PR, determined by `gh api user --jq .login` or `get_me`.
+A skill never runs another skill to finish, except under "Autopilot runs"; it only suggests each applicable step once before `Handoffs:`, only for the user's own PR, per `gh api user --jq .login` or `get_me`.
 
 - PR just opened → `/cops:pr-review self-reviews it; "fix, no post" skips posting.` (`/pr-review` on Cursor).
 - An existing PR was pushed; title/body may be stale → `The PR's title and description may now be stale; /cops:pr-wrap-up will update them.` (`/pr-wrap-up` on Cursor).
@@ -77,12 +77,12 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
   | `light` | sorting, extracting, formatting | `brief-task` |
   | `standard` | reading, summarising, drafting | `scout-repo`, `triage-threads`, `sweep-diff`, `grill-description`, `learn-feedback` |
   | `deep` | finding bugs, judging trade-offs | `review-pr`, `draft-author-notes` |
-- **Optional only when missing.** If `cops` is absent, perform the step inline, continue, and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
+- **Optional only when missing.** If `cops` is absent, perform the step inline and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known; always include the selected `GitHub route:`. Later `scout-repo` calls get the run's first profile as `profile:`; `overrides:` is rebuilt from current memory. Review modes get owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
 - **Check what it loaded.** Every reply's `loaded:` must include `memory.md`, `modes/<mode>.md` per mode, `picking.md` for `brief-task` or `sweep-diff`. Missing or no `loaded:` → call again once, naming the missing files. Still missing → use the reply and mark the handoff `✓ (incomplete load: <files>)`.
-- **Pass memory context.** Session context supplies the verified COPS memory root and configured memory login, or says each is unavailable/unset. Pass `memory-root: <absolute path | unavailable>` and `memory-login: <login | unset>` to every `pr-oracle` call. Never pass them to `pr-sidekick`: it reads no memory, and gets remembered rules only as oracle lines, `[U-014]` IDs kept, in its prompt. Never fill `memory-login` from `gh`, `get_me`, or `login:`.
+- **Pass memory context.** Session context supplies the verified COPS memory root and configured memory login, or says each is unavailable/unset. Pass `memory-root: <absolute path | unavailable>` and `memory-login: <login | unset>` to every `pr-oracle` call. Never pass them to `pr-sidekick`: it reads no memory, and gets rules only as oracle lines, IDs kept. Never fill `memory-login` from `gh`, `get_me`, or `login:`.
 - **Graduated memory consent.** Operational modes never write memory. Show `memory-candidate:` to the user; only explicit remember or promotion intent permits a separate `learn-feedback` call. On `not concrete:`, ask the user to restate the rule and call again with their wording; never rephrase it for them. Reviewer-derived rules stay inactive candidates until explicitly promoted.
 - **Team memory.** Only a separate `learn-feedback` call for an explicit team-memory request receives `record-team: <one line>`.
 
