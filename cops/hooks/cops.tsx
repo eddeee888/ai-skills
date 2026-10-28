@@ -10,7 +10,7 @@ import { checkLoaded, checkTool, EXPECTED_HANDOFFS, tickedBy } from './orchestra
 import { describeActivity, describeAgent, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, snippet, SPINNER_MS, summarize, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, parseEntries, parseFlagged, parseReply, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, parseEntries, parseFlagged, parseReply, parseReviewRules, toRuleUsage } from './rule-usage.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 import { addUsage, describeUsage, keyCall, toUsage } from './usage-stats.ts'
 
@@ -31,7 +31,7 @@ const INBOX_LIMIT = 50
 // The `$.store` key of the `kind: text` lines dropped from the inbox, kept so they aren't collected again.
 const DROPPED = 'dropped'
 const DROPPED_LIMIT = 200
-// The `$.store` key of how often each remembered rule matched a brief-task or sweep-diff reply, kept across sessions.
+// The `$.store` key of how often each remembered rule matched a brief-task, sweep-diff or review-pr reply, kept across sessions.
 const RULE_USAGE = 'ruleUsage'
 // The `$.store` key of what finished cops agent calls cost per mode or job, kept across sessions.
 const USAGE = 'usage'
@@ -581,17 +581,18 @@ export const register: Register = (on, options) => {
       if (agent === 'cops:pr-oracle' && call.modes?.includes('learn-feedback')) {
         void refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error }))
       }
-      // Counts the remembered rules a plain brief-task or a sweep-diff reply cites, while memory is on.
+      // Counts the remembered rules a plain brief-task, a sweep-diff or a review-pr reply cites, while memory is on.
+      // A review-pr reply cites them only in its comments' private `rule:` fields.
       // A `for: pr-sidekick` brief lists every rule that could apply, so it doesn't show which rules fire.
       try {
         const isSidekickBrief = /^for:\s*pr-sidekick\b/mi.test(e.prompt)
-        if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || (one === 'brief-task' && !isSidekickBrief))) {
+        if (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || one === 'review-pr' || (one === 'brief-task' && !isSidekickBrief))) {
           const pluginRoot = $.plugin.root
           const context = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
           if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
             const { rules } = await readMemory($, { context: context.stdout })
             const entries = rules.map(one => one.rule)
-            const keys = matchEntries({ entries, cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
+            const keys = matchEntries({ entries, cited: call.modes?.includes('review-pr') ? parseReviewRules({ text: ran.text ?? '' }) : parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
             // Only a sweep-diff reply's `— rule:` lines flag a rule; a brief-task citation just counts.
             const flaggedKeys = call.modes?.includes('sweep-diff') ? matchEntries({ entries, cited: parseFlagged({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule })) : []
             if (keys.length > 0) {

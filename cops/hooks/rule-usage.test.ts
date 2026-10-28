@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseEntries, parseFlagged, parseReply, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseEntries, parseFlagged, parseReply, parseReviewRules, toRuleUsage } from './rule-usage.ts'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -152,6 +152,20 @@ describe('rule usage counting', () => {
     expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 2, flagged: 1, firstSeen: DAY, lastSeen: NOW, recent: [DAY, NOW] })
     expect(used({ stored, rule: 'Keep tests beside the code' })?.count).toBe(1)
     expect(Object.keys(toRuleUsage({ stored: stored.ruleUsage }))).toHaveLength(2)
+  })
+
+  test('a review-pr comment\'s private rule counts as cited, not flagged', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, replies: { 'mode: review-pr': 'comments:\n  - path: a.ts\n    rule: [U-014] prefer early returns (stated by user)\n    body: |-\n      **Issue:** nested ifs' } })
+    await oracle({ $, mode: 'review-pr' })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+  })
+
+  test('a review-pr comment with rule null counts nothing', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, replies: { 'mode: review-pr': 'comments:\n  - path: a.ts\n    rule: null\n    body: |-\n      **Issue:** prefer early returns' } })
+    await oracle({ $, mode: 'review-pr' })
+    expect(stored.ruleUsage).toBeUndefined()
   })
 
   test('counts nothing for unmatched text, no relevant memory, clean, or other modes', MEMORY, async ($, on) => {
@@ -348,6 +362,14 @@ describe('usage', () => {
 
   test('parses only the sweep-diff rule lines as flagged', () => {
     expect(parseFlagged({ text: '- a.ts:3  nested ifs  — rule: [U-014] prefer early returns (stated by user)\n- ask before pushing  (seen 2x)\nclean' })).toEqual(['[U-014] prefer early returns'])
+  })
+
+  test('parses a review-pr reply\'s rule fields, skipping null and empty', () => {
+    expect(parseReviewRules({ text: '  - path: a.ts\n    rule: [U-014] prefer early returns (stated by user)\n    rule: null\n    rule:\n    rule: "use pnpm"\n- a bullet' })).toEqual(['[U-014] prefer early returns', 'use pnpm'])
+  })
+
+  test('ignores rule lines inside a comment body block', () => {
+    expect(parseReviewRules({ text: '  - path: a.yml\n    rule: null\n    body: |-\n      **Suggestion:** x\n      ```suggestion\n      rule: no\n      ```' })).toEqual([])
   })
 
   test('drops stored values that are not usage', () => {

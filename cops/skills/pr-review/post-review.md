@@ -1,14 +1,14 @@
 # Shared review posting mechanics
 
-`pr-review` and `pr-note` read this only after the user confirms the draft. The caller supplies signed bodies and event (`COMMENT` by default).
+`pr-review`/`pr-note` read this only after the user confirms the draft. The caller supplies signed bodies and event (`COMMENT` by default).
 
 Immediately before writing, re-read full `headRefOid` (`gh api repos/<owner>/<repo>/pulls/<number> --jq .head.sha`; MCP `pull_request_read` `get`). Saved-head mismatch → stop, post nothing, offer a fresh review.
 
-Post accepted comments in one review anchored to the saved `headRefOid`.
+Post accepted comments (only `path`, `line`, `start_line`, signed body; never `rule`) in one review at the saved `headRefOid`.
 
 ## `gh` route
 
-Pick the absolute scratch dir `d` first (the session's, else `mktemp -d`; never under `.git`), then write the payload there (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
+Pick absolute scratch dir `d` first (the session's, else `mktemp -d`; never under `.git`); write the payload there (`CONVENTIONS-github.md` → "Passing drafted text to `gh`"):
 
 ```bash
 d=<that absolute path>
@@ -18,7 +18,7 @@ gh api repos/<owner>/<repo>/pulls/<number>/reviews --input "$d/pr-review.json"
 rm "$d/pr-review.json"
 ```
 
-For `pr-note`, use `pr-note.json` throughout. Keep an empty body empty.
+For `pr-note`, use `pr-note.json` throughout. Keep empty bodies empty.
 
 ## MCP route
 
