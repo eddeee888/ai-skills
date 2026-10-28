@@ -29,7 +29,7 @@ two, in the same paragraph:
   Approved-by: <user's GitHub login>
 Do not push. If the fix needs more than the chosen option, stop and say why.
 Return at most 5 lines: files changed, commit sha, tests run and result,
-or why you stopped.
+or why you stopped. Also return the `applied:` line.
 ```
 
 The test must pass for the correct reason, and affected-package tests must show no regression. Preserve both required trailers and the checkpoint commit.

@@ -58,7 +58,7 @@ Use a non-closing issue reference, never `Fixes #123`/`Closes #123` (`CONVENTION
 
 ## Step 7: Wrap up
 
-Never run `cops:pr-wrap-up` or `cops:pr-note`; suggest them per `CONVENTIONS-orchestration.md` → "Suggesting next steps". A new fix PR needs no wrap-up; a pushed existing checkpoint PR may. End with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo`, `root cause`, `brief-task`, `learn-feedback` when run, `fix loop`, and `sweep-diff`.
+Never run `cops:pr-wrap-up` or `cops:pr-note`; suggest them per `CONVENTIONS-orchestration.md` → "Suggesting next steps". A new fix PR needs no wrap-up; a pushed existing checkpoint PR may. Report the fix loop's `applied:` line. End with handoffs (`CONVENTIONS-orchestration.md` → "Handoffs in the final report"), labels `scout-repo`, `root cause`, `brief-task`, `learn-feedback` when run, `fix loop`, and `sweep-diff`.
 
 ## When to stop instead of proceeding
 

@@ -59,6 +59,7 @@ scope but touched more files or packages than the Approach named, or a
 shared helper. A file or behavior In scope doesn't cover, or a public or
 documented behavior change the card doesn't name, is a question as
 above, never a `blast radius:` line.
+Also return the `applied:` line.
 ```
 
 Fill `Approved-by:` with the login from Step 1; the user's card confirmation is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). Host trailers follow the block without a blank line.
@@ -122,6 +123,7 @@ lines → skip it and say why.
 Do not push.
 Return one line per flag: fixed (sha) | skipped (why) — then one line for
 the test run.
+Also return the `applied:` line.
 ```
 
 Skipped flags go to the user before Step 6. The follow-up's commit stays in the same round (`CONVENTIONS-orchestration.md` → "Round"): SKILL.md Step 5 re-sweeps only that commit before Step 6.

@@ -16,7 +16,7 @@ login: <login>
 Findings to fix:
 1. <path>:<line> — <label>: <body exactly as approved> [+ suggestion block] [— answer: <the user's answer to a Question:>]
 2. ...
-Rules that apply: none
+Rules that apply: <the approved findings' non-null `rule:` values, IDs kept and repeats dropped, or "none">
 Tests: find out
 GitHub: gh api (REST, through Bash). Do not use MCP.
 Resuming: <"no" | the question you returned last time, and the user's answer>
@@ -38,6 +38,7 @@ Commit in the repo's commit style, ending with:
 Do not push, post, reply, or edit any PR or issue.
 Return one line per finding: fixed (sha, one-line summary) | skipped
 (why) — then one line for the final test run.
+Also return the `applied:` line for the rules above.
 ```
 
 The user's Step 3 choice is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). A question → ask the user, then spawn again with `Resuming:` filled in. No subagent capability → run the same steps here and mark `fix loop` as `inline (no subagent capability)`.
@@ -54,4 +55,4 @@ No commits → push nothing.
 
 ## Report
 
-Report each finding as fixed (sha) or skipped (why), the push, and the test result. Skipped findings stay with the user; never post them. Then suggest per `CONVENTIONS-orchestration.md` → "Suggesting next steps". Handoffs: `review-pr`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up), and `learn-feedback` when run.
+Report each finding as fixed (sha) or skipped (why), the push, the test result, and each sidekick handoff's `applied:` line. Skipped findings stay with the user; never post them. Then suggest per `CONVENTIONS-orchestration.md` → "Suggesting next steps". Handoffs: `review-pr`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up), and `learn-feedback` when run.
