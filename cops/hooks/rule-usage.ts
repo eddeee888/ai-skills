@@ -151,6 +151,7 @@ export const toRuleUsage = ({ stored }: { stored: unknown }): Record<string, Rul
     && 'count' in value && typeof value.count === 'number'
     && 'firstSeen' in value && typeof value.firstSeen === 'number'
     && 'lastSeen' in value && typeof value.lastSeen === 'number'
+    && (!('flagged' in value) || value.flagged === undefined || typeof value.flagged === 'number')
     && 'recent' in value && Array.isArray(value.recent) && value.recent.every(one => typeof one === 'number')
   if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
     return {}

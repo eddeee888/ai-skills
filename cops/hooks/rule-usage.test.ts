@@ -342,7 +342,7 @@ describe('usage', () => {
   })
 
   test('drops stored values that are not usage', () => {
-    expect(toRuleUsage({ stored: { a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] }, b: { count: 'x' }, c: null } })).toEqual({ a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } })
+    expect(toRuleUsage({ stored: { a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] }, b: { count: 'x' }, c: null, d: { count: 1, flagged: 'x', firstSeen: 1, lastSeen: 1, recent: [1] } } })).toEqual({ a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } })
     expect(toRuleUsage({ stored: ['junk'] })).toEqual({})
   })
 
