@@ -258,7 +258,7 @@ const refreshThreadsReported = ($: EngineInterface): Promise<void> =>
 //   no line                   → 0
 //   `deviations: renamed x`   → 1
 //   `deviations: a; b; c`     → 3
-const countDeviations = (text: string) => {
+const countDeviations = ({ text }: { text: string }): number => {
   const entries = /^deviations:[ \t]*(.*)$/mi.exec(text)?.[1]?.split(';').map(one => one.trim()).filter(Boolean) || []
   return entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
 }
@@ -515,7 +515,7 @@ export const register: Register = (on, options) => {
     } else {
       const result = ran.result
       const totals = 'status' in result && result.status === 'completed' ? { durationMs: result.totalDurationMs, tokens: result.totalTokens } : { durationMs }
-      const deviations = countDeviations(ran.text ?? '')
+      const deviations = countDeviations({ text: ran.text ?? '' })
       await setCall($, call.id, { state: 'done', ...totals, ...(isCops && { deviations }), ...('resolvedModel' in result && result.resolvedModel && { resolvedModel: result.resolvedModel }), outcome: describeOutcome(ran.text ?? '') })
       if (!isCops) return ran
       // Adds a completed call's time and tokens to its mode's or job's usage, split by model.
@@ -677,7 +677,7 @@ export const register: Register = (on, options) => {
         if (call.state === 'background') {
           const isCops = call.agent.startsWith('cops:')
           await setCall($, call.id, {
-            state: e.isAborted ? 'failed' : 'done', durationMs: e.durationMs, ...(isCops && { deviations: countDeviations(e.answer) }),
+            state: e.isAborted ? 'failed' : 'done', durationMs: e.durationMs, ...(isCops && { deviations: countDeviations({ text: e.answer }) }),
             outcome: e.isAborted ? 'stopped' : describeOutcome(e.answer),
           })
           $.ui.invalidate('ui.render')
