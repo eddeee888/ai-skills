@@ -614,7 +614,8 @@ export const register: Register = (on, options) => {
         : []
       if (running && ticked.length > 0) await update($, checklist, () => ({ ...running, ticked: [...new Set([...running.ticked, ...ticked])] }))
       if (spawned.deny === undefined) {
-        await setCall($, e.tool_use_id, { resolvedModel: spawned.model, ...(spawned.agentId && { agentId: spawned.agentId }) })
+        const agentId = spawned.agentId || undefined
+        await setCall($, e.tool_use_id, { resolvedModel: spawned.model, agentId })
       }
       if (ticked.length > 0) $.ui.invalidate('ui.render')
     } catch (error) {
@@ -676,8 +677,9 @@ export const register: Register = (on, options) => {
         // A background call's row stays `background` after its launch returned; its turn ending is when it finished (no token count is reported then).
         if (call.state === 'background') {
           const isCops = call.agent.startsWith('cops:')
+          const deviations = isCops ? countDeviations({ text: e.answer }) : undefined
           await setCall($, call.id, {
-            state: e.isAborted ? 'failed' : 'done', durationMs: e.durationMs, ...(isCops && { deviations: countDeviations({ text: e.answer }) }),
+            state: e.isAborted ? 'failed' : 'done', durationMs: e.durationMs, deviations,
             outcome: e.isAborted ? 'stopped' : describeOutcome(e.answer),
           })
           $.ui.invalidate('ui.render')
