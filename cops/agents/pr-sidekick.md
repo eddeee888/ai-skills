@@ -34,7 +34,7 @@ You never read or write memory. The oracle picks the remembered rules for this j
 
 ## Returning
 
-Return only the lines the template asks for, plus one `applied:` line whenever the prompt carried rules, and one `deviations:` line whenever you made a small decision — neither counts toward the template's line limit. When the template gives no shape, use:
+Return only the lines the template asks for, plus one `applied:` line every time (`applied: none; not applied: none` when the prompt carried no rules), and one `deviations:` line whenever you made a small decision — neither counts toward the template's line limit. When the template gives no shape, use:
 
 ```
 applied: <rule IDs you applied, or "none">; not applied: <ID> (<why>), or "none"
