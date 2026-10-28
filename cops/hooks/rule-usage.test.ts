@@ -112,6 +112,15 @@ describe('rule usage counting', () => {
     expect(Object.keys(toRuleUsage({ stored: stored.ruleUsage }))).toHaveLength(2)
   })
 
+  test('a brief-task reply with a rule: line counts a use, not a flag', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, replies: { 'mode: brief-task': '- a.ts:3  nested ifs  — rule: prefer early returns (stated by user)' } })
+    await oracle({ $, mode: 'brief-task' })
+    const use = used({ stored, rule: 'Prefer early returns' })
+    expect(use?.count).toBe(1)
+    expect(use?.flagged).toBeUndefined()
+  })
+
   test('a for: pr-sidekick brief-task reply counts nothing', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
     const prompt = 'mode: brief-task\nfor: pr-sidekick'
