@@ -615,8 +615,8 @@ validate_autopilot() {
     "the user's own \"resume the rest with autopilot\" continues it"
   require_markers "CONVENTIONS-posts.md" "autopilot signature" \
     'for every post of an autopilot run (`CONVENTIONS-orchestration.md` → "Autopilot runs")'
-  require_markers "CONVENTIONS-orchestration.md" "foreground when dependent" \
-    '**Foreground when dependent.**'
+  require_markers "CONVENTIONS-orchestration.md" "foreground by default" \
+    '**Foreground by default.**'
   # The stages keep their own handoffs, so pr-start's lists are the fix loop and its two oracle calls.
   require_markers "CONVENTIONS-orchestration.md" "pr-start handoff list" \
     '`cops:pr-start` (fix loop);' \

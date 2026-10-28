@@ -253,6 +253,16 @@ const refreshAll = async ($: EngineInterface, memory: Memory) => {
 const refreshThreadsReported = ($: EngineInterface): Promise<void> =>
   refreshThreads($).catch(error => reportFailure($, { step: 'threads', what: 'refresh the PR’s threads', error }))
 
+// Entries on the `deviations:` line, split on `;`:
+//   `deviations: none`        → 0
+//   no line                   → 0
+//   `deviations: renamed x`   → 1
+//   `deviations: a; b; c`     → 3
+const countDeviations = ({ text }: { text: string }): number => {
+  const entries = /^deviations:[ \t]*(.*)$/mi.exec(text)?.[1]?.split(';').map(one => one.trim()).filter(Boolean) || []
+  return entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
+}
+
 const elapsedSince = async ($: EngineInterface, startedAt: number) => {
   try {
     return (await $.clock.now()) - startedAt
@@ -505,13 +515,7 @@ export const register: Register = (on, options) => {
     } else {
       const result = ran.result
       const totals = 'status' in result && result.status === 'completed' ? { durationMs: result.totalDurationMs, tokens: result.totalTokens } : { durationMs }
-      // Entries on the `deviations:` line, split on `;`:
-      //   `deviations: none`        → 0
-      //   no line                   → 0
-      //   `deviations: renamed x`   → 1
-      //   `deviations: a; b; c`     → 3
-      const entries = /^deviations:[ \t]*(.*)$/mi.exec(ran.text ?? '')?.[1]?.split(';').map(one => one.trim()).filter(Boolean) || []
-      const deviations = entries.length === 1 && entries[0]?.toLowerCase() === 'none' ? 0 : entries.length
+      const deviations = countDeviations({ text: ran.text ?? '' })
       await setCall($, call.id, { state: 'done', ...totals, ...(isCops && { deviations }), ...('resolvedModel' in result && result.resolvedModel && { resolvedModel: result.resolvedModel }), outcome: describeOutcome(ran.text ?? '') })
       if (!isCops) return ran
       // Adds a completed call's time and tokens to its mode's or job's usage, split by model.
@@ -603,7 +607,7 @@ export const register: Register = (on, options) => {
     return ran
   }).catch(($, e, next) => next(e))
 
-  // Ticks the handoffs a main-chat spawn makes, records the model every agent call resolved to, and links a cops agent's call to its loop.
+  // Ticks the handoffs a main-chat spawn makes, records the model every agent call resolved to, and links each agent call to its run by agentId.
   on('agent.spawn', async ($, e, next) => {
     const spawned = await next(e)
     try {
@@ -613,7 +617,8 @@ export const register: Register = (on, options) => {
         : []
       if (running && ticked.length > 0) await update($, checklist, () => ({ ...running, ticked: [...new Set([...running.ticked, ...ticked])] }))
       if (spawned.deny === undefined) {
-        await setCall($, e.tool_use_id, { resolvedModel: spawned.model, ...(spawned.agentId && e.subagentType.startsWith('cops:') && { agentId: spawned.agentId }) })
+        const agentId = spawned.agentId || undefined
+        await setCall($, e.tool_use_id, { resolvedModel: spawned.model, agentId })
       }
       if (ticked.length > 0) $.ui.invalidate('ui.render')
     } catch (error) {
@@ -626,7 +631,7 @@ export const register: Register = (on, options) => {
   on('tool.call', async ($, e, next) => {
     try {
       const call = e.agentId ? (await read($, agents)).find(one => one.agentId === e.agentId) : undefined
-      if (call && e.agentId) {
+      if (call && e.agentId && call.agent.startsWith('cops:')) {
         const command = e.tool === 'Bash' ? e.command : undefined
         const history = command === undefined ? commands.get(e.agentId) || [] : [...(commands.get(e.agentId) || []), command]
         commands.set(e.agentId, history)
@@ -672,6 +677,16 @@ export const register: Register = (on, options) => {
       const call = e.agentId ? (await read($, agents)).find(one => one.agentId === e.agentId) : undefined
       if (call && e.agentId) {
         commands.delete(e.agentId)
+        // A background call's row stays `background` after its launch returned; its turn ending is when it finished (no token count is reported then).
+        if (call.state === 'background') {
+          const isCops = call.agent.startsWith('cops:')
+          const deviations = isCops ? countDeviations({ text: e.answer }) : undefined
+          await setCall($, call.id, {
+            state: e.isAborted ? 'failed' : 'done', durationMs: e.durationMs, deviations,
+            outcome: e.isAborted ? 'stopped' : describeOutcome(e.answer),
+          })
+          $.ui.invalidate('ui.render')
+        }
         if (call.agent === 'cops:pr-oracle') {
           await setCall($, call.id, { missingLoads: checkLoaded({ text: e.answer, modes: call.modes || [] }) })
           $.ui.invalidate('ui.render')

@@ -7,7 +7,8 @@ type Ui = Awaited<ReturnType<Engine['ui']['mount']>>
 
 // One subagent run inside its Agent call: the tool calls it makes once spawned, carrying the
 // agentId it got, and the answer its turn ends with.
-type Run = { does?: ({ $, agentId }: { $: Engine; agentId: string }) => Promise<void>; answer?: string }
+// `background` returns the launch stub and leaves the turn open, for the test to end.
+type Run = { does?: ({ $, agentId }: { $: Engine; agentId: string }) => Promise<void>; answer?: string; background?: boolean }
 
 // Answers what the plugin asks of the engine outside a repository, and runs each Agent call's
 // subagent the way a session does: spawned, its tool calls, then its turn's end. `runs` names
@@ -39,6 +40,7 @@ const world = ({ $, on, runs = {} }: { $: Engine; on: On; runs?: Record<string, 
     })
     const agentId = spawned.deny === undefined ? spawned.agentId || '' : ''
     await run?.does?.({ $, agentId })
+    if (run?.background) return { result: { status: 'async_launched', agentId, description: e.description, prompt: e.prompt }, text: '' } as never
     await $.turn.complete({ answer: run?.answer || '', durationMs: 1, isAborted: false, turnId: `turn-${count}`, agentId, reason: 'answer' })
     return {
       result: {
@@ -112,6 +114,43 @@ describe('running row model', () => {
     await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
     expect(drawn).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] 🔮 Oracle · inherit \(sonnet\) · brief-task/)
     expect(drawn).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏] Explore · inherit \(sonnet\)/)
+  })
+})
+
+describe('background row', () => {
+  test('stays running in the background until the agent ends, then shows its time and outcome', async ($, on) => {
+    world({ $, on, runs: { 'mode: brief-task': { background: true } } })
+    await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    const ui = await mount({ $ })
+    expect(await text({ ui })).toContain('running in the background')
+    await $.turn.complete({ answer: 'CHECKPOINT_FOUND abc1234567\nloaded: memory.md, modes/brief-task.md', durationMs: 42_000, isAborted: false, turnId: 't', agentId: 'agent-1', reason: 'answer' })
+    const drawn = await text({ ui })
+    expect(drawn).not.toContain('running in the background')
+    expect(drawn).toMatch(/✓ 🔮 Oracle · inherit \(sonnet\) · brief-task · .*42s · CHECKPOINT_FOUND abc1234/)
+    await ui.unmount()
+  })
+
+  test('ends a non-cops background row too, with its time', async ($, on) => {
+    world({ $, on, runs: { 'find things': { background: true } } })
+    await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
+    const ui = await mount({ $ })
+    expect(await text({ ui })).toContain('running in the background')
+    await $.turn.complete({ answer: 'found it', durationMs: 42_000, isAborted: false, turnId: 't', agentId: 'agent-1', reason: 'answer' })
+    const drawn = await text({ ui })
+    expect(drawn).not.toContain('running in the background')
+    expect(drawn).toMatch(/✓ Explore .*42s/)
+    await ui.unmount()
+  })
+
+  test('shows ✗ stopped when the background agent is aborted', async ($, on) => {
+    world({ $, on, runs: { 'mode: brief-task': { background: true } } })
+    await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    const ui = await mount({ $ })
+    await $.turn.complete({ answer: '', durationMs: 5_000, isAborted: true, turnId: 't', agentId: 'agent-1', reason: 'aborted' })
+    const drawn = await text({ ui })
+    expect(drawn).not.toContain('running in the background')
+    expect(drawn).toMatch(/✗ 🔮 Oracle .*stopped/)
+    await ui.unmount()
   })
 })
 
