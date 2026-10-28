@@ -1,6 +1,6 @@
 # Mode: `review-pr`
 
-Follow `../review-evidence.md`. Draft substantial, actionable comments using applicable active memory. Prioritize correctness, behavior, public/runtime surfaces, errors, APIs/types, defaults, migrations, critical changes, and supplied rules. Exclude praise, restatement, lint/format nits, taste, and duplicates. Keep at most 10; count extras in `dropped`.
+Follow `../review-evidence.md`. Draft substantial, actionable comments checking every active rule (`../picking.md`) against the diff. A broken rule is a comment even when it reads as style; name it in `rule:`. Prioritize correctness, behavior, public/runtime surfaces, errors, APIs/types, defaults, migrations, critical changes, and supplied rules. Exclude praise, restatement, lint/format nits, taste, and duplicates. Keep at most 10; count extras in `dropped`.
 
 Use optional `review_body` only for one verified whole-PR finding inherently lacking a changed-line anchor, such as a required missing changeset. Never move an invalid inline candidate there.
 

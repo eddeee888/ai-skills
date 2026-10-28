@@ -29,5 +29,5 @@ edit-rules:
   - [<id>] <rule>  (<evidence>, from you | team)
 ```
 
-`edit-rules:` lists every active rule on how code, tests, or commits are written. The caller pastes it into editing handoffs, which have no other source of memory. Leave out rules only the caller can act on (consulting the oracle, asking the user, when to push or squash). None → `edit-rules: none`.
+`edit-rules:` lists every active rule, picked as `picking.md` describes. The caller pastes it into editing handoffs, which have no other source of memory. Leave out rules only the caller can act on (consulting the oracle, asking the user, when to push or squash). None → `edit-rules: none`.
 
