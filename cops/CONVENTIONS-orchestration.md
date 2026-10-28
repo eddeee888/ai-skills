@@ -11,7 +11,7 @@ When a skill names a handoff and the host can spawn a subagent, make it every ti
 - **One at a time on a shared checkout.** Never parallel editing subagents.
 - **Short results.** Return only requested lines; a question, not a guess. Main chat asks the user, then respawns with the answer.
 - **Round.** Every spawn/check is a main-chat step. A round's fix commits get one `sweep-diff` (pre-round to `HEAD`) and one push; a sweep follow-up's commit gets one more sweep.
-- **Foreground by default.** Never set `run_in_background` unless the user explicitly asks for a background run. A background call has no token count or ✓ in the COPS pane and stays "running in the background" after it stops.
+- **Foreground by default.** Never set `run_in_background` unless the user explicitly asks for a background run.
 - **Bounded retries.** "Until" allows at most 3 attempts. After the third, stop, leave work uncommitted, and report attempts and remaining failure; do not respawn unasked.
 - **Resume, don't restart.** After a question, carry question+answer and resume, checking completed rebase/commit/push work.
 - **No way to spawn** means no subagent tool, not inconvenience. Run inline and mark `inline` under "Handoffs in the final report".
