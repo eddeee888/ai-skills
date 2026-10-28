@@ -1,7 +1,7 @@
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
 
-// How often each remembered rule fires in pr-oracle's brief-task and sweep-diff replies, and which have gone stale.
+// How often each remembered rule fires in pr-oracle's brief-task, sweep-diff and review-pr replies, and which have gone stale.
 
 const DAY_MS = 86_400_000
 // A rule last seen this long ago, or never, is stale.
@@ -108,6 +108,17 @@ export const parseFlagged = ({ text }: { text: string }): string[] =>
     const rule = /^\s*- .*?\s—\s*rule:\s*(.+)$/.exec(line)?.[1]
     const stripped = rule ? stripEvidence({ text: rule }) : ''
     return stripped ? [stripped] : []
+  })
+
+// The rules a review-pr reply names in its comments' private `rule:` fields, without their evidence:
+//   '    rule: [U-014] prefer early returns (stated by user)'   → ['[U-014] prefer early returns']
+//   '  - rule: "prefer early returns"'                          → ['prefer early returns']
+//   '    rule: null', '    rule:', 'no comments'                → []
+export const parseReviewRules = ({ text }: { text: string }): string[] =>
+  text.split('\n').flatMap(line => {
+    const value = /^\s*(?:- )?rule:\s*(.*)$/.exec(line)?.[1] ?? ''
+    const rule = stripEvidence({ text: value.trim().replace(/^(["'])(.*)\1$/, '$2') })
+    return rule && rule !== 'null' ? [rule] : []
   })
 
 // The entries a reply's rules match, each once: the same ID, or text equal once normalized, or one a prefix of the other:
