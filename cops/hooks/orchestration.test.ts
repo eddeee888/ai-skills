@@ -141,6 +141,17 @@ describe('background row', () => {
     expect(drawn).toMatch(/✓ Explore .*42s/)
     await ui.unmount()
   })
+
+  test('shows ✗ stopped when the background agent is aborted', async ($, on) => {
+    world({ $, on, runs: { 'mode: brief-task': { background: true } } })
+    await $.tool.call({ tool: 'Agent', description: 'brief', subagent_type: 'cops:pr-oracle', prompt: 'mode: brief-task' })
+    const ui = await mount({ $ })
+    await $.turn.complete({ answer: '', durationMs: 5_000, isAborted: true, turnId: 't', agentId: 'agent-1', reason: 'aborted' })
+    const drawn = await text({ ui })
+    expect(drawn).not.toContain('running in the background')
+    expect(drawn).toMatch(/✗ 🔮 Oracle .*stopped/)
+    await ui.unmount()
+  })
 })
 
 describe('oracle loaded check', () => {
