@@ -17,6 +17,6 @@ Write only these files. Store only cross-repository rules; never name a reposito
 
 Write personal data only under `memory/users/<github-login>/`. Team writes require `learn-feedback` with `record-team:`. Never store repository-only rules.
 
-Before mode work, verify `memory-root` is an attached workspace Git root. Then read/apply only the first 200 lines of the current user's and team `MEMORY.md`. A rule ending `applies-to: <glob>[, <glob>]` is a hint, not a filter (`picking.md`). Never read another user's tree. Rules start with an ID: `[U-nnn]` personal, `[T-nnn]` team. Cite rules as `[U-014] <rule>`, keeping the text.
+Before mode work, verify `memory-root` is an attached workspace Git root. Then read/apply only the first 200 lines of the current user's and team `MEMORY.md`. A rule ending `applies-to: <glob>[, <glob>]` is a hint, not a filter: unmatched paths can't break it. Never read another user's tree. Rules start with an ID: `[U-nnn]` personal, `[T-nnn]` team. Cite rules as `[U-014] <rule>`, keeping the text.
 
 If `memory-root` is absent, `unavailable`, outside the workspace, or not a Git root, do not read or write memory. Run the requested mode without memory and append `memory unavailable — configure an attached workspace Git root`. Never clone, pull, commit, or push the memory repository.
