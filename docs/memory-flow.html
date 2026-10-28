@@ -43,7 +43,7 @@ svg .w { color: var(--write); } svg .w text { fill: var(--write); }
     <strong>How memory flows through cops &amp; oss</strong>
     <span id="versions">cops 0.1.39 · oss 0.1.11</span>
   </header>
-  <svg viewBox="0 0 1040 580" role="img" aria-label="The main chat runs a cops or oss skill. It calls pr-oracle for read-only advice and pr-sidekick for edit, test, commit and push loops. A SessionStart hook injects the memory root. Only the oracle receives the memory root and reads the memory repo, and only its learn-feedback mode writes it. The sidekick gets remembered rules through its prompt.">
+  <svg viewBox="0 0 1040 580" role="img" aria-label="The main chat runs a cops or oss skill. It calls pr-oracle for read-only advice and pr-sidekick for edit, test, commit and push loops. A SessionStart hook injects the memory root. Only the oracle receives the memory root and reads the memory repo, and only its learn-feedback mode writes it. The oracle's brief lists every active rule and the sidekick gets them only through its prompt; main chat checks the sidekick accounted for each rule ID.">
     <defs>
       <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>
@@ -101,13 +101,14 @@ svg .w { color: var(--write); } svg .w text { fill: var(--write); }
     <rect class="pill" x="454" y="198" width="140" height="24" rx="3"/><text class="mono" x="464" y="214">issue-fix</text>
 
     <line class="soft" x1="306" y1="264" x2="594" y2="264"/>
-    <text class="m" x="306" y="284" style="font-size:11px;letter-spacing:.05em">SHARED RULES · CONVENTIONS*.md</text>
-    <text x="306" y="304" style="font-size:11.5px">picks each subagent's model</text>
-    <text x="306" y="322" style="font-size:11.5px">passes memory-root to the oracle only</text>
-    <text x="306" y="340" style="font-size:11.5px">one editing subagent at a time</text>
-    <text x="306" y="358" style="font-size:11.5px">relays agent questions to you, then resumes</text>
-    <text x="306" y="376" style="font-size:11.5px">ends every run with a Handoffs: list</text>
-    <text x="306" y="393" style="font-size:11.5px">autopilot: one card, ends a finished draft</text>
+    <text class="m" x="306" y="282" style="font-size:11px;letter-spacing:.05em">SHARED RULES · CONVENTIONS*.md</text>
+    <text x="306" y="298" style="font-size:11.5px">picks each subagent's model</text>
+    <text x="306" y="313" style="font-size:11.5px">passes memory-root to the oracle only</text>
+    <text x="306" y="328" style="font-size:11.5px">one editing subagent at a time</text>
+    <text x="306" y="343" style="font-size:11.5px">relays agent questions to you, then resumes</text>
+    <text x="306" y="358" style="font-size:11.5px">checks sidekick's rule IDs against the brief</text>
+    <text x="306" y="373" style="font-size:11.5px">ends every run with a Handoffs: list</text>
+    <text x="306" y="388" style="font-size:11.5px">autopilot: one card, ends a finished draft</text>
 
     <!-- Oracle -->
     <g class="o">
@@ -128,8 +129,8 @@ svg .w { color: var(--write); } svg .w text { fill: var(--write); }
       <text x="655" y="56" text-anchor="middle" style="font-size:11px">mode, inputs,</text>
       <text x="655" y="70" text-anchor="middle" style="font-size:11px">memory-root</text>
       <line class="edge" x1="700" y1="130" x2="612" y2="130" marker-end="url(#ah)"/>
-      <text x="655" y="148" text-anchor="middle" style="font-size:11px">advice, rules</text>
-      <text x="655" y="162" text-anchor="middle" style="font-size:11px">for the sidekick</text>
+      <text x="655" y="148" text-anchor="middle" style="font-size:11px">advice + every</text>
+      <text x="655" y="162" text-anchor="middle" style="font-size:11px">active rule</text>
     </g>
 
     <!-- Sidekick -->
@@ -148,7 +149,8 @@ svg .w { color: var(--write); } svg .w text { fill: var(--write); }
       <text x="655" y="283" text-anchor="middle" style="font-size:11px">oracle's rules</text>
       <line class="edge" x1="700" y1="345" x2="612" y2="345" marker-end="url(#ah)"/>
       <text x="655" y="363" text-anchor="middle" style="font-size:11px">changed, ran,</text>
-      <text x="655" y="377" text-anchor="middle" style="font-size:11px">committed, open</text>
+      <text x="655" y="377" text-anchor="middle" style="font-size:11px">committed, open,</text>
+      <text x="655" y="391" text-anchor="middle" style="font-size:11px">applied: rule IDs</text>
     </g>
 
     <!-- GitHub -->
