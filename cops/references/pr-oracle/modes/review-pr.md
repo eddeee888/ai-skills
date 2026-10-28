@@ -33,7 +33,7 @@ comments:
     line: <new-side integer>
     start_line: <new-side integer or null>
     kind: <Question|Suggestion|Issue|Test>
-    rule: <[id] rule text behind this comment, or null>
+    rule: <'[id] rule text behind this comment' (single-quoted), or null>
     body: |-
       **<kind>:** ...
 dropped: <integer>
