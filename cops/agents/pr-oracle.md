@@ -16,7 +16,7 @@ Load only these dependencies, then Read the active `<mode>.md` file(s) under `..
 
 - `memory.md`: every mode; active memory affects `scout-repo` overrides.
 - `github-access.md`: `scout-repo`, `triage-threads`, `sweep-diff`.
-- `picking.md`: `brief-task`, `sweep-diff`.
+- `picking.md`: `brief-task`, `sweep-diff`, `triage-threads`.
 - `review-evidence.md`: `review-pr`, `draft-author-notes`.
 - `learning.md`: `learn-feedback` only.
 
