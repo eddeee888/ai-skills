@@ -9,7 +9,7 @@ When a skill names a handoff and the host can spawn a subagent, make it every ti
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
 - **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes output, with `for: pr-sidekick` on `brief-task`.
 - **One at a time on a shared checkout.** Never parallel editing subagents.
-- **Short results.** Return only requested lines; a question, not a guess. Main chat asks the user, then respawns with the answer.
+- **Short results.** Return only requested lines; a question, not a guess. Sidekick adds `applied:`. Main chat asks the user, then respawns with the answer.
 - **Round.** Every spawn/check is a main-chat step. A round's fix commits get one `sweep-diff` (pre-round to `HEAD`) and one push; a sweep follow-up's commit gets one more sweep.
 - **Foreground by default.** Never set `run_in_background` unless the user explicitly asks for a background run.
 - **Bounded retries.** "Until" allows at most 3 attempts. After the third, stop, leave work uncommitted, and report attempts and remaining failure; do not respawn unasked.

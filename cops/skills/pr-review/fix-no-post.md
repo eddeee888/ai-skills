@@ -38,6 +38,7 @@ Commit in the repo's commit style, ending with:
 Do not push, post, reply, or edit any PR or issue.
 Return one line per finding: fixed (sha, one-line summary) | skipped
 (why) — then one line for the final test run.
+Also return the `applied:` line for the rules above.
 ```
 
 The user's Step 3 choice is the approval (`CONVENTIONS-pr-metadata.md` → "Commit trailers"). A question → ask the user, then spawn again with `Resuming:` filled in. No subagent capability → run the same steps here and mark `fix loop` as `inline (no subagent capability)`.
@@ -54,4 +55,4 @@ No commits → push nothing.
 
 ## Report
 
-Report each finding as fixed (sha) or skipped (why), the push, and the test result. Skipped findings stay with the user; never post them. Then suggest per `CONVENTIONS-orchestration.md` → "Suggesting next steps". Handoffs: `review-pr`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up), and `learn-feedback` when run.
+Report each finding as fixed (sha) or skipped (why), the push, the test result, and the sidekick's `applied:` line. Skipped findings stay with the user; never post them. Then suggest per `CONVENTIONS-orchestration.md` → "Suggesting next steps". Handoffs: `review-pr`, `fix loop` (a second for a sweep follow-up), `sweep-diff` (a second for the follow-up), and `learn-feedback` when run.

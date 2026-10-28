@@ -33,9 +33,14 @@ tests still fail.
 Do not push, reply on any thread, resolve any thread, or run pr-wrap-up.
 Return one line per thread: comment id, done (commit sha, one-line
 summary for the reply) or skipped (why) — then one line for the final test run.
+Also return the `applied:` line for the rules above.
 ```
 
 No subagent capability means perform the same implement/test/commit loop inline and mark the handoff as required by `CONVENTIONS-orchestration.md`; convenience is not unavailability.
+
+## Report
+
+The batch's report includes each handoff's `applied:` line.
 
 ## Check gate
 

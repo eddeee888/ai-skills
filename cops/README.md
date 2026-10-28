@@ -140,6 +140,8 @@ All three live in one hooks module, [`hooks/cops.tsx`](hooks/cops.tsx). What the
   rebase-and-draft), keeping them out
   of the main chat. It never reads or writes `memory/`: the oracle picks
   the remembered rules for each job and the skill puts them in its prompt.
+  It returns an `applied:` line naming the rules it applied and any it did not (with why),
+  and the skill's report shows it.
   It follows that prompt template and returns a few lines. The calling skill
   picks its tier per job — `light` for mechanical edits, `standard` for scoped
   changes, `deep` for anything needing more judgment ([Subagent models](#subagent-models)).
