@@ -129,6 +129,18 @@ describe('background row', () => {
     expect(drawn).toMatch(/✓ 🔮 Oracle · inherit \(sonnet\) · brief-task · .*42s · CHECKPOINT_FOUND abc1234/)
     await ui.unmount()
   })
+
+  test('ends a non-cops background row too, with its time', async ($, on) => {
+    world({ $, on, runs: { 'find things': { background: true } } })
+    await $.tool.call({ tool: 'Agent', description: 'look', subagent_type: 'Explore', prompt: 'find things' })
+    const ui = await mount({ $ })
+    expect(await text({ ui })).toContain('running in the background')
+    await $.turn.complete({ answer: 'found it', durationMs: 42_000, isAborted: false, turnId: 't', agentId: 'agent-1', reason: 'answer' })
+    const drawn = await text({ ui })
+    expect(drawn).not.toContain('running in the background')
+    expect(drawn).toMatch(/✓ Explore .*42s/)
+    await ui.unmount()
+  })
 })
 
 describe('oracle loaded check', () => {

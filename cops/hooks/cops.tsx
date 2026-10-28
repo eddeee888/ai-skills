@@ -604,7 +604,7 @@ export const register: Register = (on, options) => {
     return ran
   }).catch(($, e, next) => next(e))
 
-  // Ticks the handoffs a main-chat spawn makes, records the model every agent call resolved to, and links a cops agent's call to its loop.
+  // Ticks the handoffs a main-chat spawn makes, records the model every agent call resolved to, and links each agent call to its run by agentId.
   on('agent.spawn', async ($, e, next) => {
     const spawned = await next(e)
     try {
@@ -614,7 +614,7 @@ export const register: Register = (on, options) => {
         : []
       if (running && ticked.length > 0) await update($, checklist, () => ({ ...running, ticked: [...new Set([...running.ticked, ...ticked])] }))
       if (spawned.deny === undefined) {
-        await setCall($, e.tool_use_id, { resolvedModel: spawned.model, ...(spawned.agentId && e.subagentType.startsWith('cops:') && { agentId: spawned.agentId }) })
+        await setCall($, e.tool_use_id, { resolvedModel: spawned.model, ...(spawned.agentId && { agentId: spawned.agentId }) })
       }
       if (ticked.length > 0) $.ui.invalidate('ui.render')
     } catch (error) {
@@ -627,7 +627,7 @@ export const register: Register = (on, options) => {
   on('tool.call', async ($, e, next) => {
     try {
       const call = e.agentId ? (await read($, agents)).find(one => one.agentId === e.agentId) : undefined
-      if (call && e.agentId) {
+      if (call && e.agentId && call.agent.startsWith('cops:')) {
         const command = e.tool === 'Bash' ? e.command : undefined
         const history = command === undefined ? commands.get(e.agentId) || [] : [...(commands.get(e.agentId) || []), command]
         commands.set(e.agentId, history)
