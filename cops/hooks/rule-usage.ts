@@ -99,6 +99,17 @@ export const parseReply = ({ text }: { text: string }): string[] =>
     return rule ? [rule] : []
   })
 
+// The rules a sweep-diff reply flags: only its `— rule:` lines, without their evidence:
+//   '- a.ts:3  nested ifs  — rule: [U-014] prefer early returns (stated by user)' → ['[U-014] prefer early returns']
+//   '- prefer early returns  (stated by user 2x, from you)'                       → []
+//   'clean'                                                                      → []
+export const parseFlagged = ({ text }: { text: string }): string[] =>
+  text.split('\n').flatMap(line => {
+    const rule = /^\s*- .*?\s—\s*rule:\s*(.+)$/.exec(line)?.[1]
+    const stripped = rule ? stripEvidence({ text: rule }) : ''
+    return stripped ? [stripped] : []
+  })
+
 // The entries a reply's rules match, each once: the same ID, or text equal once normalized, or one a prefix of the other:
 //   entries ['prefer early returns', 'keep tests beside code'], cited ['Prefer early returns, always.'] → ['prefer early returns']
 //   entries ['prefer early returns'], cited ['prefer'] → ['prefer early returns']
@@ -115,17 +126,21 @@ export const matchEntries = ({ entries, cited }: { entries: string[]; cited: str
   return matched.filter((entry, index) => matched.findIndex(other => normalize({ text: other }) === normalize({ text: entry })) === index)
 }
 
-// The usage after one reply matched `keys`, at `now`:
-//   {}, ['k'], 5 → { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
-//   { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }, ['k'], 9
-//     → { k: { count: 2, firstSeen: 5, lastSeen: 9, recent: [5, 9] } }
-//   { k: { count: 10, firstSeen: 1, lastSeen: 10, recent: [1, 2, …, 10] } }, ['k'], 11
+// The usage after one reply matched `keys` (cited) and `flaggedKeys` (flagged by a sweep-diff line), at `now`; a flagged key also counts as cited:
+//   {}, ['k'], [], 5 → { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
+//   {}, [], ['k'], 5 → { k: { count: 1, flagged: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
+//   { k: { count: 1, flagged: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }, ['k'], [], 9
+//     → { k: { count: 2, flagged: 1, firstSeen: 5, lastSeen: 9, recent: [5, 9] } }   (a citation leaves flagged alone)
+//   { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }, [], ['k'], 9
+//     → { k: { count: 2, flagged: 1, firstSeen: 5, lastSeen: 9, recent: [5, 9] } }   (no stored flagged reads as 0)
+//   { k: { count: 10, firstSeen: 1, lastSeen: 10, recent: [1, 2, …, 10] } }, ['k'], [], 11
 //     → { k: { count: 11, firstSeen: 1, lastSeen: 11, recent: [2, 3, …, 11] } }   (RECENT_LIMIT keeps the newest 10)
-export const countUses = ({ usage, keys, now }: { usage: Record<string, RuleUsage>; keys: string[]; now: number }): Record<string, RuleUsage> => ({
+export const countUses = ({ usage, keys, flaggedKeys, now }: { usage: Record<string, RuleUsage>; keys: string[]; flaggedKeys: string[]; now: number }): Record<string, RuleUsage> => ({
   ...usage,
-  ...Object.fromEntries(keys.map(key => {
+  ...Object.fromEntries([...new Set([...keys, ...flaggedKeys])].map(key => {
     const prior = usage[key]
-    return [key, { count: (prior?.count ?? 0) + 1, firstSeen: prior?.firstSeen ?? now, lastSeen: now, recent: [...(prior?.recent ?? []), now].slice(-RECENT_LIMIT) }]
+    const flagged = flaggedKeys.includes(key) ? (prior?.flagged ?? 0) + 1 : prior?.flagged
+    return [key, { count: (prior?.count ?? 0) + 1, flagged, firstSeen: prior?.firstSeen ?? now, lastSeen: now, recent: [...(prior?.recent ?? []), now].slice(-RECENT_LIMIT) }]
   })),
 })
 
@@ -136,6 +151,7 @@ export const toRuleUsage = ({ stored }: { stored: unknown }): Record<string, Rul
     && 'count' in value && typeof value.count === 'number'
     && 'firstSeen' in value && typeof value.firstSeen === 'number'
     && 'lastSeen' in value && typeof value.lastSeen === 'number'
+    && (!('flagged' in value) || value.flagged === undefined || typeof value.flagged === 'number')
     && 'recent' in value && Array.isArray(value.recent) && value.recent.every(one => typeof one === 'number')
   if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
     return {}
@@ -165,14 +181,16 @@ export const describeRules = ({ entries, usage, now }: { entries: string[]; usag
   }
 }
 
-// A rule's count and when it was last seen:
-//   no use                              → 'never seen'
-//   count 3, last seen earlier today    → '3× · last seen today'
-//   count 1, last seen 31 days ago      → '1× · last seen 31d ago'
+// A rule's count, how often a sweep flagged it (only above 0), and when it was last seen:
+//   no use                                      → 'never seen'
+//   count 3, last seen earlier today            → 'seen 3× · last seen today'
+//   count 5, flagged 3, last seen 2 days ago    → 'seen 5× · flagged 3× · last seen 2d ago'
+//   count 1, flagged 0, last seen 31 days ago   → 'seen 1× · last seen 31d ago'
 export const describeUse = ({ use, now }: { use?: RuleUsage; now: number }): string => {
   if (!use) {
     return 'never seen'
   }
   const days = Math.floor((now - use.lastSeen) / DAY_MS)
-  return `${use.count}× · last seen ${days === 0 ? 'today' : `${days}d ago`}`
+  const flagged = (use.flagged ?? 0) > 0 ? ` · flagged ${use.flagged}×` : ''
+  return `seen ${use.count}×${flagged} · last seen ${days === 0 ? 'today' : `${days}d ago`}`
 }

@@ -10,7 +10,7 @@ import { checkLoaded, checkTool, EXPECTED_HANDOFFS, tickedBy } from './orchestra
 import { describeActivity, describeAgent, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, snippet, SPINNER_MS, summarize, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, parseEntries, parseFlagged, parseReply, toRuleUsage } from './rule-usage.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 import { addUsage, describeUsage, keyCall, toUsage } from './usage-stats.ts'
 
@@ -590,9 +590,12 @@ export const register: Register = (on, options) => {
           const context = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
           if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
             const { rules } = await readMemory($, { context: context.stdout })
-            const keys = matchEntries({ entries: rules.map(one => one.rule), cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
+            const entries = rules.map(one => one.rule)
+            const keys = matchEntries({ entries, cited: parseReply({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule }))
+            // Only a sweep-diff reply's `— rule:` lines flag a rule; a brief-task citation just counts.
+            const flaggedKeys = call.modes?.includes('sweep-diff') ? matchEntries({ entries, cited: parseFlagged({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule })) : []
             if (keys.length > 0) {
-              await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, now: await $.clock.now() }))
+              await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, flaggedKeys, now: await $.clock.now() }))
               $.ui.invalidate('ui.render')
             }
           }

@@ -95,7 +95,10 @@ export type InboxItem = {
  * `$.store` under the key `ruleUsage`, by a hash of the rule's normalized text. Times are `$.clock.now()`.
  */
 export type RuleUsage = {
+  /** Times a reply cited it, a sweep-diff flag included. */
   count: number
+  /** Times a sweep-diff reply flagged it; unset reads as 0. */
+  flagged?: number
   firstSeen: number
   lastSeen: number
   /** The latest times it matched, oldest first, capped. */

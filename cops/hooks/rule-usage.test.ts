@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseEntries, parseReply, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseEntries, parseFlagged, parseReply, toRuleUsage } from './rule-usage.ts'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -112,6 +112,15 @@ describe('rule usage counting', () => {
     expect(Object.keys(toRuleUsage({ stored: stored.ruleUsage }))).toHaveLength(2)
   })
 
+  test('a brief-task reply with a rule: line counts a use, not a flag', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, replies: { 'mode: brief-task': '- a.ts:3  nested ifs  — rule: prefer early returns (stated by user)' } })
+    await oracle({ $, mode: 'brief-task' })
+    const use = used({ stored, rule: 'Prefer early returns' })
+    expect(use?.count).toBe(1)
+    expect(use?.flagged).toBeUndefined()
+  })
+
   test('a for: pr-sidekick brief-task reply counts nothing', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
     const prompt = 'mode: brief-task\nfor: pr-sidekick'
@@ -124,7 +133,7 @@ describe('rule usage counting', () => {
     const stored: Record<string, unknown> = { ruleUsage: { [hashRule({ text: 'Keep tests beside the code' })]: { count: 2, firstSeen: DAY, lastSeen: 2 * DAY, recent: [DAY, 2 * DAY] } } }
     world({ on, stored, replies: { 'mode: sweep-diff': '- a.test.ts:1  test in a separate folder  — rule: keep tests beside the code (stated by user, from team)' } })
     await oracle({ $, mode: 'sweep-diff' })
-    expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 3, firstSeen: DAY, lastSeen: NOW, recent: [DAY, 2 * DAY, NOW] })
+    expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 3, flagged: 1, firstSeen: DAY, lastSeen: NOW, recent: [DAY, 2 * DAY, NOW] })
   })
 
   test('a rule cited by ID alone or with its ID counts under the hash of its text', MEMORY, async ($, on) => {
@@ -140,7 +149,7 @@ describe('rule usage counting', () => {
       replies: { 'mode: sweep-diff': '- a.ts:3  nested ifs  — rule: [U-014]\n- a.test.ts:1  test in a separate folder  — rule: [T-002] keep tests beside the code (stated by octocat, from team)' },
     })
     await oracle({ $, mode: 'sweep-diff' })
-    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 2, firstSeen: DAY, lastSeen: NOW, recent: [DAY, NOW] })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 2, flagged: 1, firstSeen: DAY, lastSeen: NOW, recent: [DAY, NOW] })
     expect(used({ stored, rule: 'Keep tests beside the code' })?.count).toBe(1)
     expect(Object.keys(toRuleUsage({ stored: stored.ruleUsage }))).toHaveLength(2)
   })
@@ -184,9 +193,9 @@ describe('Rules tab', () => {
     await ui.press({ key: 'tab-rules' })
     await until({ check: async () => (await text({ ui })).includes('Stale rules (1)') })
     const drawn = await text({ ui })
-    expect(drawn).toContain('Prefer early returns · 4× · last seen 31d ago')
+    expect(drawn).toContain('Prefer early returns · seen 4× · last seen 31d ago')
     expect(drawn).toContain('Often fired (1)')
-    expect(drawn).toContain('Use `run()` (not `exec()`) for commands · 5 in 30d · 5× · last seen today')
+    expect(drawn).toContain('Use `run()` (not `exec()`) for commands · 5 in 30d · seen 5× · last seen today')
     expect(drawn).not.toContain('Keep tests beside the code')
     expect(drawn).not.toContain('Threads:')
     await ui.press({ key: 'prune-0' })
@@ -230,7 +239,7 @@ describe('Rules tab', () => {
     await until({ check: async () => (await text({ ui })).includes('Stale rules (0)') })
     await clock.advance(120_000)
     await until({ check: async () => (await text({ ui })).includes('Stale rules (1)') })
-    expect(await text({ ui })).toContain('Prefer early returns · 1× · last seen 30d ago')
+    expect(await text({ ui })).toContain('Prefer early returns · seen 1× · last seen 30d ago')
     await ui.unmount()
   })
 
@@ -321,14 +330,28 @@ describe('matching', () => {
 
 describe('usage', () => {
   test('counts uses, keeping the latest 10 times', () => {
-    const once = countUses({ usage: {}, keys: ['k'], now: 5 })
+    const once = countUses({ usage: {}, keys: ['k'], flaggedKeys: [], now: 5 })
     expect(once).toEqual({ k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } })
-    const many = Array.from({ length: 11 }, (_, at) => at + 6).reduce((usage, now) => countUses({ usage, keys: ['k'], now }), once)
+    const many = Array.from({ length: 11 }, (_, at) => at + 6).reduce((usage, now) => countUses({ usage, keys: ['k'], flaggedKeys: [], now }), once)
     expect(many.k).toEqual({ count: 12, firstSeen: 5, lastSeen: 16, recent: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16] })
   })
 
+  test('a flagged key bumps count and flagged, a cited key only count, and no stored flagged reads as 0', () => {
+    const stored = { k: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } }
+    expect(countUses({ usage: stored, keys: [], flaggedKeys: ['k'], now: 9 }).k).toEqual({ count: 2, flagged: 1, firstSeen: 1, lastSeen: 9, recent: [1, 9] })
+    expect(countUses({ usage: stored, keys: ['k'], flaggedKeys: [], now: 9 }).k).toEqual({ count: 2, firstSeen: 1, lastSeen: 9, recent: [1, 9] })
+    const flagged = countUses({ usage: {}, keys: [], flaggedKeys: ['k'], now: 5 })
+    expect(countUses({ usage: flagged, keys: ['k'], flaggedKeys: [], now: 6 }).k).toMatchObject({ count: 2, flagged: 1 })
+    expect(toRuleUsage({ stored })).toEqual(stored)
+    expect(describeUse({ use: stored.k, now: 1 })).not.toContain('flagged')
+  })
+
+  test('parses only the sweep-diff rule lines as flagged', () => {
+    expect(parseFlagged({ text: '- a.ts:3  nested ifs  — rule: [U-014] prefer early returns (stated by user)\n- ask before pushing  (seen 2x)\nclean' })).toEqual(['[U-014] prefer early returns'])
+  })
+
   test('drops stored values that are not usage', () => {
-    expect(toRuleUsage({ stored: { a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] }, b: { count: 'x' }, c: null } })).toEqual({ a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } })
+    expect(toRuleUsage({ stored: { a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] }, b: { count: 'x' }, c: null, d: { count: 1, flagged: 'x', firstSeen: 1, lastSeen: 1, recent: [1] } } })).toEqual({ a: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } })
     expect(toRuleUsage({ stored: ['junk'] })).toEqual({})
   })
 
@@ -345,7 +368,8 @@ describe('usage', () => {
 
   test('describes a rule\'s use', () => {
     expect(describeUse({ now: NOW })).toBe('never seen')
-    expect(describeUse({ use: { count: 3, firstSeen: 0, lastSeen: NOW - 1000, recent: [] }, now: NOW })).toBe('3× · last seen today')
-    expect(describeUse({ use: { count: 1, firstSeen: 0, lastSeen: NOW - 31 * DAY, recent: [] }, now: NOW })).toBe('1× · last seen 31d ago')
+    expect(describeUse({ use: { count: 3, firstSeen: 0, lastSeen: NOW - 1000, recent: [] }, now: NOW })).toBe('seen 3× · last seen today')
+    expect(describeUse({ use: { count: 1, firstSeen: 0, lastSeen: NOW - 31 * DAY, recent: [] }, now: NOW })).toBe('seen 1× · last seen 31d ago')
+    expect(describeUse({ use: { count: 5, flagged: 3, firstSeen: 0, lastSeen: NOW - 2 * DAY, recent: [] }, now: NOW })).toBe('seen 5× · flagged 3× · last seen 2d ago')
   })
 })
