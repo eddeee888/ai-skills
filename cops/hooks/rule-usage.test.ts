@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseEntries, parseFlagged, parseReply, parseReviewRules, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseApplied, parseEntries, parseFlagged, parseReply, parseReviewRules, toRuleUsage } from './rule-usage.ts'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -192,6 +192,39 @@ describe('rule usage counting', () => {
   })
 })
 
+describe('pr-sidekick applied rules', () => {
+  const IDS = {
+    [PERSONAL]: '## Code\n- [U-001] Prefer early returns  (stated by user 2x)\n- [U-002] Use `run()` for commands  (seen 2x)\n',
+    [TEAM]: '## Team\n- [T-001] Keep tests beside the code  (stated by user)\n',
+  }
+  const sidekick = async ({ $ }: { $: Engine }): Promise<void> => {
+    await $.tool.call({ tool: 'Agent', description: 'job', subagent_type: 'cops:pr-sidekick', prompt: 'job' })
+  }
+
+  test('counts only the applied IDs', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { job: 'changed: a.ts — x\napplied: [U-001], T-001; not applied: [U-002] (not triggered)\ndeviations: none' } })
+    await sidekick({ $ })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+    expect(used({ stored, rule: 'Keep tests beside the code' })?.count).toBe(1)
+    expect(used({ stored, rule: 'Use `run()` for commands' })).toBeUndefined()
+  })
+
+  test('applied: none counts nothing', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { job: 'applied: none; not applied: [U-002] (not triggered)' } })
+    await sidekick({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+
+  test('counts nothing while memory is off', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, memory: MEMORY_OFF, replies: { job: 'applied: [U-001]' } })
+    await sidekick({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+})
+
 describe('Rules tab', () => {
   test('lists a rule last seen 30+ days ago as stale, with a Prune button that fills the prompt', MEMORY, async ($, on) => {
     const stored = {
@@ -304,6 +337,34 @@ describe('parseReply', () => {
     expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: [U-014]' })).toEqual(['[U-014]'])
     expect(parseReply({ text: '- a.ts:3  nested ifs  — rule: [U-014] (stated by user, from you)' })).toEqual(['[U-014]'])
     expect(parseReply({ text: 'clean' })).toEqual([])
+  })
+})
+
+describe('parseApplied', () => {
+  test('reads only the applied part, not the not-applied one', () => {
+    expect(parseApplied({ text: 'applied: [U-001], [U-003]; not applied: [U-002] (not triggered)' })).toEqual(['[U-001]', '[U-003]'])
+  })
+
+  test('none reads as no rules', () => {
+    expect(parseApplied({ text: 'applied: none; not applied: none' })).toEqual([])
+    expect(parseApplied({ text: 'applied: none' })).toEqual([])
+  })
+
+  test('a bare ID reads as a bracketed one', () => {
+    expect(parseApplied({ text: 'applied: U-014, [T-004]' })).toEqual(['[U-014]', '[T-004]'])
+  })
+
+  test('not-applied reasons with commas, semicolons and parentheses are left out', () => {
+    expect(parseApplied({ text: 'applied: [U-001]; not applied: [U-002] (a, b; c (d)), [U-005] (no match; skipped)' })).toEqual(['[U-001]'])
+  })
+
+  test('finds the applied line among a reply\'s other lines', () => {
+    expect(parseApplied({ text: 'changed: a.ts — x\napplied: [U-001] [T-004]\ndeviations: none' })).toEqual(['[U-001]', '[T-004]'])
+  })
+
+  test('a reply without an applied line reads as no rules', () => {
+    expect(parseApplied({ text: 'not applied: [U-002] (not triggered)' })).toEqual([])
+    expect(parseApplied({ text: 'changed: a.ts — x\ndeviations: none' })).toEqual([])
   })
 })
 
