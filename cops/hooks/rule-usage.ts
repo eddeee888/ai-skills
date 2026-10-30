@@ -126,12 +126,15 @@ export const parseReviewRules = ({ text }: { text: string }): string[] =>
 //   'applied: U-014'                                                                  → ['[U-014]']
 //   'applied: none; not applied: none', 'applied: none'                               → []
 //   'applied: [U-001]; not applied: [U-002] (a, b; c (d))'                            → ['[U-001]']
+//   'applied: [U-001] — not applied: [U-002] (not triggered)'                         → ['[U-001]']
+//   'applied: [U-001], not applied: [U-002] (x)'                                      → ['[U-001]']
+//   'applied: [U-001]; [U-003]'                                                       → ['[U-001]', '[U-003]']
 //   'changed: a.ts — x\napplied: [U-001] [T-004]\ndeviations: none'                   → ['[U-001]', '[T-004]']
 //   'not applied: [U-002] (not triggered)', 'changed: a.ts — x'                       → []
 export const parseApplied = ({ text }: { text: string }): string[] =>
   text.split('\n').flatMap(line => {
-    const value = /^\s*applied:\s*(.*?)(?:;\s*not applied:.*)?$/i.exec(line)?.[1] ?? ''
-    return value.split(/[,\s]+/).flatMap(token => {
+    const value = /^\s*applied:\s*(.*)$/i.exec(line)?.[1]?.split(/not applied:/i)[0] ?? ''
+    return value.split(/[,;\s]+/).flatMap(token => {
       const id = /^\[?([UCT]-\d+)\]?$/.exec(token)?.[1]
       return id ? [`[${id}]`] : []
     })

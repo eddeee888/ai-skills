@@ -358,6 +358,12 @@ describe('parseApplied', () => {
     expect(parseApplied({ text: 'applied: [U-001]; not applied: [U-002] (a, b; c (d)), [U-005] (no match; skipped)' })).toEqual(['[U-001]'])
   })
 
+  test('not-applied is cut off whatever comes before it, and semicolons separate IDs', () => {
+    expect(parseApplied({ text: 'applied: [U-001] — not applied: [U-002] (not triggered)' })).toEqual(['[U-001]'])
+    expect(parseApplied({ text: 'applied: [U-001], not applied: [U-002] (x)' })).toEqual(['[U-001]'])
+    expect(parseApplied({ text: 'applied: [U-001]; [U-003]' })).toEqual(['[U-001]', '[U-003]'])
+  })
+
   test('finds the applied line among a reply\'s other lines', () => {
     expect(parseApplied({ text: 'changed: a.ts — x\napplied: [U-001] [T-004]\ndeviations: none' })).toEqual(['[U-001]', '[T-004]'])
   })
