@@ -1,7 +1,7 @@
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
 
-// How often each remembered rule fires in pr-oracle's brief-task, sweep-diff, review-pr and grill-description replies and in pr-sidekick's `applied:` lines, and which have gone stale.
+// How often each remembered rule fires in pr-oracle's brief-task, sweep-diff, review-pr, grill-description and triage-threads replies and in pr-sidekick's `applied:` lines, and which have gone stale.
 
 const DAY_MS = 86_400_000
 // A rule last seen this long ago, or never, is stale.
@@ -123,6 +123,18 @@ export const parseStyleFlags = ({ text }: { text: string }): string[] =>
     return rule ? [rule] : []
   })
 
+// The rule a triage-threads reply's per-thread `remembered:` lines name, without their `(you)` / `(team)` origin marker; each line holds one rule, and the `edit-rules:` list and other lines are left out:
+//   'automatic:\n  - thread: t1  comment: 1  at: a.ts:3\n    remembered: [U-001] prefer early returns  (you)' → ['[U-001] prefer early returns']
+//   'needs-user:\n  - thread: t2  comment: 2  at: a.ts:9\n    remembered: [T-002] keep tests beside code (team)' → ['[T-002] keep tests beside code']
+//   '    remembered: [U-001]'                                                                               → ['[U-001]']
+//   '    remembered: none', 'edit-rules:\n  - [U-003] use pnpm  (stated by user, from you)', 'already-handled:' → []
+export const parseThreadRules = ({ text }: { text: string }): string[] =>
+  text.split('\n').flatMap(line => {
+    const value = /^\s*remembered:\s*(.*)$/.exec(line)?.[1] ?? ''
+    const rule = value.replace(/\s*\((?:you|team)\)\s*$/, '').trim()
+    return rule && rule !== 'none' ? [rule] : []
+  })
+
 // The rules a review-pr reply names in its comments' private `rule:` fields, without their evidence:
 //   '    rule: [U-014] prefer early returns (stated by user)'   → ['[U-014] prefer early returns']
 //   '  - rule: "prefer early returns"'                          → ['prefer early returns']
@@ -169,21 +181,25 @@ export const matchEntries = ({ entries, cited }: { entries: string[]; cited: str
   return matched.filter((entry, index) => matched.findIndex(other => normalize({ text: other }) === normalize({ text: entry })) === index)
 }
 
-// The usage after one reply matched `keys` (cited) and `flaggedKeys` (flagged by a sweep-diff `— rule:` line or a grill-description `style:` flag), at `now`; a flagged key also counts as cited:
+// The usage after one reply matched `keys` (cited), `flaggedKeys` (flagged by a sweep-diff `— rule:` line or a grill-description `style:` flag) and `matchedKeys` (matched to a review thread by a triage-threads `remembered:` line), at `now`; a flagged or matched key also counts as cited:
 //   {}, ['k'], [], 5 → { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
 //   {}, [], ['k'], 5 → { k: { count: 1, flagged: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
+//   {}, [], [], ['k'], 5 → { k: { count: 1, matched: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }   (the arguments are keys, flaggedKeys, matchedKeys)
 //   { k: { count: 1, flagged: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }, ['k'], [], 9
 //     → { k: { count: 2, flagged: 1, firstSeen: 5, lastSeen: 9, recent: [5, 9] } }   (a citation leaves flagged alone)
 //   { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }, [], ['k'], 9
 //     → { k: { count: 2, flagged: 1, firstSeen: 5, lastSeen: 9, recent: [5, 9] } }   (no stored flagged reads as 0)
+//   { k: { count: 1, matched: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }, ['k'], [], [], 9
+//     → { k: { count: 2, matched: 1, firstSeen: 5, lastSeen: 9, recent: [5, 9] } }   (a citation leaves matched alone)
 //   { k: { count: 10, firstSeen: 1, lastSeen: 10, recent: [1, 2, …, 10] } }, ['k'], [], 11
 //     → { k: { count: 11, firstSeen: 1, lastSeen: 11, recent: [2, 3, …, 11] } }   (RECENT_LIMIT keeps the newest 10)
-export const countUses = ({ usage, keys, flaggedKeys, now }: { usage: Record<string, RuleUsage>; keys: string[]; flaggedKeys: string[]; now: number }): Record<string, RuleUsage> => ({
+export const countUses = ({ usage, keys, flaggedKeys, matchedKeys, now }: { usage: Record<string, RuleUsage>; keys: string[]; flaggedKeys: string[]; matchedKeys: string[]; now: number }): Record<string, RuleUsage> => ({
   ...usage,
-  ...Object.fromEntries([...new Set([...keys, ...flaggedKeys])].map(key => {
+  ...Object.fromEntries([...new Set([...keys, ...flaggedKeys, ...matchedKeys])].map(key => {
     const prior = usage[key]
     const flagged = flaggedKeys.includes(key) ? (prior?.flagged ?? 0) + 1 : prior?.flagged
-    return [key, { count: (prior?.count ?? 0) + 1, flagged, firstSeen: prior?.firstSeen ?? now, lastSeen: now, recent: [...(prior?.recent ?? []), now].slice(-RECENT_LIMIT) }]
+    const matched = matchedKeys.includes(key) ? (prior?.matched ?? 0) + 1 : prior?.matched
+    return [key, { count: (prior?.count ?? 0) + 1, flagged, matched, firstSeen: prior?.firstSeen ?? now, lastSeen: now, recent: [...(prior?.recent ?? []), now].slice(-RECENT_LIMIT) }]
   })),
 })
 
@@ -195,6 +211,7 @@ export const toRuleUsage = ({ stored }: { stored: unknown }): Record<string, Rul
     && 'firstSeen' in value && typeof value.firstSeen === 'number'
     && 'lastSeen' in value && typeof value.lastSeen === 'number'
     && (!('flagged' in value) || value.flagged === undefined || typeof value.flagged === 'number')
+    && (!('matched' in value) || value.matched === undefined || typeof value.matched === 'number')
     && 'recent' in value && Array.isArray(value.recent) && value.recent.every(one => typeof one === 'number')
   if (typeof stored !== 'object' || stored === null || Array.isArray(stored)) {
     return {}
@@ -224,10 +241,11 @@ export const describeRules = ({ entries, usage, now }: { entries: string[]; usag
   }
 }
 
-// A rule's count, how often a sweep flagged it (only above 0), and when it was last seen:
+// A rule's count, how often a sweep flagged it and how often a triage matched it to a thread (each only above 0), and when it was last seen:
 //   no use                                      → 'never seen'
 //   count 3, last seen earlier today            → 'seen 3× · last seen today'
 //   count 5, flagged 3, last seen 2 days ago    → 'seen 5× · flagged 3× · last seen 2d ago'
+//   count 5, flagged 3, matched 2, last seen 2 days ago → 'seen 5× · flagged 3× · matched 2× · last seen 2d ago'
 //   count 1, flagged 0, last seen 31 days ago   → 'seen 1× · last seen 31d ago'
 export const describeUse = ({ use, now }: { use?: RuleUsage; now: number }): string => {
   if (!use) {
@@ -235,5 +253,6 @@ export const describeUse = ({ use, now }: { use?: RuleUsage; now: number }): str
   }
   const days = Math.floor((now - use.lastSeen) / DAY_MS)
   const flagged = (use.flagged ?? 0) > 0 ? ` · flagged ${use.flagged}×` : ''
-  return `seen ${use.count}×${flagged} · last seen ${days === 0 ? 'today' : `${days}d ago`}`
+  const matched = (use.matched ?? 0) > 0 ? ` · matched ${use.matched}×` : ''
+  return `seen ${use.count}×${flagged}${matched} · last seen ${days === 0 ? 'today' : `${days}d ago`}`
 }
