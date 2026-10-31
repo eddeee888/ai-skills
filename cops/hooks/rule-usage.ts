@@ -1,7 +1,7 @@
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
 
-// How often each remembered rule fires in pr-oracle's brief-task, sweep-diff and review-pr replies and in pr-sidekick's `applied:` lines, and which have gone stale.
+// How often each remembered rule fires in pr-oracle's brief-task, sweep-diff, review-pr and grill-description replies and in pr-sidekick's `applied:` lines, and which have gone stale.
 
 const DAY_MS = 86_400_000
 // A rule last seen this long ago, or never, is stale.
@@ -110,6 +110,19 @@ export const parseFlagged = ({ text }: { text: string }): string[] =>
     return stripped ? [stripped] : []
   })
 
+// The rules a grill-description reply's `style:` flags name, without their `— <fix>` part; its other flags are left out:
+//   '- style: [U-001] prefer early returns  — rewrite the intro'     → ['[U-001] prefer early returns']
+//   '- style: [U-001]  — rewrite the intro'                          → ['[U-001]']
+//   '- style: prefer early returns  — rewrite the intro'             → ['prefer early returns']
+//   '- unsupported: claims a fix  — drop it', '- missing: a.ts', '- convention: no Fixes line' → []
+//   'clean'                                                          → []
+export const parseStyleFlags = ({ text }: { text: string }): string[] =>
+  text.split('\n').flatMap(line => {
+    const flag = /^\s*- style:\s*(.+)$/.exec(line)?.[1] ?? ''
+    const rule = (flag.split(/\s—(?:\s|$)/)[0] ?? '').trim()
+    return rule ? [rule] : []
+  })
+
 // The rules a review-pr reply names in its comments' private `rule:` fields, without their evidence:
 //   '    rule: [U-014] prefer early returns (stated by user)'   → ['[U-014] prefer early returns']
 //   '  - rule: "prefer early returns"'                          → ['prefer early returns']
@@ -156,7 +169,7 @@ export const matchEntries = ({ entries, cited }: { entries: string[]; cited: str
   return matched.filter((entry, index) => matched.findIndex(other => normalize({ text: other }) === normalize({ text: entry })) === index)
 }
 
-// The usage after one reply matched `keys` (cited) and `flaggedKeys` (flagged by a sweep-diff line), at `now`; a flagged key also counts as cited:
+// The usage after one reply matched `keys` (cited) and `flaggedKeys` (flagged by a sweep-diff `— rule:` line or a grill-description `style:` flag), at `now`; a flagged key also counts as cited:
 //   {}, ['k'], [], 5 → { k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
 //   {}, [], ['k'], 5 → { k: { count: 1, flagged: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }
 //   { k: { count: 1, flagged: 1, firstSeen: 5, lastSeen: 5, recent: [5] } }, ['k'], [], 9

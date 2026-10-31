@@ -91,13 +91,13 @@ export type InboxItem = {
 }
 
 /**
- * How often a remembered rule matched a pr-oracle brief-task, sweep-diff or review-pr reply, or a pr-sidekick reply's `applied:` line, kept across sessions in
+ * How often a remembered rule matched a pr-oracle brief-task, sweep-diff, review-pr or grill-description reply, or a pr-sidekick reply's `applied:` line, kept across sessions in
  * `$.store` under the key `ruleUsage`, by a hash of the rule's normalized text. Times are `$.clock.now()`.
  */
 export type RuleUsage = {
-  /** Times a reply cited it or a pr-sidekick `applied:` line named it, a sweep-diff flag included. */
+  /** Times a reply cited it or a pr-sidekick `applied:` line named it, a sweep-diff or grill-description flag included. */
   count: number
-  /** Times a sweep-diff reply flagged it; unset reads as 0. */
+  /** Times a sweep-diff or grill-description reply flagged it (by a `— rule:` line or a `style:` flag); unset reads as 0. */
   flagged?: number
   firstSeen: number
   lastSeen: number
