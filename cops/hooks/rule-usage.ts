@@ -123,16 +123,19 @@ export const parseStyleFlags = ({ text }: { text: string }): string[] =>
     return rule ? [rule] : []
   })
 
-// The rule a triage-threads reply's per-thread `remembered:` lines name, without their `(you)` / `(team)` origin marker; each line holds one rule, and the `edit-rules:` list and other lines are left out:
+// The rule a triage-threads reply's per-thread `remembered:` lines name, without their `(you)` / `(team)` origin marker; a line naming several rules is split at each rule ID, and the `edit-rules:` list and other lines are left out:
 //   'automatic:\n  - thread: t1  comment: 1  at: a.ts:3\n    remembered: [U-001] prefer early returns  (you)' → ['[U-001] prefer early returns']
 //   'needs-user:\n  - thread: t2  comment: 2  at: a.ts:9\n    remembered: [T-002] keep tests beside code (team)' → ['[T-002] keep tests beside code']
 //   '    remembered: [U-001]'                                                                               → ['[U-001]']
+//   '    remembered: [U-001] prefer early returns (you); [T-001] keep tests beside the code (team)'         → ['[U-001] prefer early returns', '[T-001] keep tests beside the code']
 //   '    remembered: none', 'edit-rules:\n  - [U-003] use pnpm  (stated by user, from you)', 'already-handled:' → []
 export const parseThreadRules = ({ text }: { text: string }): string[] =>
   text.split('\n').flatMap(line => {
     const value = /^\s*remembered:\s*(.*)$/.exec(line)?.[1] ?? ''
-    const rule = value.replace(/\s*\((?:you|team)\)\s*$/, '').trim()
-    return rule && rule !== 'none' ? [rule] : []
+    return value.split(/[,;]?\s*(?=\[[UCT]-\d+\])/).flatMap(part => {
+      const rule = part.replace(/\s*\((?:you|team)\)\s*$/, '').trim()
+      return rule && rule !== 'none' ? [rule] : []
+    })
   })
 
 // The rules a review-pr reply names in its comments' private `rule:` fields, without their evidence:

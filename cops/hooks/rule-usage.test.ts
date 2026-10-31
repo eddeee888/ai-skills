@@ -292,6 +292,14 @@ describe('triage-threads remembered lines', () => {
     expect(used({ stored, rule: 'Use `run()` for commands' })).toBeUndefined()
   })
 
+  test('a remembered line naming two rules counts both as matched', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: 'automatic:\n  - thread: t1  comment: 1  at: a.ts:3\n    nature: authoritative\n    ask: x\n    remembered: [U-001] prefer early returns (you); [T-001] keep tests beside the code (team)' } })
+    await triage({ $ })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 1, matched: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+    expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 1, matched: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+  })
+
   test('a none remembered line counts nothing', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
     world({ on, stored, files: IDS, replies: { [prompt]: 'automatic:\n  - thread: t1\n    remembered: none' } })
@@ -530,6 +538,11 @@ describe('usage', () => {
   test('parses a thread\'s remembered line in automatic and needs-user, without its origin marker', () => {
     const text = 'automatic:\n  - thread: t1  comment: 1  at: a.ts:3\n    nature: authoritative\n    ask: x\n    remembered: [U-001] prefer early returns  (you)\nneeds-user:\n  - thread: t2  comment: 2  at: a.ts:9\n    reason: risky: y\n    ask: z\n    remembered: [T-002] keep tests beside code (team)'
     expect(parseThreadRules({ text })).toEqual(['[U-001] prefer early returns', '[T-002] keep tests beside code'])
+  })
+
+  test('splits a remembered line that names two rules, with or without a separator', () => {
+    expect(parseThreadRules({ text: '    remembered: [U-001] prefer early returns (you); [T-001] keep tests beside the code (team)' })).toEqual(['[U-001] prefer early returns', '[T-001] keep tests beside the code'])
+    expect(parseThreadRules({ text: '    remembered: [U-001] prefer early returns (you) [T-001] keep tests beside the code (team)' })).toEqual(['[U-001] prefer early returns', '[T-001] keep tests beside the code'])
   })
 
   test('ignores a none remembered line, the edit-rules list and a reply without remembered lines', () => {
