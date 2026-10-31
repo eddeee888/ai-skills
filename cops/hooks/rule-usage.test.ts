@@ -244,6 +244,13 @@ describe('grill-description style flags', () => {
     expect(used({ stored, rule: 'Use `run()` for commands' })).toBeUndefined()
   })
 
+  test('two style flags for the same rule in one reply count it once', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: '- style: [U-001] prefer early returns  — rewrite the intro\n- style: [U-001]  — move the note' } })
+    await grill({ $ })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 1, flagged: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+  })
+
   test('unsupported, missing and convention flags count nothing', MEMORY, async ($, on) => {
     const stored: Record<string, unknown> = {}
     world({ on, stored, files: IDS, replies: { [prompt]: '- unsupported: [U-001] claims a fix  — drop it\n- missing: [U-002] a.ts\n- convention: [T-001] no Fixes line  — add it' } })
