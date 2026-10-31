@@ -1,7 +1,7 @@
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
 
-// How often each remembered rule fires in pr-oracle's brief-task, sweep-diff and review-pr replies, and which have gone stale.
+// How often each remembered rule fires in pr-oracle's brief-task, sweep-diff and review-pr replies and in pr-sidekick's `applied:` lines, and which have gone stale.
 
 const DAY_MS = 86_400_000
 // A rule last seen this long ago, or never, is stale.
@@ -119,6 +119,25 @@ export const parseReviewRules = ({ text }: { text: string }): string[] =>
     const value = /^(?: {4}|  - )rule:\s*(.*)$/.exec(line)?.[1] ?? ''
     const rule = stripEvidence({ text: value.trim().replace(/^(["'])(.*)\1$/, '$2') })
     return rule && rule !== 'null' ? [rule] : []
+  })
+
+// The rules a pr-sidekick reply's `applied:` line names, as bracketed IDs; its `not applied:` part and other lines are left out:
+//   'applied: [U-001], [U-003]; not applied: [U-002] (not triggered)'                → ['[U-001]', '[U-003]']
+//   'applied: U-014'                                                                  → ['[U-014]']
+//   'applied: none; not applied: none', 'applied: none'                               → []
+//   'applied: [U-001]; not applied: [U-002] (a, b; c (d))'                            → ['[U-001]']
+//   'applied: [U-001] — not applied: [U-002] (not triggered)'                         → ['[U-001]']
+//   'applied: [U-001], not applied: [U-002] (x)'                                      → ['[U-001]']
+//   'applied: [U-001]; [U-003]'                                                       → ['[U-001]', '[U-003]']
+//   'changed: a.ts — x\napplied: [U-001] [T-004]\ndeviations: none'                   → ['[U-001]', '[T-004]']
+//   'not applied: [U-002] (not triggered)', 'changed: a.ts — x'                       → []
+export const parseApplied = ({ text }: { text: string }): string[] =>
+  text.split('\n').flatMap(line => {
+    const value = /^\s*applied:\s*(.*)$/i.exec(line)?.[1]?.split(/not applied:/i)[0] ?? ''
+    return value.split(/[,;\s]+/).flatMap(token => {
+      const id = /^\[?([UCT]-\d+)\]?$/.exec(token)?.[1]
+      return id ? [`[${id}]`] : []
+    })
   })
 
 // The entries a reply's rules match, each once: the same ID, or text equal once normalized, or one a prefix of the other:
