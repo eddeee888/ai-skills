@@ -97,7 +97,7 @@ export type InboxItem = {
 export type RuleUsage = {
   /** Times a reply cited it or a pr-sidekick `applied:` line named it, a sweep-diff or grill-description flag included. */
   count: number
-  /** Times a sweep-diff `— rule:` line or a grill-description `style:` flag named it; unset reads as 0. */
+  /** Times a sweep-diff or grill-description reply flagged it (by a `— rule:` line or a `style:` flag); unset reads as 0. */
   flagged?: number
   firstSeen: number
   lastSeen: number
