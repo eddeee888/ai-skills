@@ -10,7 +10,7 @@ import { checkLoaded, checkTool, EXPECTED_HANDOFFS, tickedBy } from './orchestra
 import { describeActivity, describeAgent, describeCall, describeNext, describeOutcome, describeSkill, groupActivity, isSameSkill, snippet, SPINNER_MS, summarize, THREADS_QUERY, toThreads } from './pr-panel.ts'
 import type { ThreadsResponse } from './pr-panel.ts'
 import { findRule } from './rule-band.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, parseApplied, parseEntries, parseFlagged, parseReply, parseReviewRules, parseStyleFlags, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, parseApplied, parseEntries, parseFlagged, parseReply, parseReviewRules, parseStyleFlags, parseThreadRules, toRuleUsage } from './rule-usage.ts'
 import { countLines, describeCapacityWarning, describeMemory } from './status-line.ts'
 import { addUsage, describeUsage, keyCall, toUsage } from './usage-stats.ts'
 
@@ -581,25 +581,28 @@ export const register: Register = (on, options) => {
       if (agent === 'cops:pr-oracle' && call.modes?.includes('learn-feedback')) {
         void refreshStatus($, memory).catch(error => reportFailure($, { step: 'status', what: 'refresh the status line', error }))
       }
-      // Counts the remembered rules a plain brief-task, a sweep-diff or a review-pr reply cites, the ones a grill-description reply's `style:` flags name, and the ones a pr-sidekick reply's `applied:` line names, while memory is on.
-      // A review-pr reply cites them only in its comments' private `rule:` fields.
+      // Counts the remembered rules a plain brief-task, a sweep-diff or a review-pr reply cites, the ones a grill-description reply's `style:` flags name, the ones a triage-threads reply's per-thread `remembered:` lines name, and the ones a pr-sidekick reply's `applied:` line names, while memory is on.
+      // A review-pr reply cites them only in its comments' private `rule:` fields; a triage-threads reply's `edit-rules:` list is not counted.
       // A `for: pr-sidekick` brief lists every rule that could apply, so it doesn't show which rules fire.
       try {
         const isSidekickBrief = /^for:\s*pr-sidekick\b/mi.test(e.prompt)
         const isSidekick = agent === 'cops:pr-sidekick'
-        if (isSidekick || (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || one === 'review-pr' || (one === 'brief-task' && !isSidekickBrief) || one === 'grill-description'))) {
+        if (isSidekick || (agent === 'cops:pr-oracle' && call.modes?.some(one => one === 'sweep-diff' || one === 'review-pr' || (one === 'brief-task' && !isSidekickBrief) || one === 'grill-description' || one === 'triage-threads'))) {
           const pluginRoot = $.plugin.root
           const context = await runProcess($, ['bash', `${pluginRoot}/hooks/memory-context.sh`, 'claude', memory.path, memory.login])
           if (context?.exitCode === 0 && context.stdout.includes('COPS memory root:')) {
             const { rules } = await readMemory($, { context: context.stdout })
             const entries = rules.map(one => one.rule)
             const isGrill = call.modes?.includes('grill-description')
-            const cited = isSidekick ? parseApplied({ text: ran.text ?? '' }) : isGrill ? parseStyleFlags({ text: ran.text ?? '' }) : call.modes?.includes('review-pr') ? parseReviewRules({ text: ran.text ?? '' }) : parseReply({ text: ran.text ?? '' })
+            const isTriage = call.modes?.includes('triage-threads')
+            const cited = isSidekick ? parseApplied({ text: ran.text ?? '' }) : isGrill ? parseStyleFlags({ text: ran.text ?? '' }) : isTriage ? parseThreadRules({ text: ran.text ?? '' }) : call.modes?.includes('review-pr') ? parseReviewRules({ text: ran.text ?? '' }) : parseReply({ text: ran.text ?? '' })
             const keys = matchEntries({ entries, cited }).map(rule => hashRule({ text: rule }))
             // A sweep-diff reply's `— rule:` lines and a grill-description reply's `style:` flags flag a rule; a brief-task citation just counts.
             const flaggedKeys = call.modes?.includes('sweep-diff') ? matchEntries({ entries, cited: parseFlagged({ text: ran.text ?? '' }) }).map(rule => hashRule({ text: rule })) : isGrill ? keys : []
+            // A triage-threads reply's `remembered:` line matches a rule to a thread, so it counts as matched.
+            const matchedKeys = isTriage ? keys : []
             if (keys.length > 0) {
-              await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, flaggedKeys, now: await $.clock.now() }))
+              await $.store.set(RULE_USAGE, countUses({ usage: toRuleUsage({ stored: await $.store.get(RULE_USAGE) }), keys, flaggedKeys, matchedKeys, now: await $.clock.now() }))
               $.ui.invalidate('ui.render')
             }
           }

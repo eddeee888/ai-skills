@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseApplied, parseEntries, parseFlagged, parseReply, parseReviewRules, parseStyleFlags, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseApplied, parseEntries, parseFlagged, parseReply, parseReviewRules, parseStyleFlags, parseThreadRules, toRuleUsage } from './rule-usage.ts'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -273,6 +273,55 @@ describe('grill-description style flags', () => {
   })
 })
 
+describe('triage-threads remembered lines', () => {
+  const IDS = {
+    [PERSONAL]: '## Code\n- [U-001] Prefer early returns  (stated by user 2x)\n- [U-002] Use `run()` for commands  (seen 2x)\n',
+    [TEAM]: '## Team\n- [T-001] Keep tests beside the code  (stated by user)\n',
+  }
+  const prompt = 'mode: triage-threads\nPR: octocat/repo#1'
+  const triage = async ({ $ }: { $: Engine }): Promise<void> => {
+    await $.tool.call({ tool: 'Agent', description: 'triage', subagent_type: 'cops:pr-oracle', prompt })
+  }
+
+  test('a remembered line counts its rule as used and matched', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: 'automatic:\n  - thread: t1  comment: 1  at: a.ts:3\n    nature: authoritative\n    ask: x\n    remembered: [U-001] prefer early returns  (you)\nneeds-user:\n  - thread: t2  comment: 2  at: a.ts:9\n    reason: risky: y\n    ask: z\n    remembered: [T-001] keep tests beside the code  (team)' } })
+    await triage({ $ })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 1, matched: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+    expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 1, matched: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+    expect(used({ stored, rule: 'Use `run()` for commands' })).toBeUndefined()
+  })
+
+  test('a remembered line naming two rules counts both as matched', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: 'automatic:\n  - thread: t1  comment: 1  at: a.ts:3\n    nature: authoritative\n    ask: x\n    remembered: [U-001] prefer early returns (you); [T-001] keep tests beside the code (team)' } })
+    await triage({ $ })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 1, matched: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+    expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 1, matched: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+  })
+
+  test('a none remembered line counts nothing', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: 'automatic:\n  - thread: t1\n    remembered: none' } })
+    await triage({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+
+  test('the edit-rules list counts nothing', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: 'edit-rules:\n  - [U-001] prefer early returns  (stated by user, from you)' } })
+    await triage({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+
+  test('counts nothing while memory is off', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, memory: MEMORY_OFF, replies: { [prompt]: 'automatic:\n  - thread: t1\n    remembered: [U-001] prefer early returns  (you)' } })
+    await triage({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+})
+
 describe('Rules tab', () => {
   test('lists a rule last seen 30+ days ago as stale, with a Prune button that fills the prompt', MEMORY, async ($, on) => {
     const stored = {
@@ -459,20 +508,47 @@ describe('matching', () => {
 
 describe('usage', () => {
   test('counts uses, keeping the latest 10 times', () => {
-    const once = countUses({ usage: {}, keys: ['k'], flaggedKeys: [], now: 5 })
+    const once = countUses({ usage: {}, keys: ['k'], flaggedKeys: [], matchedKeys: [], now: 5 })
     expect(once).toEqual({ k: { count: 1, firstSeen: 5, lastSeen: 5, recent: [5] } })
-    const many = Array.from({ length: 11 }, (_, at) => at + 6).reduce((usage, now) => countUses({ usage, keys: ['k'], flaggedKeys: [], now }), once)
+    const many = Array.from({ length: 11 }, (_, at) => at + 6).reduce((usage, now) => countUses({ usage, keys: ['k'], flaggedKeys: [], matchedKeys: [], now }), once)
     expect(many.k).toEqual({ count: 12, firstSeen: 5, lastSeen: 16, recent: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16] })
   })
 
   test('a flagged key bumps count and flagged, a cited key only count, and no stored flagged reads as 0', () => {
     const stored = { k: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } }
-    expect(countUses({ usage: stored, keys: [], flaggedKeys: ['k'], now: 9 }).k).toEqual({ count: 2, flagged: 1, firstSeen: 1, lastSeen: 9, recent: [1, 9] })
-    expect(countUses({ usage: stored, keys: ['k'], flaggedKeys: [], now: 9 }).k).toEqual({ count: 2, firstSeen: 1, lastSeen: 9, recent: [1, 9] })
-    const flagged = countUses({ usage: {}, keys: [], flaggedKeys: ['k'], now: 5 })
-    expect(countUses({ usage: flagged, keys: ['k'], flaggedKeys: [], now: 6 }).k).toMatchObject({ count: 2, flagged: 1 })
+    expect(countUses({ usage: stored, keys: [], flaggedKeys: ['k'], matchedKeys: [], now: 9 }).k).toEqual({ count: 2, flagged: 1, firstSeen: 1, lastSeen: 9, recent: [1, 9] })
+    expect(countUses({ usage: stored, keys: ['k'], flaggedKeys: [], matchedKeys: [], now: 9 }).k).toEqual({ count: 2, firstSeen: 1, lastSeen: 9, recent: [1, 9] })
+    const flagged = countUses({ usage: {}, keys: [], flaggedKeys: ['k'], matchedKeys: [], now: 5 })
+    expect(countUses({ usage: flagged, keys: ['k'], flaggedKeys: [], matchedKeys: [], now: 6 }).k).toMatchObject({ count: 2, flagged: 1 })
     expect(toRuleUsage({ stored })).toEqual(stored)
     expect(describeUse({ use: stored.k, now: 1 })).not.toContain('flagged')
+  })
+
+  test('a matched key bumps count and matched, and no stored matched reads as 0', () => {
+    const stored = { k: { count: 1, firstSeen: 1, lastSeen: 1, recent: [1] } }
+    expect(countUses({ usage: stored, keys: [], flaggedKeys: [], matchedKeys: ['k'], now: 9 }).k).toEqual({ count: 2, matched: 1, firstSeen: 1, lastSeen: 9, recent: [1, 9] })
+    const matched = countUses({ usage: {}, keys: [], flaggedKeys: [], matchedKeys: ['k'], now: 5 })
+    expect(countUses({ usage: matched, keys: ['k'], flaggedKeys: [], matchedKeys: [], now: 6 }).k).toMatchObject({ count: 2, matched: 1 })
+    expect(countUses({ usage: matched, keys: [], flaggedKeys: [], matchedKeys: ['k'], now: 6 }).k).toMatchObject({ count: 2, matched: 2 })
+    expect(toRuleUsage({ stored: { k: { count: 1, matched: 2, firstSeen: 1, lastSeen: 1, recent: [1] }, j: { count: 1, matched: 'x', firstSeen: 1, lastSeen: 1, recent: [1] } } })).toEqual({ k: { count: 1, matched: 2, firstSeen: 1, lastSeen: 1, recent: [1] } })
+    expect(toRuleUsage({ stored })).toEqual(stored)
+    expect(describeUse({ use: stored.k, now: 1 })).not.toContain('matched')
+  })
+
+  test('parses a thread\'s remembered line in automatic and needs-user, without its origin marker', () => {
+    const text = 'automatic:\n  - thread: t1  comment: 1  at: a.ts:3\n    nature: authoritative\n    ask: x\n    remembered: [U-001] prefer early returns  (you)\nneeds-user:\n  - thread: t2  comment: 2  at: a.ts:9\n    reason: risky: y\n    ask: z\n    remembered: [T-002] keep tests beside code (team)'
+    expect(parseThreadRules({ text })).toEqual(['[U-001] prefer early returns', '[T-002] keep tests beside code'])
+  })
+
+  test('splits a remembered line that names two rules, with or without a separator', () => {
+    expect(parseThreadRules({ text: '    remembered: [U-001] prefer early returns (you); [T-001] keep tests beside the code (team)' })).toEqual(['[U-001] prefer early returns', '[T-001] keep tests beside the code'])
+    expect(parseThreadRules({ text: '    remembered: [U-001] prefer early returns (you) [T-001] keep tests beside the code (team)' })).toEqual(['[U-001] prefer early returns', '[T-001] keep tests beside the code'])
+  })
+
+  test('ignores a none remembered line, the edit-rules list and a reply without remembered lines', () => {
+    expect(parseThreadRules({ text: 'automatic:\n  - thread: t1\n    remembered: none' })).toEqual([])
+    expect(parseThreadRules({ text: 'edit-rules:\n  - [U-003] use pnpm  (stated by user, from you)' })).toEqual([])
+    expect(parseThreadRules({ text: 'already-handled:\n  - thread: t3  at: a.ts:1  note: done' })).toEqual([])
   })
 
   test('parses only the sweep-diff rule lines as flagged', () => {
@@ -523,5 +599,6 @@ describe('usage', () => {
     expect(describeUse({ use: { count: 3, firstSeen: 0, lastSeen: NOW - 1000, recent: [] }, now: NOW })).toBe('seen 3× · last seen today')
     expect(describeUse({ use: { count: 1, firstSeen: 0, lastSeen: NOW - 31 * DAY, recent: [] }, now: NOW })).toBe('seen 1× · last seen 31d ago')
     expect(describeUse({ use: { count: 5, flagged: 3, firstSeen: 0, lastSeen: NOW - 2 * DAY, recent: [] }, now: NOW })).toBe('seen 5× · flagged 3× · last seen 2d ago')
+    expect(describeUse({ use: { count: 5, flagged: 3, matched: 2, firstSeen: 0, lastSeen: NOW - 2 * DAY, recent: [] }, now: NOW })).toBe('seen 5× · flagged 3× · matched 2× · last seen 2d ago')
   })
 })
