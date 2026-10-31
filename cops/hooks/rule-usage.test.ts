@@ -3,7 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On, ProcessRunResult } from 'claude-code'
 import type { RuleUsage } from '../types'
 import { MEMORY_LIMIT } from './status-line.ts'
-import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseApplied, parseEntries, parseFlagged, parseReply, parseReviewRules, toRuleUsage } from './rule-usage.ts'
+import { countUses, describeRules, describeUse, hashRule, matchEntries, normalize, parseApplied, parseEntries, parseFlagged, parseReply, parseReviewRules, parseStyleFlags, toRuleUsage } from './rule-usage.ts'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -225,6 +225,47 @@ describe('pr-sidekick applied rules', () => {
   })
 })
 
+describe('grill-description style flags', () => {
+  const IDS = {
+    [PERSONAL]: '## Code\n- [U-001] Prefer early returns  (stated by user 2x)\n- [U-002] Use `run()` for commands  (seen 2x)\n',
+    [TEAM]: '## Team\n- [T-001] Keep tests beside the code  (stated by user)\n',
+  }
+  const prompt = 'mode: grill-description\nPR: octocat/repo#1'
+  const grill = async ({ $ }: { $: Engine }): Promise<void> => {
+    await $.tool.call({ tool: 'Agent', description: 'grill', subagent_type: 'cops:pr-oracle', prompt })
+  }
+
+  test('a style flag counts its rule as used and flagged', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: '- style: [U-001] prefer early returns  — rewrite the intro\n- style: [T-001]  — move the note' } })
+    await grill({ $ })
+    expect(used({ stored, rule: 'Prefer early returns' })).toEqual({ count: 1, flagged: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+    expect(used({ stored, rule: 'Keep tests beside the code' })).toEqual({ count: 1, flagged: 1, firstSeen: NOW, lastSeen: NOW, recent: [NOW] })
+    expect(used({ stored, rule: 'Use `run()` for commands' })).toBeUndefined()
+  })
+
+  test('unsupported, missing and convention flags count nothing', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: '- unsupported: [U-001] claims a fix  — drop it\n- missing: [U-002] a.ts\n- convention: [T-001] no Fixes line  — add it' } })
+    await grill({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+
+  test('clean counts nothing', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, replies: { [prompt]: 'clean' } })
+    await grill({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+
+  test('counts nothing while memory is off', MEMORY, async ($, on) => {
+    const stored: Record<string, unknown> = {}
+    world({ on, stored, files: IDS, memory: MEMORY_OFF, replies: { [prompt]: '- style: [U-001] prefer early returns  — rewrite the intro' } })
+    await grill({ $ })
+    expect(stored.ruleUsage).toBeUndefined()
+  })
+})
+
 describe('Rules tab', () => {
   test('lists a rule last seen 30+ days ago as stale, with a Prune button that fills the prompt', MEMORY, async ($, on) => {
     const stored = {
@@ -429,6 +470,21 @@ describe('usage', () => {
 
   test('parses only the sweep-diff rule lines as flagged', () => {
     expect(parseFlagged({ text: '- a.ts:3  nested ifs  — rule: [U-014] prefer early returns (stated by user)\n- ask before pushing  (seen 2x)\nclean' })).toEqual(['[U-014] prefer early returns'])
+  })
+
+  test('parses a style flag naming a rule, with or without its ID', () => {
+    expect(parseStyleFlags({ text: '- style: [U-001] prefer early returns  — rewrite the intro' })).toEqual(['[U-001] prefer early returns'])
+    expect(parseStyleFlags({ text: '- style: [U-001]  — rewrite the intro' })).toEqual(['[U-001]'])
+    expect(parseStyleFlags({ text: '- style: prefer early returns  — rewrite the intro' })).toEqual(['prefer early returns'])
+  })
+
+  test('ignores unsupported, missing and convention flags and clean', () => {
+    expect(parseStyleFlags({ text: '- unsupported: [U-001] x  — y\n- missing: z  — w\n- convention: [U-002] q  — r' })).toEqual([])
+    expect(parseStyleFlags({ text: 'clean' })).toEqual([])
+  })
+
+  test('parses only the style lines of a mixed reply', () => {
+    expect(parseStyleFlags({ text: '- unsupported: claims a fix  — drop it\n- style: [U-001] prefer early returns  — a\n- convention: no Fixes  — b\n- style: [T-002] keep tests beside code  — c\nmemory-candidate: x' })).toEqual(['[U-001] prefer early returns', '[T-002] keep tests beside code'])
   })
 
   test('parses a review-pr reply\'s rule fields, skipping null and empty', () => {
