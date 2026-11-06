@@ -351,7 +351,7 @@ validate_budgets() {
   local path filename count limit
   check_budget "CONVENTIONS.md" 500 "convention file"
   check_budget "CONVENTIONS-orchestration.md" 1464 "convention file"
-  check_budget "CONVENTIONS-github.md" 600 "convention file"
+  check_budget "CONVENTIONS-github.md" 670 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 786 "convention file"
   check_budget "CONVENTIONS-evidence.md" 585 "convention file"
@@ -625,6 +625,11 @@ validate_autopilot() {
 
 # Guard high-value behavior that prose refactors must preserve.
 validate_behavioral_contracts() {
+  require_markers "CONVENTIONS-github.md" "no hard fail without gh or MCP" \
+    "Never stop just because" "No route for a step."
+  forbid_markers "CONVENTIONS-github.md" "no hard fail without gh or MCP" \
+    "If unavailable, fail the step." "symbolic-ref --short refs/remotes/origin/HEAD"
+
   require_markers "cops/agents/pr-oracle.md" "eight modes" \
     '`scout-repo`' '`triage-threads`' '`brief-task`' '`sweep-diff`' \
     '`grill-description`' '`review-pr`' '`draft-author-notes`' '`learn-feedback`'

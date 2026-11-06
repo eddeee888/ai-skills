@@ -28,7 +28,7 @@ gh api 'repos/<owner>/<repo>/pulls?head=<owner>:<branch>&state=open' --jq '.[].h
 gh api user --jq .login
 ```
 
-MCP route: `list_pull_requests` and `get_me` (`CONVENTIONS-github.md` table).
+MCP route: `list_pull_requests` and `get_me` (`CONVENTIONS-github.md` table). Neither works → the host's own GitHub tool, else git only (`CONVENTIONS-github.md` → "GitHub access"); don't stop. A check no route can do → the card says `not verified: <check>`; no login → ask for it once.
 
 - No checkout or a detached HEAD → stop; say what's missing.
 - The current branch has an open PR → stop and point to `/cops:pr-address` or `/cops:pr-wrap-up`.
