@@ -628,7 +628,7 @@ validate_behavioral_contracts() {
   require_markers "CONVENTIONS-github.md" "no hard fail without gh or MCP" \
     "Never stop just because" "No route for a step."
   forbid_markers "CONVENTIONS-github.md" "no hard fail without gh or MCP" \
-    "If unavailable, fail the step."
+    "If unavailable, fail the step." "symbolic-ref --short refs/remotes/origin/HEAD"
 
   require_markers "cops/agents/pr-oracle.md" "eight modes" \
     '`scout-repo`' '`triage-threads`' '`brief-task`' '`sweep-diff`' \
