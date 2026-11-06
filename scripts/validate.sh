@@ -625,6 +625,11 @@ validate_autopilot() {
 
 # Guard high-value behavior that prose refactors must preserve.
 validate_behavioral_contracts() {
+  require_markers "CONVENTIONS-github.md" "no hard fail without gh or MCP" \
+    "Never stop just because" "No route for a step."
+  forbid_markers "CONVENTIONS-github.md" "no hard fail without gh or MCP" \
+    "If unavailable, fail the step."
+
   require_markers "cops/agents/pr-oracle.md" "eight modes" \
     '`scout-repo`' '`triage-threads`' '`brief-task`' '`sweep-diff`' \
     '`grill-description`' '`review-pr`' '`draft-author-notes`' '`learn-feedback`'
