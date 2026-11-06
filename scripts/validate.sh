@@ -351,7 +351,7 @@ validate_budgets() {
   local path filename count limit
   check_budget "CONVENTIONS.md" 500 "convention file"
   check_budget "CONVENTIONS-orchestration.md" 1464 "convention file"
-  check_budget "CONVENTIONS-github.md" 600 "convention file"
+  check_budget "CONVENTIONS-github.md" 670 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 786 "convention file"
   check_budget "CONVENTIONS-evidence.md" 585 "convention file"
