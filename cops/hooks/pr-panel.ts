@@ -233,12 +233,13 @@ export const describeOutcome = (text: string): string => {
 //                      (`no rules` for none; the deviation part only when there are some)
 //   failed           → `✗ 🦸 Sidekick · inherit · failed`
 //   background       → `🔮 Oracle · inherit · running in the background`
+//   general-purpose  → `✓ 🤖 general-purpose · sonnet · …`
 //   another agent    → `✓ pr-other · inherit · …`, its name without `cops:`
 export const describeAgent = ({ call, now }: { call: AgentCall; now: number }): string => {
   const elapsed = (ms: number) => (ms < 60_000 ? `${Math.round(ms / 1000)}s` : `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`)
   const tokens = (n: number) => (n < 1000 ? `${n} tokens` : `${Math.round(n / 1000)}k tokens`)
   const marks = { running: SPINNER[Math.floor(now / SPINNER_MS) % SPINNER.length], done: '✓', failed: '✗', background: '' }
-  const names: Record<string, string> = { 'cops:pr-oracle': '🔮 Oracle', 'cops:pr-sidekick': '🦸 Sidekick' }
+  const names: Record<string, string> = { 'cops:pr-oracle': '🔮 Oracle', 'cops:pr-sidekick': '🦸 Sidekick', 'general-purpose': '🤖 general-purpose' }
   const line = [
     names[call.agent] ?? call.agent.replace(/^cops:/, ''),
     call.model || (call.resolvedModel ? `inherit (${call.resolvedModel})` : 'inherit'),

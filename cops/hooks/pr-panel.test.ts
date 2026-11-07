@@ -187,6 +187,40 @@ describe('agents', () => {
     await ui.unmount()
   })
 
+  test('labels a finished general-purpose call with the robot', async ($, on) => {
+    world(on)
+    on('tool.call', { tool: 'Agent' }, ($, e) => ({
+      result: {
+        status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 3000, totalTokens: 500, prompt: e.prompt,
+        usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
+      },
+      text: 'done',
+    }))
+    await start($)
+    await $.tool.call({ tool: 'Agent', description: 'draft', subagent_type: 'general-purpose', model: 'sonnet', prompt: 'draft the PR' })
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('1 agent'))
+    expect(await text(ui)).toContain('✓ 🤖 general-purpose · sonnet · 3s')
+    await ui.unmount()
+  })
+
+  test('labels a finished call that names no subagent_type as general-purpose', async ($, on) => {
+    world(on)
+    on('tool.call', { tool: 'Agent' }, ($, e) => ({
+      result: {
+        status: 'completed', agentId: 'a1', content: [], totalToolUseCount: 1, totalDurationMs: 3000, totalTokens: 500, prompt: e.prompt,
+        usage: { input_tokens: 1, output_tokens: 1, cache_creation_input_tokens: null, cache_read_input_tokens: null, server_tool_use: null, service_tier: null, cache_creation: null },
+      },
+      text: 'done',
+    }))
+    await start($)
+    await $.tool.call({ tool: 'Agent', description: 'draft', prompt: 'draft the PR' })
+    const ui = await mount($, 'terminal')
+    await until(async () => (await text(ui)).includes('1 agent'))
+    expect(await text(ui)).toContain('✓ 🤖 general-purpose')
+    await ui.unmount()
+  })
+
   test('names the model a background launch resolved to', async ($, on) => {
     world(on)
     on('tool.call', { tool: 'Agent' }, () => ({ result: { status: 'async_launched', agentId: 'a', description: 'd', resolvedModel: 'claude-opus-5-5' }, text: '' }) as never)

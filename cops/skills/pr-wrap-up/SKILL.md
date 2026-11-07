@@ -14,7 +14,7 @@ GitHub steps are `gh api` commands. On the MCP route, use the GitHub MCP tool fo
 Only the short ends run here. Steps 2–6 — rebase, reading the branch, changeset, drafting — live in `draft.md` next to this file and run in one subagent (`CONVENTIONS-orchestration.md` → "Hand long loops to a subagent"):
 
 1. **Here:** Step 1, including the oracle call.
-2. **Subagent:** Steps 2–6, with this prompt:
+2. **Subagent:** Steps 2–6 go to `cops:pr-sidekick` (Cursor: the `pr-sidekick` subagent) on the standard tier, with this prompt:
 
    ```text
    Repo <owner>/<repo>, PR #<number>, branch <headRefName> (checked out),
