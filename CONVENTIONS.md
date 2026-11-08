@@ -4,7 +4,7 @@ Rules shared by marketplace skills and the `pr-oracle` checks that enforce them.
 
 ## Distribution and sync
 
-Each plugin carries an identical copy of this core file and its six reference files at its root, two levels above each `SKILL.md`. Edit the seven root files, then run `bash scripts/sync-conventions.sh` to copy all seven over `cops/` and `oss/`.
+Each plugin carries an identical copy of this core file and its seven reference files at its root, two levels above each `SKILL.md`. Edit the eight root files, then run `bash scripts/sync-conventions.sh` to copy all eight over `cops/` and `oss/`.
 
 ## Defaults and contracts
 
@@ -49,6 +49,8 @@ Each indexed section is:
   - Evidence status: `captured` … `not-captured`
   - Where evidence lives: scratch and the PR body
   - Staleness is not a `sweep-diff` check
+- `CONVENTIONS-fallback.md`
+  - Fallback to a general-purpose subagent
 - `CONVENTIONS-verification.md`
   - Verification checklist: name the test type, not the command
   - Don't checklist an intentionally-failing check as done

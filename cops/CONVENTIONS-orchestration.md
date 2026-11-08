@@ -4,7 +4,7 @@
 
 When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems overhead, ask; never silently skip.
 
-- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick`; Cursor: `pr-sidekick`), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` (Cursor: a subagent). Other read-only survey/research → `Explore` (Cursor: a subagent).
+- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick`; Cursor: `pr-sidekick`), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If unavailable → `general-purpose` (Cursor: a subagent), per `CONVENTIONS-fallback.md`. Other read-only survey/research → `Explore` (Cursor: a subagent).
 - **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from the `COPS models:` line as the model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
 - **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes output, with `for: pr-sidekick` on `brief-task`.
