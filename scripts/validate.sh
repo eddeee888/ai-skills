@@ -356,7 +356,7 @@ validate_budgets() {
   check_budget "CONVENTIONS-pr-metadata.md" 786 "convention file"
   check_budget "CONVENTIONS-evidence.md" 585 "convention file"
   check_budget "CONVENTIONS-verification.md" 312 "convention file"
-  check_budget "CONVENTIONS-subagent-fallback.md" 700 "convention file"
+  check_budget "CONVENTIONS-subagent-fallback.md" 724 "convention file"
 
   while IFS= read -r -d '' path; do
     check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"
