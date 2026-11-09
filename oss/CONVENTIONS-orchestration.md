@@ -30,6 +30,7 @@ Handoffs:
 
 - `✓`: ran as specified.
 - `✓ (incomplete load: <files>)`: oracle ran but its `loaded:` still lacked required files after one retry.
+- `✓ (general-purpose in place of pr-sidekick)`: `general-purpose` ran the sidekick handoff per `CONVENTIONS-subagent-fallback.md`.
 - `fallback (pr-oracle unavailable; general read-only subagent)`: valid only for labels `review-pr` and `draft-author-notes`, after applying the oracle mode contract to that subagent.
 - `inline (no subagent capability)`: valid for a named subagent handoff only when no subagent tool exists.
 - `inline (cops plugin isn't installed)`: valid for an oracle handoff only when `cops` is absent.
