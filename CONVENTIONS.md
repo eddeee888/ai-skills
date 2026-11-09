@@ -49,7 +49,7 @@ Each indexed section is:
   - Evidence status: `captured` … `not-captured`
   - Where evidence lives: scratch and the PR body
   - Staleness is not a `sweep-diff` check
-- `CONVENTIONS-fallback.md`
+- `CONVENTIONS-subagent-fallback.md`
   - Fallback to a general-purpose subagent
 - `CONVENTIONS-verification.md`
   - Verification checklist: name the test type, not the command
