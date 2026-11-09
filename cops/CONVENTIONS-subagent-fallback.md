@@ -41,7 +41,7 @@ Act as pr-sidekick for the one scoped job below. Do exactly what it says, in its
 
 ### Oracle preamble
 
-Only when the mode's reference files (`cops/references/pr-oracle/`) are readable on the host. Otherwise there is nothing to carry, so perform the step inline and mark `fallback`, as "Consulting the `pr-oracle` agent" says.
+Only when the mode's reference files (`cops/references/pr-oracle/`) are readable on the host. Otherwise there is nothing to carry, so perform the step inline. Mark it `inline (cops plugin isn't installed)`; mark `fallback` only for `review-pr` and `draft-author-notes`, as "Handoffs in the final report" says.
 
 ```
 Act as pr-oracle for the mode(s) below. Read the mode file(s) under the references directory first, then follow their job and output exactly.

@@ -44,7 +44,7 @@ Final-report users: every `cops` and `oss` skill.
 `oss` works alone; when installed, `cops` supplies `pr-oracle`, `pr-sidekick`, and `pr-wrap-up`.
 
 - **How to tell.** Installed when this session has `cops:pr-oracle`, `cops:pr-sidekick`, `/cops:pr-wrap-up` on Claude Code; or `pr-oracle`, `pr-sidekick`, `/pr-wrap-up` on Cursor. Check once and cache. Cursor is never missing.
-- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
+- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → `general-purpose` per `CONVENTIONS-subagent-fallback.md` when the mode's reference files are readable, else perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
 - **Defaults without the oracle.** With no profile/`overrides:`, inspect repo `CLAUDE.md` and `CONTRIBUTING.md` before applying a *Default*.
 
 ## Suggesting next steps
@@ -77,7 +77,7 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
   | `light` | sorting, extracting, formatting | `brief-task` |
   | `standard` | reading, summarising, drafting | `scout-repo`, `triage-threads`, `sweep-diff`, `grill-description`, `learn-feedback` |
   | `deep` | finding bugs, judging trade-offs | `review-pr`, `draft-author-notes` |
-- **Optional only when missing.** If `cops` is absent, perform the step inline and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
+- **Optional only when missing.** If `cops` is absent, fall back per "Companion plugin: `cops`", marking the handoff as "Handoffs in the final report" says. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known; always include the selected `GitHub route:`. Later `scout-repo` calls get the run's first profile as `profile:`; `overrides:` is rebuilt from current memory. Review modes get owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
