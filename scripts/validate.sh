@@ -350,12 +350,13 @@ validate_descriptions() {
 validate_budgets() {
   local path filename count limit
   check_budget "CONVENTIONS.md" 500 "convention file"
-  check_budget "CONVENTIONS-orchestration.md" 1464 "convention file"
+  check_budget "CONVENTIONS-orchestration.md" 1495 "convention file"
   check_budget "CONVENTIONS-github.md" 670 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 786 "convention file"
   check_budget "CONVENTIONS-evidence.md" 585 "convention file"
   check_budget "CONVENTIONS-verification.md" 312 "convention file"
+  check_budget "CONVENTIONS-subagent-fallback.md" 736 "convention file"
 
   while IFS= read -r -d '' path; do
     check_budget "${path#"$ROOT"/}" 1400 "SKILL.md"

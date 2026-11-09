@@ -4,7 +4,7 @@
 
 When a skill names a handoff and the host can spawn a subagent, make it every time. This includes implement/test/commit, write/run-test, survey, research, and rebase/draft loops. Size or already-read code is no exemption. If handoff seems overhead, ask; never silently skip.
 
-- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick`; Cursor: `pr-sidekick`), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If `cops` is absent → `general-purpose` (Cursor: a subagent). Other read-only survey/research → `Explore` (Cursor: a subagent).
+- **Which agent.** Editing, running, or pushing → `pr-sidekick` (`cops:pr-sidekick`; Cursor: `pr-sidekick`), passing `login: <github-login>` when known. Complete PR review or author-note drafting → `pr-oracle` under "Consulting the `pr-oracle` agent". If unavailable → `general-purpose` (Cursor: a subagent), per `CONVENTIONS-subagent-fallback.md`. Other read-only survey/research → `Explore` (Cursor: a subagent).
 - **The caller picks the model by tier.** Every subagent call has one: `light` for mechanical work (also say "mechanical"), `standard` for a scoped change/survey, `deep` for cross-file judgment; oracle modes are tiered below. Pass the tier's value from the `COPS models:` line as the model. Omit it only for `inherit`, no such line, or a host without per-call models (Cursor). Mostly-design work stays in main chat.
 - **The prompt is only the filled template**: no transcript, diff, skill copy, or unrequested material.
 - **An editing subagent can't consult the oracle or read memory.** Main chat calls `pr-oracle` first and includes output, with `for: pr-sidekick` on `brief-task`.
@@ -30,6 +30,7 @@ Handoffs:
 
 - `✓`: ran as specified.
 - `✓ (incomplete load: <files>)`: oracle ran but its `loaded:` still lacked required files after one retry.
+- `✓ (general-purpose in place of pr-sidekick)`: `general-purpose` ran the sidekick handoff per `CONVENTIONS-subagent-fallback.md`.
 - `fallback (pr-oracle unavailable; general read-only subagent)`: valid only for labels `review-pr` and `draft-author-notes`, after applying the oracle mode contract to that subagent.
 - `inline (no subagent capability)`: valid for a named subagent handoff only when no subagent tool exists.
 - `inline (cops plugin isn't installed)`: valid for an oracle handoff only when `cops` is absent.
@@ -44,7 +45,7 @@ Final-report users: every `cops` and `oss` skill.
 `oss` works alone; when installed, `cops` supplies `pr-oracle`, `pr-sidekick`, and `pr-wrap-up`.
 
 - **How to tell.** Installed when this session has `cops:pr-oracle`, `cops:pr-sidekick`, `/cops:pr-wrap-up` on Claude Code; or `pr-oracle`, `pr-sidekick`, `/pr-wrap-up` on Cursor. Check once and cache. Cursor is never missing.
-- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
+- **Missing → fall back, never stop or ask for installation.** `pr-oracle` → `general-purpose` per `CONVENTIONS-subagent-fallback.md` when the mode's reference files are readable, else perform its specified step inline and mark `inline (cops plugin isn't installed)`; `pr-sidekick` → fallback above; `pr-wrap-up` → say title and description need manual updating, without naming `/cops:pr-wrap-up`.
 - **Defaults without the oracle.** With no profile/`overrides:`, inspect repo `CLAUDE.md` and `CONTRIBUTING.md` before applying a *Default*.
 
 ## Suggesting next steps
@@ -77,7 +78,7 @@ Skills call it at their named points in modes `scout-repo`, `triage-threads`, `b
   | `light` | sorting, extracting, formatting | `brief-task` |
   | `standard` | reading, summarising, drafting | `scout-repo`, `triage-threads`, `sweep-diff`, `grill-description`, `learn-feedback` |
   | `deep` | finding bugs, judging trade-offs | `review-pr`, `draft-author-notes` |
-- **Optional only when missing.** If `cops` is absent, perform the step inline and mark fallback. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
+- **Optional only when missing.** If `cops` is absent, fall back per "Companion plugin: `cops`", marking the handoff as "Handoffs in the final report" says. Small changes do not exempt calls. When present, call every named point; nothing inline replaces `sweep-diff` or `brief-task` as checks of remembered rules.
 - **Advice, not authority.** Current ask and skill rules win, except remembered rules override *Defaults*. Surface memory/current-ask conflicts to the user.
 - **The skill acts, the agent doesn't.** Caller pushes, replies, and edits. Report `promote:` once (repo-only rule belongs in `CLAUDE.md`). Show both rules for `conflict:` from an unrecorded contradictory `record-team:`.
 - **Pass what you have.** Include `login: <github-login>` if known; always include the selected `GitHub route:`. Later `scout-repo` calls get the run's first profile as `profile:`; `overrides:` is rebuilt from current memory. Review modes get owner/repo, PR number/URL, saved full head SHA, checkout status/path, and mode-specific inputs.
