@@ -125,7 +125,7 @@ Any failure or question ends the run:
 - A failed push: push once, with no retry on another route, no remote or branch switch, and no force. Commits stay local. Report `committed locally on <branch>; push failed: <error>` and `git push -u origin <branch>`. No PR exists, so the report ends with that command and skips the resume line below.
 - Don't retry the stage, start a later one, or undo what was already pushed or posted.
 - Report the stage reached, what stopped it, what was pushed and posted so far, the held `memory-candidate:` lines, and the command that picks up from there (`/cops:pr-address`, `/cops:pr-wrap-up`, …).
-- Unless the push failed, end with: `Say "resume the rest with autopilot" to continue on autopilot` ([resume.md](resume.md)).
+- End with: `Say "resume the rest with autopilot" to continue on autopilot` ([resume.md](resume.md)), except after a failed push.
 
 ## Handoffs
 
