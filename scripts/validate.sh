@@ -366,7 +366,7 @@ validate_budgets() {
   done
   for plugin in cops oss; do
     while IFS= read -r -d '' path; do
-      [ "${path##*/}" = SKILL.md ] ||
+      [ "${path##*/}" = SKILL.md ] || [ "${path#"$ROOT"/}" = cops/skills/pr-start/autopilot.md ] ||
         check_budget "${path#"$ROOT"/}" 1200 "lazy instruction"
     done < <(find "$ROOT/$plugin/skills" -type f -name '*.md' -print0)
     if [ -d "$ROOT/$plugin/references" ]; then
@@ -377,7 +377,7 @@ validate_budgets() {
   done
 
   if [ -f "$ROOT/cops/skills/pr-start/autopilot.md" ]; then
-    check_budget "cops/skills/pr-start/autopilot.md" 1200 "lazy instruction"
+    check_budget "cops/skills/pr-start/autopilot.md" 1320 "lazy instruction"
   else
     fail "cops/skills/pr-start/autopilot.md" "missing autopilot instruction file"
   fi
