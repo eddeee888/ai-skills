@@ -21,19 +21,20 @@ Run this before the card; it only reads, after SKILL.md Step 1's own checks.
 gh api repos/<owner>/<repo> --jq .permissions.push
 ```
 
-- **Write access:** `permissions.push` is `true`.
+- **Write access** has three states: `permissions.push` is `true` (passes), `false` (refuses), or unknown (advisory). Unknown: `gh` missing or unauthenticated, MCP unreachable, or no `permissions` field (an app token). Try the MCP route once, then record `push access unverified`. Never treat unknown as `false`.
 
 The `autopilot` label is optional and never a gate.
 
-A failed check refuses autopilot: with the flag, say it failed and offer the normal run; without the flag, the card shows `🤖 Autopilot: not offered — <failed gate>`. The normal run goes on from Step 2.
+Only `false` refuses autopilot: with the flag, say so and offer the normal run; without the flag, the card shows `🤖 Autopilot: not offered — <failed gate>`. An unverified check refuses nothing. The normal run goes on from Step 2.
 
 ## At the card
 
-When the gate check passes, autopilot is offered, and choosing it is the user's call; the card shows no `Autopilot:` line unless a note applies. Each note is a bullet under `🤖 Autopilot: advisory`:
+When the gate check passes or is unverified, autopilot is offered, and choosing it is the user's call; the card shows no `Autopilot:` line unless a note applies. Each note is a bullet under `🤖 Autopilot: advisory`:
 
 - `Large` when the Size is Large;
 - `high-risk scope (<area>)` when the scope touches security or auth, data loss, infrastructure or a public API;
-- `Done when is an observable behavior` when it is not a test or a command.
+- `Done when is an observable behavior` when it is not a test or a command;
+- `push access unverified — the run stops at the push if it fails` when the gate check was unverified.
 
 A note informs the choice and blocks nothing. Once offered:
 
@@ -121,9 +122,10 @@ Report as open-pr.md Step 7 says, adding each stage's result in one line, the op
 Any failure or question ends the run:
 
 - Leave the PR a draft if one exists, and assign the user as "Finish" does. A stop before the PR exists has nothing to assign.
+- A failed push: push once, with no retry on another route, no remote or branch switch, and no force. Commits stay local. Report `committed locally on <branch>; push failed: <error>` and `git push -u origin <branch>`. No PR exists, so the report ends with that command and skips the resume line below.
 - Don't retry the stage, start a later one, or undo what was already pushed or posted.
 - Report the stage reached, what stopped it, what was pushed and posted so far, the held `memory-candidate:` lines, and the command that picks up from there (`/cops:pr-address`, `/cops:pr-wrap-up`, …).
-- End with: `Say "resume the rest with autopilot" to continue on autopilot` ([resume.md](resume.md)).
+- End with: `Say "resume the rest with autopilot" to continue on autopilot` ([resume.md](resume.md)), except after a failed push.
 
 ## Handoffs
 
