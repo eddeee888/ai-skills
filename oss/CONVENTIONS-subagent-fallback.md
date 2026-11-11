@@ -1,6 +1,6 @@
 # Fallback to a general-purpose subagent
 
-How a skill proceeds when `pr-oracle` or `pr-sidekick` cannot be spawned by name. The skill still hands the work to a subagent: a `general-purpose` one carrying the named agent's contract.
+How a skill proceeds when `pr-oracle` or `pr-sidekick` cannot be spawned by name. The skill still hands the work to a subagent: a `general-purpose` one carrying the named agent's contract. Inline is the last resort, not the default.
 
 This extends `CONVENTIONS-orchestration.md` → "Hand long loops to a subagent". It adds no decisions: ordering, gates, retry bounds, and who commits or pushes stay as the skill says.
 
@@ -17,7 +17,7 @@ It does not apply:
 - **No subagent tool.** Run the step inline and mark `inline (no subagent capability)`.
 - **Failure after work began** (edits, commits, a push, a posted comment). Never respawn as a fallback; the skill's own failure handling applies (bounded retries, `Resuming:`, or ask the user).
 
-Never stop or ask to install the plugin because an agent is missing.
+Never stop or ask to install the plugin for a missing agent.
 
 ## How to run it
 
