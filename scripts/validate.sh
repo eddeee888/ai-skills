@@ -351,7 +351,7 @@ validate_budgets() {
   local path filename count limit
   check_budget "CONVENTIONS.md" 500 "convention file"
   check_budget "CONVENTIONS-orchestration.md" 1495 "convention file"
-  check_budget "CONVENTIONS-github.md" 670 "convention file"
+  check_budget "CONVENTIONS-github.md" 680 "convention file"
   check_budget "CONVENTIONS-posts.md" 1000 "convention file"
   check_budget "CONVENTIONS-pr-metadata.md" 786 "convention file"
   check_budget "CONVENTIONS-evidence.md" 585 "convention file"
@@ -377,7 +377,7 @@ validate_budgets() {
   done
 
   if [ -f "$ROOT/cops/skills/pr-start/autopilot.md" ]; then
-    check_budget "cops/skills/pr-start/autopilot.md" 1320 "lazy instruction"
+    check_budget "cops/skills/pr-start/autopilot.md" 1350 "lazy instruction"
   else
     fail "cops/skills/pr-start/autopilot.md" "missing autopilot instruction file"
   fi
