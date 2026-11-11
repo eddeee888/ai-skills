@@ -377,7 +377,7 @@ validate_budgets() {
   done
 
   if [ -f "$ROOT/cops/skills/pr-start/autopilot.md" ]; then
-    check_budget "cops/skills/pr-start/autopilot.md" 1400 "lazy instruction"
+    check_budget "cops/skills/pr-start/autopilot.md" 1350 "lazy instruction"
   else
     fail "cops/skills/pr-start/autopilot.md" "missing autopilot instruction file"
   fi

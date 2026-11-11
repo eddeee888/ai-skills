@@ -21,7 +21,7 @@ Run this before the card; it only reads, after SKILL.md Step 1's own checks.
 gh api repos/<owner>/<repo> --jq .permissions.push
 ```
 
-- **Write access** has three states: `permissions.push` is `true` (passes), `false` (refuses), or unknown (advisory). A `false` refuses only when `gh api user --jq .type` returns `User`; if that call fails, returns `Bot`, or the repo read errors `Resource not accessible by integration`, it is unknown. Also unknown: `gh` missing or unauthenticated, MCP unreachable, or no `permissions` field. Try MCP once, then record `push access unverified`. Never treat unknown as `false`.
+- **Write access:** `permissions.push` is `true` (passes). Refuse only when it is `false` and `gh api user --jq .type` returns `User`. Anything else is unknown: `gh` missing, unauthenticated or erroring, no `permissions` field, a `Bot`, or `Resource not accessible by integration`. Record `push access unverified`; never treat unknown as `false`. Run no MCP or host-tool check.
 
 The `autopilot` label is optional and never a gate.
 
