@@ -10,7 +10,7 @@
     "test:hooks": "claude plugin test cops"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.328",
+    "@anthropic-ai/claude-code": "2.1.332",
     "playwright": "1.65.1"
   }
 }
